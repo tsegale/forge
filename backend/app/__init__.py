@@ -18,6 +18,10 @@ def create_app(config_name: str | None = None) -> Flask:
 
     migrate.init_app(app, db, compare_type=True)
 
+    from .errors import register_error_handlers
+
+    register_error_handlers(app)
+
     from .api.v1 import bp as api_v1
 
     app.register_blueprint(api_v1, url_prefix="/api/v1")
