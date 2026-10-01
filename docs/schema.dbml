@@ -158,6 +158,7 @@ Table cpu_specs {
   tdp_w smallint [not null]
   max_power_w smallint [not null]
   has_integrated_graphics boolean [not null]
+  includes_cooler boolean [not null]
 
   Note: 'CHECK: boost_clock_mhz >= base_clock_mhz; kind_code = \'cpu\'; max_power_w >= tdp_w; threads >= cores AND cores > 0'
 }
@@ -356,6 +357,7 @@ Table psu_specs {
   modularity psu_modularity [not null]
   form_factor psu_form_factor [not null]
   has_12v_2x6 boolean [not null]
+  atx_version psu_atx_version [not null]
 
   Note: 'CHECK: kind_code = \'psu\'; wattage_w >= 300'
 }
@@ -527,6 +529,12 @@ Enum payment_status {
   "succeeded"
   "failed"
   "refunded"
+}
+
+Enum psu_atx_version {
+  "2.x"
+  "3.0"
+  "3.1"
 }
 
 Enum psu_efficiency {

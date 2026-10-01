@@ -44,6 +44,7 @@ CONSTRAINT_ERRORS: dict[str, MappedError] = {
         409, "build_slot_limit", "This build already holds the maximum number of parts of this kind."
     ),
     "uq_build_items_build_product": MappedError(409, "duplicate_build_item", "This part is already in the build."),
+    "build_locked": MappedError(409, "build_locked", "This build has been ordered and its parts can no longer change."),
     # orders (trigger-raised)
     "order_status_transition": MappedError(
         409, "invalid_status_transition", "The order cannot move to that status from its current status."

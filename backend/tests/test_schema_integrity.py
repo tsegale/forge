@@ -4,7 +4,7 @@ import uuid
 from datetime import UTC, datetime, timedelta
 
 import pytest
-from sqlalchemy import func, insert, select, text, update
+from sqlalchemy import delete, func, insert, select, text, update
 from sqlalchemy.exc import DBAPIError, IntegrityError
 
 from app.models import (
@@ -19,10 +19,11 @@ from app.models import (
     OrderStatusHistory,
     PriceHistory,
     Product,
+    PsuProduct,
     RefreshToken,
     User,
 )
-from app.models.enums import OrderStatus
+from app.models.enums import BuildStatus, OrderStatus, PsuAtxVersion
 from app.services.audit import set_actor
 
 
@@ -58,6 +59,7 @@ def test_spec_row_cannot_attach_to_product_of_another_kind(session, product_by_s
         tdp_w=120,
         max_power_w=160,
         has_integrated_graphics=True,
+        includes_cooler=False,
     )
     with pytest.raises(IntegrityError) as exc:
         session.execute(stmt)
@@ -263,3 +265,91 @@ def test_trigram_substring_finds_model_suffix(session):
 def test_trigram_word_similarity_tolerates_typos(session):
     names = session.scalars(select(Product.name).where(Product.name.op("%>")("ryzn"))).all()
     assert names and all("Ryzen" in name for name in names)
+
+
+# --------------------------------------------------------------------- build item guard (migration 0004)
+
+
+@pytest.fixture()
+def build_with_cpu(session, user, product_by_sku):
+    build = Build(user_id=user.id, name="Guarded")
+    build.items.append(BuildItem.for_product(product_by_sku("FRG-CPU-R7-7800X3D")))
+    session.add(build)
+    session.flush()
+    return build
+
+
+def _status(session, build) -> BuildStatus:
+    session.expire(build, ["status"])
+    return build.status
+
+
+@pytest.mark.parametrize("change", ["insert", "update", "delete"])
+def test_item_changes_reset_a_validated_build_to_draft(session, build_with_cpu, product_by_sku, change):
+    build_with_cpu.status = BuildStatus.VALIDATED
+    session.flush()
+    if change == "insert":
+        build_with_cpu.items.append(BuildItem.for_product(product_by_sku("FRG-RAM-CR-VEN-32-6000")))
+    elif change == "update":
+        session.execute(update(BuildItem).where(BuildItem.build_id == build_with_cpu.id).values(quantity=1))
+    else:
+        session.execute(delete(BuildItem).where(BuildItem.build_id == build_with_cpu.id))
+    session.flush()
+    assert _status(session, build_with_cpu) is BuildStatus.DRAFT
+
+
+@pytest.mark.parametrize("change", ["insert", "update", "delete"])
+def test_ordered_build_items_are_locked(session, build_with_cpu, product_by_sku, change):
+    build_with_cpu.status = BuildStatus.ORDERED
+    session.flush()
+    with pytest.raises(IntegrityError) as exc, session.begin_nested():
+        if change == "insert":
+            session.execute(
+                insert(BuildItem).values(
+                    build_id=build_with_cpu.id,
+                    product_id=product_by_sku("FRG-RAM-CR-VEN-32-6000").id,
+                    kind_code="memory",
+                    quantity=1,
+                )
+            )
+        elif change == "update":
+            session.execute(update(BuildItem).where(BuildItem.build_id == build_with_cpu.id).values(quantity=1))
+        else:
+            session.execute(delete(BuildItem).where(BuildItem.build_id == build_with_cpu.id))
+    assert _constraint_name(exc.value) == "build_locked"
+    assert _status(session, build_with_cpu) is BuildStatus.ORDERED  # the reset never touches ordered builds
+
+
+def test_ordered_build_cannot_be_deleted(session, build_with_cpu):
+    """The item cascade runs after the build row is gone, so the build row needs its own guard."""
+    build_with_cpu.status = BuildStatus.ORDERED
+    session.flush()
+    with pytest.raises(IntegrityError) as exc, session.begin_nested():
+        session.execute(delete(Build).where(Build.id == build_with_cpu.id))
+    assert _constraint_name(exc.value) == "build_locked"
+
+
+def test_draft_build_deletes_with_its_items(session, build_with_cpu):
+    session.execute(delete(Build).where(Build.id == build_with_cpu.id))
+    assert (
+        session.scalar(select(func.count()).select_from(BuildItem).where(BuildItem.build_id == build_with_cpu.id)) == 0
+    )
+
+
+# --------------------------------------------------------------------- seeded compatibility inputs
+
+
+def test_seeded_cpus_record_bundled_coolers(session):
+    """Verified against AMD product pages and Intel's boxed-cooler support articles."""
+    bundled = set(session.scalars(select(CpuProduct.sku).where(CpuProduct.includes_cooler)))
+    assert bundled == {"FRG-CPU-R5-5600X", "FRG-CPU-I5-12400F"}
+
+
+def test_seeded_psus_record_atx_version(session):
+    versions = dict(session.execute(select(PsuProduct.sku, PsuProduct.atx_version)).all())
+    assert versions["FRG-PSU-CM-MWE550"] is PsuAtxVersion.V2
+    assert versions["FRG-PSU-CR-SF750"] is PsuAtxVersion.V2
+    assert versions["FRG-PSU-BQ-PP12M-650"] is PsuAtxVersion.V3_0
+    assert {versions[s] for s in ("FRG-PSU-SS-GX750", "FRG-PSU-CR-RM850E", "FRG-PSU-CR-RM1000X")} == {
+        PsuAtxVersion.V3_1
+    }

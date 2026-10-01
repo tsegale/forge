@@ -45,6 +45,7 @@ from .enums import (
     CoolerType,
     KindCode,
     MemoryType,
+    PsuAtxVersion,
     PsuEfficiency,
     PsuFormFactor,
     PsuModularity,
@@ -216,6 +217,8 @@ class CpuProduct(_SpecTable, Product):
     # Sustained package limit (AMD PPT / Intel MTP): what the PSU actually has to feed.
     max_power_w: Mapped[int] = mapped_column(SmallInteger, nullable=False)
     has_integrated_graphics: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    # Whether the retail box ships with a cooler (e.g. AMD Wraith Stealth, Intel Laminar RM1).
+    includes_cooler: Mapped[bool] = mapped_column(Boolean, nullable=False)
 
     socket: Mapped[Socket] = relationship()
 
@@ -324,6 +327,7 @@ class PsuProduct(_SpecTable, Product):
     modularity: Mapped[PsuModularity] = mapped_column(pg_enum(PsuModularity, "psu_modularity"), nullable=False)
     form_factor: Mapped[PsuFormFactor] = mapped_column(pg_enum(PsuFormFactor, "psu_form_factor"), nullable=False)
     has_12v_2x6: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
+    atx_version: Mapped[PsuAtxVersion] = mapped_column(pg_enum(PsuAtxVersion, "psu_atx_version"), nullable=False)
 
     __table_args__ = _spec_table_args(KindCode.PSU, CheckConstraint("wattage_w >= 300", name="wattage_min"))
     __kind__ = KindCode.PSU

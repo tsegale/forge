@@ -53,6 +53,15 @@ class PsuEfficiency(enum.StrEnum):
     TITANIUM = "80plus_titanium"
 
 
+class PsuAtxVersion(enum.StrEnum):
+    """ATX 3.x supplies are specified to absorb power excursions of 200% of rated output
+    (100 microseconds); ATX 2.x supplies make no such guarantee."""
+
+    V2 = "2.x"
+    V3_0 = "3.0"
+    V3_1 = "3.1"
+
+
 class PsuModularity(enum.StrEnum):
     NON_MODULAR = "non_modular"
     SEMI_MODULAR = "semi_modular"
