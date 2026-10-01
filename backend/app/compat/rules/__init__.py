@@ -5,6 +5,7 @@ from .cooling import CoolerCapacityRule, CoolerFitRule, CoolerSocketRule
 from .physical import FormFactorRule, GpuClearanceRule, PsuFormFactorRule
 from .platform import MemoryRule, SocketRule
 from .power import PowerRule
+from .storage import StorageConnectivityRule
 
 RULES: list[Rule] = [
     SocketRule(),
@@ -15,5 +16,6 @@ RULES: list[Rule] = [
     CoolerSocketRule(),
     CoolerFitRule(),
     CoolerCapacityRule(),
+    StorageConnectivityRule(),
     PowerRule(),
 ]
