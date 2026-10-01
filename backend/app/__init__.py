@@ -32,6 +32,10 @@ def create_app(config_name: str | None = None) -> Flask:
 
     app.register_blueprint(api_v1, url_prefix="/api/v1")
 
+    from .api.spec import register_docs
+
+    register_docs(app)
+
     from .cli import register_cli
 
     register_cli(app)

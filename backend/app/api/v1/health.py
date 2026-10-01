@@ -1,20 +1,39 @@
 """Liveness and readiness probes used by Docker healthchecks and the reverse proxy."""
 
+from typing import Literal
+
 import redis
 from flask import current_app
+from pydantic import BaseModel
 from sqlalchemy import text
 
 from ...extensions import db
+from ..spec import api, responses
 from . import bp
+
+TAG = "Health"
+
+
+class Liveness(BaseModel):
+    status: Literal["ok"]
+
+
+class Readiness(BaseModel):
+    status: Literal["ok", "degraded"]
+    checks: dict[str, Literal["ok", "unavailable"]]
 
 
 @bp.get("/health/live")
+@api.validate(resp=responses(HTTP_200=Liveness), tags=[TAG])
 def live():
+    """Liveness: the process is up and serving requests."""
     return {"status": "ok"}
 
 
 @bp.get("/health/ready")
+@api.validate(resp=responses(HTTP_200=Readiness, HTTP_503=Readiness), tags=[TAG])
 def ready():
+    """Readiness: PostgreSQL and Redis are reachable. 503 while any dependency is down."""
     checks: dict[str, str] = {}
     try:
         db.session.execute(text("SELECT 1"))

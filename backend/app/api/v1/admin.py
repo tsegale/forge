@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from flask import request
-from spectree import Response as Resp
 from sqlalchemy.orm.exc import StaleDataError
 
 from ...errors import NotFound, PreconditionFailed, PreconditionRequired
@@ -13,7 +12,7 @@ from ...models.enums import UserRole
 from ...schemas.admin import AdminProductResponse, InventoryResponse, ProductUpdate, StockUpdate
 from ...security.guards import current_user, require_role
 from ...services.audit import set_actor
-from ..spec import api
+from ..spec import api, responses
 from . import bp
 
 TAG = "Admin"
@@ -22,7 +21,9 @@ SECURITY = {"bearerAuth": []}
 
 @bp.patch("/admin/products/<int:product_id>")
 @require_role(UserRole.ADMIN)
-@api.validate(json=ProductUpdate, resp=Resp(HTTP_200=AdminProductResponse), tags=[TAG], security=SECURITY)
+@api.validate(
+    json=ProductUpdate, resp=responses(401, 403, 404, 422, HTTP_200=AdminProductResponse), tags=[TAG], security=SECURITY
+)
 def update_product(product_id: int):
     """Change a product's price or availability. Price changes are recorded in price_history by a trigger."""
     product = db.session.get(Product, product_id)
@@ -49,7 +50,7 @@ def _get_inventory(product_id: int) -> Inventory:
 
 @bp.get("/admin/inventory/<int:product_id>")
 @require_role(UserRole.ADMIN)
-@api.validate(resp=Resp(HTTP_200=InventoryResponse), tags=[TAG], security=SECURITY)
+@api.validate(resp=responses(401, 403, 404, HTTP_200=InventoryResponse), tags=[TAG], security=SECURITY)
 def get_inventory(product_id: int):
     """Current stock levels. The ETag header carries the version required to update them."""
     inventory = _get_inventory(product_id)
@@ -60,7 +61,7 @@ def get_inventory(product_id: int):
 @require_role(UserRole.ADMIN)
 @api.validate(
     json=StockUpdate,
-    resp=Resp(HTTP_200=InventoryResponse, HTTP_409=None, HTTP_412=None, HTTP_428=None),
+    resp=responses(401, 403, 404, 409, 412, 422, 428, HTTP_200=InventoryResponse),
     tags=[TAG],
     security=SECURITY,
 )

@@ -10,7 +10,8 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from spectree import SecurityScheme, SecuritySchemeData, SpecTree
+from pydantic import BaseModel, Field
+from spectree import Response, SecurityScheme, SecuritySchemeData, SpecTree
 from spectree.models import SecureType
 
 from ..errors import APIError, ValidationFailed, validation_details
@@ -30,6 +31,19 @@ def _after(req: Any, resp: Any, resp_validation_error: Exception | None, instanc
         raise APIError()
 
 
+class ErrorBody(BaseModel):
+    code: str = Field(description="Stable, machine-readable error code.")
+    message: str = Field(description="Human-readable explanation; may change.")
+    details: object | None = Field(default=None, description="Per-field problems for validation errors.")
+    request_id: str | None = Field(default=None, description="Echoed in the X-Request-ID header.")
+
+
+class ErrorResponse(BaseModel):
+    """The envelope every error response uses."""
+
+    error: ErrorBody
+
+
 api = SpecTree(
     "flask",
     title="Forge API",
@@ -40,6 +54,11 @@ api = SpecTree(
     annotations=False,
     before=_before,
     after=_after,
+    # spectree documents a 422 on every validated route; make it describe our envelope.
+    validation_error_model=ErrorResponse,
+    # Plain model names in the published document (spectree appends a hash by default).
+    naming_strategy=lambda model: model.__name__,
+    nested_naming_strategy=lambda parent, child: child,
     security_schemes=[
         SecurityScheme(
             name="bearerAuth",
@@ -47,3 +66,17 @@ api = SpecTree(
         )
     ],
 )
+
+
+def responses(*error_statuses: int, **success: type[BaseModel] | None) -> Response:
+    """``responses(404, 409, HTTP_200=Model)``: success models plus documented error statuses,
+    all of which use the shared error envelope."""
+    return Response(**success, **{f"HTTP_{status}": ErrorResponse for status in error_statuses})
+
+
+def register_docs(app: Any) -> None:
+    """Serve the spec at /api/v1/docs/openapi.json with Swagger UI and Redoc beside it.
+
+    Routes are discovered from ``current_app``, so the spec always describes the serving app;
+    the generated document is cached per process, which matches one app per process."""
+    api.register(app)

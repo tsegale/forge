@@ -9,7 +9,6 @@ from __future__ import annotations
 
 from flask import Response, after_this_request, current_app, request
 from flask_limiter.util import get_remote_address
-from spectree import Response as Resp
 
 from ...errors import Unauthorized
 from ...extensions import limiter
@@ -17,7 +16,7 @@ from ...schemas.auth import LoginRequest, RegisterRequest, TokenResponse, UserRe
 from ...security.guards import current_user, require_auth
 from ...services import auth as auth_service
 from ...services.auth import IssuedSession
-from ..spec import api
+from ..spec import api, responses
 from . import bp
 
 TAG = "Auth"
@@ -80,7 +79,7 @@ def _token_response(session: IssuedSession) -> TokenResponse:
 
 @bp.post("/auth/register")
 @limiter.limit(_limit("REGISTER_LIMIT_PER_IP"))
-@api.validate(json=RegisterRequest, resp=Resp(HTTP_201=UserResponse), tags=[TAG])
+@api.validate(json=RegisterRequest, resp=responses(409, 422, 429, HTTP_201=UserResponse), tags=[TAG])
 def register():
     """Create a customer account."""
     user = auth_service.register(request.context.json)
@@ -96,7 +95,7 @@ def register():
     deduct_when=lambda response: response.status_code == 401,
     error_message=TOO_MANY_ATTEMPTS,
 )
-@api.validate(json=LoginRequest, resp=Resp(HTTP_200=TokenResponse), tags=[TAG])
+@api.validate(json=LoginRequest, resp=responses(401, 403, 422, 429, HTTP_200=TokenResponse), tags=[TAG])
 def login():
     """Exchange credentials for an access token and a refresh cookie."""
     body: LoginRequest = request.context.json
@@ -106,14 +105,14 @@ def login():
 
 @bp.get("/auth/me")
 @require_auth
-@api.validate(resp=Resp(HTTP_200=UserResponse), tags=[TAG], security={"bearerAuth": []})
+@api.validate(resp=responses(401, HTTP_200=UserResponse), tags=[TAG], security={"bearerAuth": []})
 def me():
     """The authenticated user's profile."""
     return UserResponse.model_validate(current_user())
 
 
 @bp.post("/auth/refresh")
-@api.validate(resp=Resp(HTTP_200=TokenResponse), tags=[TAG])
+@api.validate(resp=responses(401, HTTP_200=TokenResponse), tags=[TAG])
 def refresh():
     """Rotate the refresh cookie and issue a new access token. Reusing a rotated token ends the session."""
     token = _refresh_cookie()
@@ -127,7 +126,7 @@ def refresh():
 
 
 @bp.post("/auth/logout")
-@api.validate(resp=Resp(HTTP_204=None), tags=[TAG])
+@api.validate(resp=responses(HTTP_204=None), tags=[TAG])
 def logout():
     """End this session (the refresh token family in the cookie). Always succeeds."""
     token = _refresh_cookie()
@@ -139,7 +138,7 @@ def logout():
 
 @bp.post("/auth/logout-all")
 @require_auth
-@api.validate(resp=Resp(HTTP_204=None), tags=[TAG], security={"bearerAuth": []})
+@api.validate(resp=responses(401, HTTP_204=None), tags=[TAG], security={"bearerAuth": []})
 def logout_all():
     """End every session for the authenticated user, on every device."""
     auth_service.end_all_sessions(current_user())
