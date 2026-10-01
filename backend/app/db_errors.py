@@ -49,6 +49,8 @@ CONSTRAINT_ERRORS: dict[str, MappedError] = {
     "order_status_transition": MappedError(
         409, "invalid_status_transition", "The order cannot move to that status from its current status."
     ),
+    # cart
+    "ck_cart_items_quantity_range": MappedError(422, "cart_quantity_limit", "A cart line can hold 1 to 99 units."),
     # checkout and payments (trigger-raised, migration 0005)
     "order_payment_required": MappedError(
         409, "payment_required", "The order cannot be marked paid without a matching successful payment."

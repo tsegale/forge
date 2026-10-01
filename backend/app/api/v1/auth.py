@@ -15,6 +15,7 @@ from ...extensions import limiter
 from ...schemas.auth import LoginRequest, RegisterRequest, TokenResponse, UserResponse
 from ...security.guards import current_user, require_auth
 from ...services import auth as auth_service
+from ...services import cart as cart_service
 from ...services.auth import IssuedSession
 from ..spec import api, responses
 from . import bp
@@ -72,6 +73,26 @@ def _refresh_cookie() -> str | None:
     return request.cookies.get(current_app.config["REFRESH_COOKIE_NAME"])
 
 
+def _merge_guest_cart(user) -> None:
+    """A cart built before signing in follows the user into their account."""
+    cfg = current_app.config
+    token = cart_service.parse_token(request.cookies.get(cfg["CART_COOKIE_NAME"]))
+    if token is None:
+        return
+    cart_service.merge_guest_cart(token, user)
+
+    @after_this_request
+    def forget_guest_cart(response: Response) -> Response:
+        response.delete_cookie(
+            cfg["CART_COOKIE_NAME"],
+            path=cfg["CART_COOKIE_PATH"],
+            secure=cfg["CART_COOKIE_SECURE"],
+            httponly=True,
+            samesite="Lax",
+        )
+        return response
+
+
 def _token_response(session: IssuedSession) -> TokenResponse:
     _set_refresh_cookie(session)
     return TokenResponse(access_token=session.access.token, expires_in=session.access.expires_in)
@@ -100,6 +121,7 @@ def login():
     """Exchange credentials for an access token and a refresh cookie."""
     body: LoginRequest = request.context.json
     user = auth_service.authenticate(str(body.email), body.password)
+    _merge_guest_cart(user)
     return _token_response(auth_service.start_session(user))
 
 

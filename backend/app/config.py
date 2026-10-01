@@ -60,6 +60,10 @@ class BaseConfig:
     REFRESH_COOKIE_NAME = "forge_refresh"
     REFRESH_COOKIE_PATH = "/api/v1/auth"
     REFRESH_COOKIE_SECURE = True
+    CART_COOKIE_NAME = "forge_cart"
+    CART_COOKIE_PATH = "/api/v1"
+    CART_COOKIE_MAX_AGE = timedelta(days=30)
+    CART_COOKIE_SECURE = True
 
     RATELIMIT_STRATEGY = "moving-window"
     RATELIMIT_HEADERS_ENABLED = True
@@ -99,6 +103,7 @@ class DevelopmentConfig(BaseConfig):
     DEBUG = True
     SQLALCHEMY_RECORD_QUERIES = True
     REFRESH_COOKIE_SECURE = False  # plain http on the developer's machine
+    CART_COOKIE_SECURE = False
 
 
 class ProductionConfig(BaseConfig):

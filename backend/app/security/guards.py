@@ -39,6 +39,14 @@ def _authenticate() -> User:
     return user
 
 
+def optional_user() -> User | None:
+    """The caller if they sent an access token, else None. A token that is sent but invalid is
+    still a 401: silently treating it as anonymous would hide expired sessions from the client."""
+    if "Authorization" not in request.headers:
+        return None
+    return _authenticate()
+
+
 def current_user() -> User:
     """The authenticated user for this request. Only valid inside a guarded view."""
     return g.current_user
