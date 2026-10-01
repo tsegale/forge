@@ -7,6 +7,7 @@ x-backend-env: &backend-env
   JWT_SECRET_KEY: ${JWT_SECRET_KEY}
   STORE_CURRENCY: ${STORE_CURRENCY:-nad}
   FORGE_ENV: ${FORGE_ENV:-production}
+  TRUSTED_PROXY_COUNT: 1   # nginx; makes per-IP rate limits see the real client address
 
 services:
   db:

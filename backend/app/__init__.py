@@ -3,20 +3,26 @@
 import os
 
 from flask import Flask
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from .config import CONFIGS
-from .extensions import db, migrate
+from .extensions import db, limiter, migrate
 
 
 def create_app(config_name: str | None = None) -> Flask:
     config_name = config_name or os.environ.get("FORGE_ENV", "development")
     app = Flask(__name__)
     app.config.from_object(CONFIGS[config_name]())
+    app.config.setdefault("RATELIMIT_STORAGE_URI", app.config["REDIS_URL"])
+    if app.config["TRUSTED_PROXY_COUNT"]:
+        hops = app.config["TRUSTED_PROXY_COUNT"]
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=hops, x_proto=hops, x_host=hops)  # type: ignore[method-assign]
 
     db.init_app(app)
     from . import models  # noqa: F401  register mappers before Alembic inspects metadata
 
     migrate.init_app(app, db, compare_type=True)
+    limiter.init_app(app)
 
     from .errors import register_error_handlers
 

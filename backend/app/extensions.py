@@ -1,5 +1,7 @@
 """Shared extension instances, initialised in the app factory."""
 
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import MetaData
@@ -22,3 +24,6 @@ class Base(DeclarativeBase):
 
 db = SQLAlchemy(model_class=Base)
 migrate = Migrate()
+# Storage, strategy and headers come from RATELIMIT_* config. Per-IP keys rely on ProxyFix
+# (TRUSTED_PROXY_COUNT) when the app runs behind a reverse proxy.
+limiter = Limiter(key_func=get_remote_address)

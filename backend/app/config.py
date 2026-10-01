@@ -38,12 +38,24 @@ class BaseConfig:
     REFRESH_COOKIE_PATH = "/api/v1/auth"
     REFRESH_COOKIE_SECURE = True
 
+    RATELIMIT_STRATEGY = "moving-window"
+    RATELIMIT_HEADERS_ENABLED = True
+    RATELIMIT_KEY_PREFIX = "forge:ratelimit"
+    # If Redis is unreachable, keep limiting with per-process counters instead of failing open.
+    RATELIMIT_SWALLOW_ERRORS = True
+    RATELIMIT_IN_MEMORY_FALLBACK_ENABLED = True
+    LOGIN_LIMIT_PER_IP = "5 per minute"
+    LOGIN_FAILURE_LIMIT_PER_ACCOUNT = "10 per 15 minutes"
+    REGISTER_LIMIT_PER_IP = "10 per hour"
+
     def __init__(self) -> None:
         self.SECRET_KEY = _require("SECRET_KEY")
         self.JWT_SECRET_KEY = _jwt_key()
         self.SQLALCHEMY_DATABASE_URI = _require("DATABASE_URL")
         self.SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True, "pool_size": 10, "max_overflow": 20}
         self.REDIS_URL = os.environ.get("REDIS_URL", "redis://redis:6379/0")
+        # Number of reverse proxies in front of the app whose X-Forwarded-* headers are trusted.
+        self.TRUSTED_PROXY_COUNT = int(os.environ.get("TRUSTED_PROXY_COUNT", "0"))
         self.STORE_CURRENCY = os.environ.get("STORE_CURRENCY", "nad")
 
 

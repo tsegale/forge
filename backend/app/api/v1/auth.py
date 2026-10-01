@@ -8,9 +8,11 @@ token only ever travels in an ``HttpOnly; Secure; SameSite=Strict`` cookie scope
 from __future__ import annotations
 
 from flask import Response, after_this_request, current_app, request
+from flask_limiter.util import get_remote_address
 from spectree import Response as Resp
 
 from ...errors import Unauthorized
+from ...extensions import limiter
 from ...schemas.auth import LoginRequest, RegisterRequest, TokenResponse, UserResponse
 from ...security.guards import current_user, require_auth
 from ...services import auth as auth_service
@@ -19,6 +21,20 @@ from ..spec import api
 from . import bp
 
 TAG = "Auth"
+TOO_MANY_ATTEMPTS = "Too many sign-in attempts. Wait a moment and try again."
+
+
+def _login_account_key() -> str:
+    """Rate-limit key for the account being targeted, independent of the caller's IP."""
+    body = request.get_json(silent=True)
+    email = body.get("email") if isinstance(body, dict) else None
+    if isinstance(email, str) and email.strip():
+        return f"account:{email.strip().lower()}"
+    return f"ip:{get_remote_address()}"
+
+
+def _limit(key: str):
+    return lambda: current_app.config[key]
 
 
 def _set_refresh_cookie(session: IssuedSession) -> None:
@@ -63,6 +79,7 @@ def _token_response(session: IssuedSession) -> TokenResponse:
 
 
 @bp.post("/auth/register")
+@limiter.limit(_limit("REGISTER_LIMIT_PER_IP"))
 @api.validate(json=RegisterRequest, resp=Resp(HTTP_201=UserResponse), tags=[TAG])
 def register():
     """Create a customer account."""
@@ -71,6 +88,14 @@ def register():
 
 
 @bp.post("/auth/login")
+@limiter.limit(_limit("LOGIN_LIMIT_PER_IP"), error_message=TOO_MANY_ATTEMPTS)
+@limiter.limit(
+    _limit("LOGIN_FAILURE_LIMIT_PER_ACCOUNT"),
+    key_func=_login_account_key,
+    # Only failures count, so an attacker cannot lock a real user out of an account they keep using.
+    deduct_when=lambda response: response.status_code == 401,
+    error_message=TOO_MANY_ATTEMPTS,
+)
 @api.validate(json=LoginRequest, resp=Resp(HTTP_200=TokenResponse), tags=[TAG])
 def login():
     """Exchange credentials for an access token and a refresh cookie."""

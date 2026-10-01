@@ -9,7 +9,7 @@ from sqlalchemy import select, text
 
 from app import create_app
 from app.cli import DEFAULT_SEED, load_catalog
-from app.extensions import db
+from app.extensions import db, limiter
 from app.models import Product, User
 from app.models.enums import UserRole
 from app.security.passwords import hash_password
@@ -37,6 +37,13 @@ class _ConnectionBoundSession(FlaskSQLAlchemySession):
 
     def get_bind(self, mapper=None, clause=None, bind=None, **kwargs):
         return self.bind
+
+
+@pytest.fixture(autouse=True)
+def _reset_rate_limits(app):
+    """Rate-limit counters live in Redis (TEST_REDIS_URL); clear them so tests stay independent."""
+    with app.app_context():
+        limiter.reset()
 
 
 @pytest.fixture()
