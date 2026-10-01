@@ -9,10 +9,11 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, PlainSerializer, field_validator
+from pydantic import BaseModel, ConfigDict, Field, PlainSerializer, field_validator, model_validator
 
 from ..models.enums import (
     CoolerType,
+    KindCode,
     MemoryType,
     PsuEfficiency,
     PsuFormFactor,
@@ -209,3 +210,68 @@ class CategoryList(BaseModel):
 
 class BrandList(BaseModel):
     items: list[BrandResponse]
+
+
+# --------------------------------------------------------------------------- listing
+
+SortOrder = Literal["price", "-price", "name", "-name", "newest"]
+
+
+class ProductQuery(BaseModel):
+    """Query string for GET /products. Unknown parameters are rejected rather than ignored, so a
+    misspelled filter fails loudly instead of silently returning unfiltered results."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: KindCode | None = None
+    category: str | None = Field(default=None, description="Category slug; includes its subcategories.")
+    brand: list[str] | None = Field(
+        default=None, description="Brand slugs, comma-separated or repeated (brand=amd,intel or brand=amd&brand=intel)."
+    )
+    min_price: int | None = Field(default=None, ge=0, description="Inclusive, in minor units.")
+    max_price: int | None = Field(default=None, ge=0, description="Inclusive, in minor units.")
+    in_stock: bool | None = None
+    sort: SortOrder = "name"
+    limit: int = Field(default=24, ge=1, le=100)
+    cursor: str | None = Field(default=None, description="Opaque; from next_cursor of the previous page.")
+
+    # Spec filters. Each applies only to the kinds listed in its description; requires `kind`.
+    socket: str | None = Field(default=None, description="cpu, motherboard, cooler (supported socket).")
+    memory_type: MemoryType | None = Field(default=None, description="motherboard, memory.")
+    form_factor: str | None = Field(
+        default=None, description="motherboard (board), case (supported board), psu, storage."
+    )
+    chipset: str | None = Field(default=None, max_length=60, description="motherboard, gpu; substring match.")
+    cores_min: int | None = Field(default=None, ge=1, description="cpu.")
+    has_integrated_graphics: bool | None = Field(default=None, description="cpu.")
+    capacity_min_gb: int | None = Field(default=None, ge=1, description="memory (kit total), storage.")
+    speed_min_mts: int | None = Field(default=None, ge=1, description="memory.")
+    vram_min_gb: int | None = Field(default=None, ge=1, description="gpu.")
+    length_max_mm: int | None = Field(default=None, ge=1, description="gpu.")
+    fits_gpu_length_mm: int | None = Field(default=None, ge=1, description="case: GPU clearance at least this.")
+    fits_cooler_height_mm: int | None = Field(default=None, ge=1, description="case: cooler clearance at least this.")
+    height_max_mm: int | None = Field(default=None, ge=1, description="cooler.")
+    cooler_type: CoolerType | None = Field(default=None, description="cooler.")
+    wattage_min_w: int | None = Field(default=None, ge=1, description="psu.")
+    efficiency: PsuEfficiency | None = Field(default=None, description="psu.")
+    modularity: PsuModularity | None = Field(default=None, description="psu.")
+    interface: StorageInterface | None = Field(default=None, description="storage.")
+
+    @field_validator("brand", mode="before")
+    @classmethod
+    def _split_brands(cls, value: Any) -> Any:
+        values = [value] if isinstance(value, str) else value
+        if not isinstance(values, list):
+            return value
+        return [part.strip() for v in values for part in str(v).split(",") if part.strip()] or None
+
+    @model_validator(mode="after")
+    def _price_range(self) -> ProductQuery:
+        if self.min_price is not None and self.max_price is not None and self.min_price > self.max_price:
+            raise ValueError("min_price cannot be greater than max_price.")
+        return self
+
+
+class ProductPage(BaseModel):
+    items: list[ProductSummary]
+    next_cursor: str | None = Field(description="Pass as `cursor` to fetch the next page; null on the last page.")
