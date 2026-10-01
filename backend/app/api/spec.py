@@ -10,7 +10,8 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from spectree import SpecTree
+from spectree import SecurityScheme, SecuritySchemeData, SpecTree
+from spectree.models import SecureType
 
 from ..errors import APIError, ValidationFailed, validation_details
 
@@ -39,4 +40,10 @@ api = SpecTree(
     annotations=False,
     before=_before,
     after=_after,
+    security_schemes=[
+        SecurityScheme(
+            name="bearerAuth",
+            data=SecuritySchemeData(type=SecureType.HTTP, scheme="bearer", bearer_format="JWT"),
+        )
+    ],
 )

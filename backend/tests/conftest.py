@@ -10,7 +10,10 @@ from sqlalchemy import select, text
 from app import create_app
 from app.cli import DEFAULT_SEED, load_catalog
 from app.extensions import db
-from app.models import Product
+from app.models import Product, User
+from app.models.enums import UserRole
+from app.security.passwords import hash_password
+from app.security.tokens import issue_access_token
 
 
 @pytest.fixture(scope="session")
@@ -60,3 +63,43 @@ def product_by_sku(session):
         return session.scalar(select(Product).where(Product.sku == sku))
 
     return _get
+
+
+DEFAULT_PASSWORD = "correct horse battery staple"
+
+
+@pytest.fixture()
+def client(app, session):
+    """Test client whose requests run inside the per-test transaction."""
+    return app.test_client()
+
+
+@pytest.fixture()
+def make_user(session):
+    password_hash = hash_password(DEFAULT_PASSWORD)  # hash once; Argon2 is deliberately slow
+    counter = iter(range(1, 10_000))
+
+    def _make(*, email: str | None = None, role: UserRole = UserRole.CUSTOMER, is_active: bool = True) -> User:
+        user = User(
+            email=email or f"user{next(counter)}@example.com",
+            password_hash=password_hash,
+            first_name="Test",
+            last_name="User",
+            role=role,
+            is_active=is_active,
+        )
+        session.add(user)
+        session.flush()
+        return user
+
+    return _make
+
+
+@pytest.fixture()
+def auth_headers(app):
+    def _headers(user) -> dict[str, str]:
+        with app.app_context():
+            token = issue_access_token(user.id, user.role.value).token
+        return {"Authorization": f"Bearer {token}"}
+
+    return _headers
