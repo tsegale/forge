@@ -1,0 +1,624 @@
+Project forge {
+  database_type: "PostgreSQL"
+  Note: "Generated from SQLAlchemy metadata. Do not edit by hand."
+}
+
+Table addresses {
+  id integer [pk]
+  user_id integer [not null]
+  type address_type [not null]
+  recipient_name varchar(160) [not null]
+  phone varchar(32)
+  line1 varchar(200) [not null]
+  line2 varchar(200)
+  city varchar(100) [not null]
+  region varchar(100)
+  postal_code varchar(20)
+  country_code char(2) [not null]
+  is_default boolean [not null]
+  created_at timestamp_with_time_zone [not null]
+  updated_at timestamp_with_time_zone [not null]
+
+  Note: 'CHECK: country_code ~ \'^[A-Z]{2}$\''
+}
+
+Table board_form_factors {
+  code varchar(20) [pk]
+  width_mm smallint [not null]
+  depth_mm smallint [not null]
+}
+
+Table brands {
+  id integer [pk]
+  name varchar(80) [unique, not null]
+  slug varchar(80) [unique, not null]
+  created_at timestamp_with_time_zone [not null]
+  updated_at timestamp_with_time_zone [not null]
+}
+
+Table build_items {
+  id integer [pk]
+  build_id integer [not null]
+  product_id integer [not null]
+  kind_code varchar(20) [not null]
+  quantity smallint [not null]
+
+  indexes {
+    (build_id, product_id) [unique]
+  }
+
+  Note: 'CHECK: quantity > 0'
+}
+
+Table builds {
+  id integer [pk]
+  user_id integer [not null]
+  name varchar(120) [not null]
+  status build_status [not null]
+  is_public boolean [not null]
+  share_slug varchar(32) [unique]
+  created_at timestamp_with_time_zone [not null]
+  updated_at timestamp_with_time_zone [not null]
+
+  Note: 'CHECK: NOT is_public OR share_slug IS NOT NULL'
+}
+
+Table cart_items {
+  id integer [pk]
+  cart_id integer [not null]
+  product_id integer [not null]
+  quantity smallint [not null]
+  created_at timestamp_with_time_zone [not null]
+  updated_at timestamp_with_time_zone [not null]
+
+  indexes {
+    (cart_id, product_id) [unique]
+  }
+
+  Note: 'CHECK: quantity BETWEEN 1 AND 99'
+}
+
+Table carts {
+  id integer [pk]
+  user_id integer [unique]
+  guest_token uuid [unique]
+  created_at timestamp_with_time_zone [not null]
+  updated_at timestamp_with_time_zone [not null]
+
+  Note: 'CHECK: num_nonnulls(user_id, guest_token) = 1'
+}
+
+Table case_specs {
+  product_id integer [pk]
+  kind_code varchar(20) [not null]
+  max_gpu_length_mm smallint [not null]
+  max_cooler_height_mm smallint [not null]
+  max_radiator_mm smallint
+  psu_form_factor psu_form_factor [not null]
+
+  Note: 'CHECK: kind_code = \'case\''
+}
+
+Table case_supported_form_factors {
+  case_product_id integer [pk]
+  form_factor_code varchar(20) [pk]
+}
+
+Table categories {
+  id integer [pk]
+  parent_id integer
+  name varchar(80) [not null]
+  slug varchar(80) [unique, not null]
+  kind_code varchar(20)
+  created_at timestamp_with_time_zone [not null]
+  updated_at timestamp_with_time_zone [not null]
+
+  indexes {
+    (id, kind_code) [unique]
+    (parent_id, name) [unique]
+  }
+
+  Note: 'CHECK: parent_id IS NULL OR parent_id <> id'
+}
+
+Table component_kinds {
+  code varchar(20) [pk]
+  label varchar(50) [unique, not null]
+  max_per_build smallint [not null]
+  required_in_build boolean [not null]
+  sort_order smallint [not null]
+
+  Note: 'CHECK: max_per_build >= 1'
+}
+
+Table cooler_specs {
+  product_id integer [pk]
+  kind_code varchar(20) [not null]
+  cooler_type cooler_type [not null]
+  height_mm smallint
+  radiator_mm smallint
+  tdp_rating_w smallint
+
+  Note: 'CHECK: (cooler_type = \'air\' AND height_mm IS NOT NULL AND radiator_mm IS NULL) OR (cooler_type = \'aio\' AND radiator_mm IN (120, 140, 240, 280, 360, 420)); kind_code = \'cooler\''
+}
+
+Table cooler_supported_sockets {
+  cooler_product_id integer [pk]
+  socket_code varchar(20) [pk]
+}
+
+Table cpu_specs {
+  product_id integer [pk]
+  kind_code varchar(20) [not null]
+  socket_code varchar(20) [not null]
+  cores smallint [not null]
+  threads smallint [not null]
+  base_clock_mhz smallint [not null]
+  boost_clock_mhz smallint [not null]
+  tdp_w smallint [not null]
+  max_power_w smallint [not null]
+  has_integrated_graphics boolean [not null]
+
+  Note: 'CHECK: boost_clock_mhz >= base_clock_mhz; max_power_w >= tdp_w; threads >= cores AND cores > 0; kind_code = \'cpu\''
+}
+
+Table gpu_specs {
+  product_id integer [pk]
+  kind_code varchar(20) [not null]
+  chipset varchar(60) [not null]
+  vram_gb smallint [not null]
+  length_mm smallint [not null]
+  slot_width numeric(3,_1) [not null]
+  tdp_w smallint [not null]
+  power_connectors varchar(60) [not null]
+  recommended_psu_w smallint [not null]
+
+  Note: 'CHECK: kind_code = \'gpu\'; length_mm > 0 AND tdp_w > 0'
+}
+
+Table inventory {
+  product_id integer [pk]
+  quantity_on_hand integer [not null]
+  quantity_reserved integer [not null]
+  version integer [not null]
+  updated_at timestamp_with_time_zone [not null]
+
+  Note: 'CHECK: quantity_reserved <= quantity_on_hand; quantity_on_hand >= 0; quantity_reserved >= 0'
+}
+
+Table memory_specs {
+  product_id integer [pk]
+  kind_code varchar(20) [not null]
+  memory_type memory_type [not null]
+  modules smallint [not null]
+  module_capacity_gb smallint [not null]
+  speed_mts smallint [not null]
+  cas_latency smallint [not null]
+  height_mm numeric(4,_1) [not null]
+  total_capacity_gb smallint [not null, note: 'generated']
+
+  Note: 'CHECK: kind_code = \'memory\'; modules BETWEEN 1 AND 8'
+}
+
+Table motherboard_specs {
+  product_id integer [pk]
+  kind_code varchar(20) [not null]
+  socket_code varchar(20) [not null]
+  form_factor_code varchar(20) [not null]
+  chipset varchar(20) [not null]
+  memory_type memory_type [not null]
+  memory_slots smallint [not null]
+  max_memory_gb smallint [not null]
+  m2_slots smallint [not null]
+  sata_ports smallint [not null]
+
+  Note: 'CHECK: m2_slots >= 0 AND sata_ports >= 0; kind_code = \'motherboard\'; memory_slots IN (2, 4, 8)'
+}
+
+Table order_addresses {
+  order_id integer [pk]
+  type address_type [pk]
+  recipient_name varchar(160) [not null]
+  phone varchar(32)
+  line1 varchar(200) [not null]
+  line2 varchar(200)
+  city varchar(100) [not null]
+  region varchar(100)
+  postal_code varchar(20)
+  country_code char(2) [not null]
+}
+
+Table order_items {
+  id integer [pk]
+  order_id integer [not null]
+  product_id integer [not null]
+  sku_snapshot varchar(64) [not null]
+  name_snapshot varchar(200) [not null]
+  unit_price_cents integer [not null]
+  quantity smallint [not null]
+  line_total_cents integer [not null]
+
+  indexes {
+    (order_id, product_id) [unique]
+  }
+
+  Note: 'CHECK: quantity > 0 AND unit_price_cents >= 0; line_total_cents = unit_price_cents * quantity'
+}
+
+Table order_status_history {
+  id integer [pk]
+  order_id integer [not null]
+  from_status order_status
+  to_status order_status [not null]
+  changed_by_user_id integer
+  changed_at timestamp_with_time_zone [not null]
+}
+
+Table order_status_transitions {
+  from_status order_status [pk]
+  to_status order_status [pk]
+
+  Note: 'CHECK: from_status <> to_status'
+}
+
+Table orders {
+  id integer [pk]
+  order_number varchar(20) [unique, not null]
+  user_id integer [not null]
+  build_id integer
+  status order_status [not null]
+  currency char(3) [not null]
+  subtotal_cents integer [not null]
+  tax_cents integer [not null]
+  shipping_cents integer [not null]
+  total_cents integer [not null]
+  reservation_expires_at timestamp_with_time_zone
+  created_at timestamp_with_time_zone [not null]
+  updated_at timestamp_with_time_zone [not null]
+
+  Note: 'CHECK: total_cents = subtotal_cents + tax_cents + shipping_cents; subtotal_cents >= 0 AND tax_cents >= 0 AND shipping_cents >= 0'
+}
+
+Table payments {
+  id integer [pk]
+  order_id integer [not null]
+  provider varchar(20) [not null]
+  provider_payment_id varchar(255) [unique, not null]
+  amount_cents integer [not null]
+  currency char(3) [not null]
+  status payment_status [not null]
+  failure_reason text
+  created_at timestamp_with_time_zone [not null]
+  updated_at timestamp_with_time_zone [not null]
+
+  Note: 'CHECK: amount_cents > 0'
+}
+
+Table price_alerts {
+  id integer [pk]
+  user_id integer [not null]
+  product_id integer [not null]
+  target_price_cents integer [not null]
+  triggered_at timestamp_with_time_zone
+  created_at timestamp_with_time_zone [not null]
+  updated_at timestamp_with_time_zone [not null]
+
+  indexes {
+    (user_id, product_id) [unique]
+  }
+
+  Note: 'CHECK: target_price_cents > 0'
+}
+
+Table price_history {
+  id integer [pk]
+  recorded_at timestamp_with_time_zone [pk]
+  product_id integer [not null]
+  price_cents integer [not null]
+}
+
+Table processed_webhook_events {
+  provider varchar(20) [pk]
+  event_id varchar(255) [pk]
+  event_type varchar(100) [not null]
+  payload jsonb [not null]
+  processed_at timestamp_with_time_zone [not null]
+}
+
+Table products {
+  id integer [pk]
+  sku varchar(64) [unique, not null]
+  slug varchar(220) [unique, not null]
+  name varchar(200) [not null]
+  brand_id integer [not null]
+  category_id integer [not null]
+  kind_code varchar(20) [not null]
+  price_cents integer [not null]
+  description text
+  attributes jsonb [not null]
+  is_active boolean [not null]
+  search_vector tsvector [not null, note: 'generated']
+  created_at timestamp_with_time_zone [not null]
+  updated_at timestamp_with_time_zone [not null]
+
+  indexes {
+    (id, kind_code) [unique]
+  }
+
+  Note: 'CHECK: price_cents >= 0'
+}
+
+Table psu_specs {
+  product_id integer [pk]
+  kind_code varchar(20) [not null]
+  wattage_w smallint [not null]
+  efficiency psu_efficiency [not null]
+  modularity psu_modularity [not null]
+  form_factor psu_form_factor [not null]
+  has_12v_2x6 boolean [not null]
+
+  Note: 'CHECK: wattage_w >= 300; kind_code = \'psu\''
+}
+
+Table refresh_tokens {
+  id integer [pk]
+  jti uuid [unique, not null]
+  user_id integer [not null]
+  issued_at timestamp_with_time_zone [not null]
+  expires_at timestamp_with_time_zone [not null]
+  revoked_at timestamp_with_time_zone
+  replaced_by_jti uuid
+
+  Note: 'CHECK: expires_at > issued_at'
+}
+
+Table reviews {
+  id integer [pk]
+  product_id integer [not null]
+  user_id integer [not null]
+  rating smallint [not null]
+  title varchar(120)
+  body text
+  is_verified_purchase boolean [not null]
+  created_at timestamp_with_time_zone [not null]
+  updated_at timestamp_with_time_zone [not null]
+
+  indexes {
+    (product_id, user_id) [unique]
+  }
+
+  Note: 'CHECK: rating BETWEEN 1 AND 5'
+}
+
+Table sockets {
+  code varchar(20) [pk]
+  vendor varchar(20) [not null]
+}
+
+Table stock_reservations {
+  id integer [pk]
+  order_id integer [not null]
+  product_id integer [not null]
+  quantity smallint [not null]
+  status reservation_status [not null]
+  expires_at timestamp_with_time_zone [not null]
+  created_at timestamp_with_time_zone [not null]
+  resolved_at timestamp_with_time_zone
+
+  indexes {
+    (order_id, product_id) [unique]
+  }
+
+  Note: 'CHECK: quantity > 0; (status = \'active\') = (resolved_at IS NULL)'
+}
+
+Table storage_specs {
+  product_id integer [pk]
+  kind_code varchar(20) [not null]
+  interface storage_interface [not null]
+  form_factor storage_form_factor [not null]
+  capacity_gb integer [not null]
+  pcie_gen smallint
+
+  Note: 'CHECK: kind_code = \'storage\'; (interface = \'nvme\' AND form_factor = \'m2_2280\' AND pcie_gen IS NOT NULL) OR (interface = \'sata\' AND pcie_gen IS NULL)'
+}
+
+Table users {
+  id integer [pk]
+  email citext [unique, not null]
+  password_hash varchar(255) [not null]
+  first_name varchar(80) [not null]
+  last_name varchar(80) [not null]
+  role user_role [not null]
+  is_active boolean [not null]
+  created_at timestamp_with_time_zone [not null]
+  updated_at timestamp_with_time_zone [not null]
+
+  Note: 'CHECK: position(\'@\' in email) > 1'
+}
+
+Ref: addresses.user_id > users.id
+Ref: build_items.build_id > builds.id
+Ref: build_items.(product_id, kind_code) > products.(id, kind_code)
+Ref: builds.user_id > users.id
+Ref: cart_items.product_id > products.id
+Ref: cart_items.cart_id > carts.id
+Ref: carts.user_id > users.id
+Ref: case_specs.product_id - products.id
+Ref: case_specs.(product_id, kind_code) > products.(id, kind_code)
+Ref: case_supported_form_factors.case_product_id > case_specs.product_id
+Ref: case_supported_form_factors.form_factor_code > board_form_factors.code
+Ref: categories.parent_id > categories.id
+Ref: categories.kind_code > component_kinds.code
+Ref: cooler_specs.(product_id, kind_code) > products.(id, kind_code)
+Ref: cooler_specs.product_id - products.id
+Ref: cooler_supported_sockets.cooler_product_id > cooler_specs.product_id
+Ref: cooler_supported_sockets.socket_code > sockets.code
+Ref: cpu_specs.product_id - products.id
+Ref: cpu_specs.socket_code > sockets.code
+Ref: cpu_specs.(product_id, kind_code) > products.(id, kind_code)
+Ref: gpu_specs.product_id - products.id
+Ref: gpu_specs.(product_id, kind_code) > products.(id, kind_code)
+Ref: inventory.product_id - products.id
+Ref: memory_specs.(product_id, kind_code) > products.(id, kind_code)
+Ref: memory_specs.product_id - products.id
+Ref: motherboard_specs.form_factor_code > board_form_factors.code
+Ref: motherboard_specs.socket_code > sockets.code
+Ref: motherboard_specs.(product_id, kind_code) > products.(id, kind_code)
+Ref: motherboard_specs.product_id - products.id
+Ref: order_addresses.order_id > orders.id
+Ref: order_items.order_id > orders.id
+Ref: order_items.product_id > products.id
+Ref: order_status_history.order_id > orders.id
+Ref: order_status_history.changed_by_user_id > users.id
+Ref: orders.build_id > builds.id
+Ref: orders.user_id > users.id
+Ref: payments.order_id > orders.id
+Ref: price_alerts.product_id > products.id
+Ref: price_alerts.user_id > users.id
+Ref: price_history.product_id > products.id
+Ref: products.(category_id, kind_code) > categories.(id, kind_code)
+Ref: products.brand_id > brands.id
+Ref: psu_specs.(product_id, kind_code) > products.(id, kind_code)
+Ref: psu_specs.product_id - products.id
+Ref: refresh_tokens.user_id > users.id
+Ref: reviews.product_id > products.id
+Ref: reviews.user_id > users.id
+Ref: stock_reservations.product_id > inventory.product_id
+Ref: stock_reservations.order_id > orders.id
+Ref: storage_specs.(product_id, kind_code) > products.(id, kind_code)
+Ref: storage_specs.product_id - products.id
+
+Enum address_type {
+  "shipping"
+  "billing"
+}
+
+Enum build_status {
+  "draft"
+  "validated"
+  "ordered"
+}
+
+Enum cooler_type {
+  "air"
+  "aio"
+}
+
+Enum memory_type {
+  "ddr4"
+  "ddr5"
+}
+
+Enum order_status {
+  "pending_payment"
+  "paid"
+  "fulfilling"
+  "shipped"
+  "delivered"
+  "cancelled"
+  "refunded"
+}
+
+Enum payment_status {
+  "requires_payment"
+  "processing"
+  "succeeded"
+  "failed"
+  "refunded"
+}
+
+Enum psu_efficiency {
+  "80plus"
+  "80plus_bronze"
+  "80plus_silver"
+  "80plus_gold"
+  "80plus_platinum"
+  "80plus_titanium"
+}
+
+Enum psu_form_factor {
+  "atx"
+  "sfx"
+  "sfx_l"
+}
+
+Enum psu_modularity {
+  "non_modular"
+  "semi_modular"
+  "fully_modular"
+}
+
+Enum reservation_status {
+  "active"
+  "committed"
+  "released"
+  "expired"
+}
+
+Enum storage_form_factor {
+  "m2_2280"
+  "2.5in"
+  "3.5in"
+}
+
+Enum storage_interface {
+  "nvme"
+  "sata"
+}
+
+Enum user_role {
+  "customer"
+  "admin"
+}
+
+TableGroup Identity {
+  users
+  addresses
+  refresh_tokens
+}
+
+TableGroup Catalog {
+  component_kinds
+  sockets
+  board_form_factors
+  brands
+  categories
+  products
+  cpu_specs
+  motherboard_specs
+  memory_specs
+  gpu_specs
+  storage_specs
+  psu_specs
+  case_specs
+  case_supported_form_factors
+  cooler_specs
+  cooler_supported_sockets
+  inventory
+  price_history
+}
+
+TableGroup Builds {
+  builds
+  build_items
+}
+
+TableGroup Commerce {
+  carts
+  cart_items
+  orders
+  order_items
+  order_addresses
+  order_status_transitions
+  order_status_history
+  stock_reservations
+  payments
+  processed_webhook_events
+}
+
+TableGroup Engagement {
+  reviews
+  price_alerts
+}
+
