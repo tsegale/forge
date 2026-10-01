@@ -3,6 +3,8 @@
 import os
 from datetime import timedelta
 
+from celery.schedules import crontab
+
 TEST_WEBHOOK_SECRET = "whsec_forge_test_signing_secret"
 
 # HS256 keys must be at least as long as the hash output (RFC 7518, section 3.2).
@@ -40,6 +42,11 @@ def _payment_settings(production: bool) -> dict[str, str]:
 # Periodic jobs for Celery beat, by task name (defined in app/tasks.py).
 BEAT_SCHEDULE: dict[str, dict] = {
     "sweep-expired-reservations": {"task": "forge.sweep_expired_reservations", "schedule": 60.0},
+    # On the 25th, so next month's partition exists days before the month begins.
+    "price-history-partitions": {
+        "task": "forge.maintain_price_history_partitions",
+        "schedule": crontab(minute=0, hour=3, day_of_month=25),
+    },
 }
 
 
@@ -103,6 +110,14 @@ class BaseConfig:
         self.SHIPPING_FLAT_CENTS = int(os.environ.get("SHIPPING_FLAT_CENTS", "15000"))
         self.FREE_SHIPPING_THRESHOLD_CENTS = int(os.environ.get("FREE_SHIPPING_THRESHOLD_CENTS", "500000"))
         self.RESERVATION_TTL = timedelta(minutes=int(os.environ.get("RESERVATION_TTL_MINUTES", "15")))
+        production = isinstance(self, ProductionConfig)
+        self.MAIL_BACKEND = os.environ.get("MAIL_BACKEND", "smtp")
+        self.MAIL_SERVER = _require("MAIL_SERVER") if production else os.environ.get("MAIL_SERVER", "127.0.0.1")
+        self.MAIL_PORT = int(os.environ.get("MAIL_PORT", "587" if production else "1025"))
+        self.MAIL_USE_TLS = os.environ.get("MAIL_USE_TLS", "true" if production else "false").lower() == "true"
+        self.MAIL_USERNAME = os.environ.get("MAIL_USERNAME", "")
+        self.MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD", "")
+        self.MAIL_FROM = os.environ.get("MAIL_FROM", "Forge <orders@forge.local>")
         self.CELERY = {
             "broker_url": os.environ.get("CELERY_BROKER_URL", self.REDIS_URL.rsplit("/", 1)[0] + "/1"),
             "task_ignore_result": True,
@@ -138,6 +153,7 @@ class TestingConfig(BaseConfig):
         self.SQLALCHEMY_DATABASE_URI = _require("TEST_DATABASE_URL")
         # Separate Redis database so test runs never touch development rate-limit or cache keys.
         self.REDIS_URL = _require("TEST_REDIS_URL")
+        self.MAIL_BACKEND = "memory"
         # Tasks run inline in tests: no broker, and errors surface in the calling test.
         self.CELERY = self.CELERY | {"task_always_eager": True, "task_eager_propagates": True}
         self.SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True}

@@ -208,8 +208,11 @@ def on_late_payment(order: Order, payment: Payment, intent: Mapping[str, Any], o
 
 
 def after_paid(order_id: int) -> list[AfterCommit]:
-    """Follow-ups once an order is paid (the confirmation email is queued here)."""
-    return []
+    """Follow-ups once an order is paid: queued only after the payment transaction commits, so a
+    worker never picks up an order whose payment then rolled back."""
+    from ..tasks import send_order_confirmation  # tasks import the services, not the other way round
+
+    return [lambda: send_order_confirmation.delay(order_id)]
 
 
 HANDLERS: dict[str, Callable[[WebhookEvent, Outcome], None]] = {

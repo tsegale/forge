@@ -3,15 +3,23 @@ context, so it uses the same configuration, database session and payment gateway
 
 from __future__ import annotations
 
-from celery import Celery, Task, shared_task
-from flask import Flask
+import smtplib
 
+from celery import Celery, Task, shared_task
+from flask import Flask, has_app_context
+
+from .services.maintenance import ensure_price_history_partitions
+from .services.notifications import send_order_confirmation as send_confirmation
 from .services.sweeper import sweep
 
 
 def init_celery(app: Flask) -> Celery:
     class FlaskTask(Task):
         def __call__(self, *args, **kwargs):
+            # Reuse an active app context (a task run inline from a request); a worker has none,
+            # so it pushes its own app's context.
+            if has_app_context():
+                return self.run(*args, **kwargs)
             with app.app_context():
                 return self.run(*args, **kwargs)
 
@@ -25,3 +33,19 @@ def init_celery(app: Flask) -> Celery:
 @shared_task(name="forge.sweep_expired_reservations")
 def sweep_expired_reservations() -> list[str]:
     return sweep().cancelled
+
+
+@shared_task(
+    name="forge.send_order_confirmation",
+    autoretry_for=(smtplib.SMTPException, OSError),
+    retry_backoff=True,
+    retry_backoff_max=600,
+    max_retries=8,
+)
+def send_order_confirmation(order_id: int) -> bool:
+    return send_confirmation(order_id)
+
+
+@shared_task(name="forge.maintain_price_history_partitions")
+def maintain_price_history_partitions() -> list[str]:
+    return ensure_price_history_partitions()

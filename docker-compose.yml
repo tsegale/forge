@@ -7,6 +7,12 @@ x-backend-env: &backend-env
   JWT_SECRET_KEY: ${JWT_SECRET_KEY}
   STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
   STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+  MAIL_SERVER: ${MAIL_SERVER}
+  MAIL_PORT: ${MAIL_PORT:-587}
+  MAIL_USE_TLS: ${MAIL_USE_TLS:-true}
+  MAIL_USERNAME: ${MAIL_USERNAME:-}
+  MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+  MAIL_FROM: ${MAIL_FROM:-Forge <orders@forge.local>}
   STORE_CURRENCY: ${STORE_CURRENCY:-nad}
   FORGE_ENV: ${FORGE_ENV:-production}
   TRUSTED_PROXY_COUNT: 1   # nginx; makes per-IP rate limits see the real client address

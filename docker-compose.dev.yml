@@ -1,7 +1,8 @@
-# Local development override: publishes PostgreSQL and Redis to the host and creates the
-# forge_test database used by pytest. Never use this file in production.
+# Local development override: publishes PostgreSQL and Redis to the host, creates the forge_test
+# database used by pytest, and adds Mailpit, which catches outgoing email (web UI on :8025).
+# Never use this file in production.
 #
-#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d db redis
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d db redis mailpit
 #
 # Set FORGE_DB_PORT / FORGE_REDIS_PORT if 5432 / 6379 are already taken on your machine.
 
@@ -26,6 +27,26 @@ services:
     ports:
       - "127.0.0.1:${FORGE_REDIS_PORT:-6379}:6379"
     networks: [backend, dev]
+
+  # Catches every email the app sends; view them at http://127.0.0.1:8025.
+  mailpit:
+    image: axllent/mailpit:v1.27
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${FORGE_SMTP_PORT:-1025}:1025"
+      - "127.0.0.1:${FORGE_MAILPIT_UI_PORT:-8025}:8025"
+    networks: [backend, dev]
+
+  # When the full stack runs with this override, send its email to Mailpit.
+  api:
+    environment: &dev-mail
+      MAIL_SERVER: mailpit
+      MAIL_PORT: "1025"
+      MAIL_USE_TLS: "false"
+  worker:
+    environment: *dev-mail
+  beat:
+    environment: *dev-mail
 
 networks:
   dev:
