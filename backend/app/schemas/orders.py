@@ -78,3 +78,35 @@ class OrderResponse(BaseModel):
 
 class CheckoutResponse(OrderResponse):
     payment: PaymentInfo | None = None
+
+
+class StatusChange(BaseModel):
+    from_status: OrderStatus | None
+    to_status: OrderStatus
+    at: datetime
+
+
+class OrderDetail(OrderResponse):
+    payment_status: str | None = Field(description="Status of the latest payment attempt, if any.")
+    history: list[StatusChange]
+
+
+class OrderSummary(BaseModel):
+    order_number: str
+    status: OrderStatus
+    item_count: int
+    total: Price
+    created_at: datetime
+
+
+class OrderPage(BaseModel):
+    items: list[OrderSummary]
+    next_cursor: int | None = Field(description="Pass as `cursor` for older orders; null on the last page.")
+
+
+class OrderListQuery(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    limit: int = Field(default=20, ge=1, le=50)
+    cursor: int | None = Field(default=None, ge=1)
+    status: OrderStatus | None = None

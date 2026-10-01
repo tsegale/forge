@@ -12,5 +12,6 @@ from . import (  # noqa: E402,F401
     checkout,
     compatibility,
     health,
+    orders,
     webhooks,
 )
