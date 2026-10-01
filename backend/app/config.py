@@ -69,6 +69,9 @@ class BaseConfig:
     RATELIMIT_IN_MEMORY_FALLBACK_ENABLED = True
     # Bound every Redis call: a hung Redis must degrade to the fallback, not hang logins.
     RATELIMIT_STORAGE_OPTIONS = {"socket_connect_timeout": 0.5, "socket_timeout": 0.5}
+    # Commerce. Prices include VAT; amounts are integer cents in STORE_CURRENCY.
+    VAT_RATE_BPS = 1500  # Namibian VAT, 15%
+
     LOGIN_LIMIT_PER_IP = "5 per minute"
     LOGIN_FAILURE_LIMIT_PER_ACCOUNT = "10 per 15 minutes"
     REGISTER_LIMIT_PER_IP = "10 per hour"
@@ -87,6 +90,9 @@ class BaseConfig:
         # gets its existing successor back instead of triggering family revocation.
         self.REFRESH_REUSE_GRACE = timedelta(seconds=int(os.environ.get("REFRESH_REUSE_GRACE_SECONDS", "10")))
         self.STORE_CURRENCY = os.environ.get("STORE_CURRENCY", "nad")
+        self.SHIPPING_FLAT_CENTS = int(os.environ.get("SHIPPING_FLAT_CENTS", "15000"))
+        self.FREE_SHIPPING_THRESHOLD_CENTS = int(os.environ.get("FREE_SHIPPING_THRESHOLD_CENTS", "500000"))
+        self.RESERVATION_TTL = timedelta(minutes=int(os.environ.get("RESERVATION_TTL_MINUTES", "15")))
 
 
 class DevelopmentConfig(BaseConfig):
