@@ -29,8 +29,11 @@ SQLAlchemy 2.x and PostgreSQL 16.
 cp .env.example .env        # then set real secrets
 docker compose up --build -d
 docker compose run --rm api flask seed catalog
+docker compose run --rm api flask users create-admin --email you@example.com --first-name You --last-name Admin
 curl http://localhost:8080/api/v1/health/ready
 ```
+
+API documentation is then at http://localhost:8080/api/v1/docs/swagger/.
 
 `migrate` runs as a one-shot service before the API starts, so schema changes are applied
 exactly once per deploy instead of racing inside every API replica. PostgreSQL and Redis sit
@@ -62,6 +65,75 @@ pytest
 Use `127.0.0.1`, not `localhost`. The ports are bound to IPv4 loopback only, and on Windows a
 `localhost` connection tries `::1` first and stalls until that attempt times out.
 `forge_test` is dropped and rebuilt by every test run, so never point `DATABASE_URL` at it.
+
+## API
+
+Versioned under `/api/v1`. The OpenAPI 3.1 document is generated from the same Pydantic models
+that validate requests, so it cannot drift from the code:
+
+- Spec: `/api/v1/docs/openapi.json`
+- Swagger UI: `/api/v1/docs/swagger/`, Redoc: `/api/v1/docs/redoc/`
+
+### Errors
+
+Every error, whatever raised it, uses one envelope. `code` is stable and safe to branch on;
+`request_id` matches the `X-Request-ID` response header for tracing.
+
+```json
+{"error": {"code": "email_taken", "message": "An account with this email address already exists.",
+           "details": null, "request_id": "4f1c..."}}
+```
+
+Database rules surface as precise HTTP errors: the API maps the violated constraint name
+(`diag.constraint_name`) to a status and code, for example `uq_users_email` to 409
+`email_taken`, the `build_slot_limit` trigger to 409, and `ck_inventory_reserved_le_on_hand`
+to 409 `stock_below_reserved`. Validation failures are 422 with per-field `details`.
+
+### Authentication
+
+| Endpoint | Purpose |
+| --- | --- |
+| `POST /auth/register` | Create a customer account (the admin role cannot be self-assigned) |
+| `POST /auth/login` | Returns a 15-minute access token; sets the refresh token cookie |
+| `POST /auth/refresh` | Rotates the refresh token and issues a new access token |
+| `POST /auth/logout`, `POST /auth/logout-all` | End this session, or every session |
+| `GET /auth/me` | The authenticated user |
+
+- Passwords are hashed with Argon2id (RFC 9106 parameters) and transparently re-hashed when
+  parameters change. Unknown emails still run a hash, so timing does not reveal accounts.
+- Access tokens are HS256 JWTs with pinned algorithm, issuer, audience and token type.
+- The refresh token lives only in an `HttpOnly; Secure; SameSite=Strict` cookie scoped to
+  `/api/v1/auth`. Every refresh rotates it under a row lock. Presenting an already-rotated
+  token is treated as theft and revokes the whole token family (RFC 9700). A login's family
+  has an absolute 30-day lifetime that rotation cannot extend.
+- Login is limited to 5 attempts per minute per IP and 10 failures per 15 minutes per account
+  (across IPs), stored in Redis; 429 responses carry `Retry-After`.
+- Roles are re-read from the database on every request, so deactivation and demotion take
+  effect immediately. Create the first administrator with
+  `flask users create-admin --email ... --first-name ... --last-name ...` (password is prompted).
+
+### Catalog
+
+`GET /products` filters on spec columns (`kind=gpu&vram_min_gb=16&length_max_mm=340`),
+category subtrees, brands, price and stock, and sorts by price, name, newest or relevance.
+Unknown parameters are rejected with 422 rather than silently ignored.
+
+Search (`q`) combines PostgreSQL full-text search with `pg_trgm`: trigram substring matching
+finds fragments inside model numbers that full-text search cannot (`x3d` finds the 7800X3D),
+and word similarity tolerates typos (`ryzn`). Both use a GIN trigram index.
+
+Pagination is keyset-based: each page compares `(sort_key, id)` with the previous page's last
+row, so pages stay consistent while data changes and deep pages cost the same as the first.
+`next_cursor` is signed and bound to its query; tampering or reusing it with other filters is
+a 400.
+
+### Administration
+
+`PATCH /admin/products/{id}` changes price or availability (price changes are recorded in the
+partitioned `price_history` table by a trigger). Stock edits use HTTP conditional requests
+for optimistic concurrency: `GET /admin/inventory/{id}` returns the row version as an `ETag`,
+and `PATCH` requires `If-Match` with it, answering 412 if someone else changed the stock first,
+428 if `If-Match` is missing, and 409 if the new level would fall below reserved stock.
 
 ## Database design
 
@@ -124,10 +196,15 @@ works), then seeds the catalog. Each test runs in a transaction that is rolled b
 backend/
   app/
     api/v1/          versioned REST blueprints
+    api/spec.py      request validation and OpenAPI generation (spectree + Pydantic)
     models/          SQLAlchemy models (identity, catalog, builds, commerce, engagement)
-    services/        business logic (compatibility engine, checkout, ...)
-    cli.py           flask seed catalog
-  migrations/        Alembic: 0001 schema, 0002 reference data and database logic
+    schemas/         Pydantic request and response models
+    security/        password hashing, JWTs, route guards
+    services/        business logic (auth sessions, catalog queries, ...)
+    errors.py        error envelope; db_errors.py maps constraint names to HTTP errors
+    cli.py           flask seed catalog, flask users create-admin
+  migrations/        Alembic: 0001 schema, 0002 reference data and database logic,
+                     0003 pg_trgm search and refresh token families
   seed/catalog.json  62 real components with manufacturer specs
   scripts/           ERD and DBML generators
   tests/
@@ -138,7 +215,7 @@ nginx/               reverse proxy config
 ## Roadmap
 
 - [x] Phase 1: schema, migrations, database logic, seed data, Docker, CI
-- [ ] Phase 2: authentication (JWT access and refresh rotation, RBAC), catalog API, OpenAPI docs
+- [x] Phase 2: authentication (JWT access and refresh rotation, RBAC, rate limiting), catalog API, OpenAPI docs
 - [ ] Phase 3: build compatibility engine and compatible-parts filtering
 - [ ] Phase 4: cart, two-phase checkout with reservations, Stripe webhooks, Celery workers
 - [ ] Phase 5: React frontend
