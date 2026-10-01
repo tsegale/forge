@@ -34,3 +34,22 @@ class AdminProductResponse(BaseModel):
     price_cents: int
     is_active: bool
     updated_at: datetime
+
+
+class StockUpdate(BaseModel):
+    """Only stock on hand is editable. Reserved stock belongs to checkout and changes only through it."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    quantity_on_hand: int = Field(strict=True, ge=0, le=2_147_483_647)
+
+
+class InventoryResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    product_id: int
+    quantity_on_hand: int
+    quantity_reserved: int
+    quantity_available: int
+    version: int = Field(description="Also returned as the ETag header. Send it back in If-Match to update.")
+    updated_at: datetime
