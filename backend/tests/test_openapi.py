@@ -7,7 +7,7 @@ from openapi_spec_validator import validate
 
 SPEC_URL = "/api/v1/docs/openapi.json"
 METHODS = {"get", "post", "put", "patch", "delete"}
-PROTECTED = re.compile(r"^/api/v1/(admin/|builds|addresses|auth/me$|auth/logout-all$)")
+PROTECTED = re.compile(r"^/api/v1/(admin/|builds|addresses|checkout|orders|auth/me$|auth/logout-all$)")
 
 
 @pytest.fixture(scope="module")
