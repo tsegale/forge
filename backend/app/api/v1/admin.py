@@ -10,7 +10,9 @@ from ...extensions import db
 from ...models import Inventory, Product
 from ...models.enums import UserRole
 from ...schemas.admin import AdminProductResponse, InventoryResponse, ProductUpdate, StockUpdate
+from ...schemas.orders import AdminOrderDetail, AdminStatusChange, OrderListQuery, OrderPage, RefundRequest
 from ...security.guards import current_user, require_role
+from ...services import admin_orders
 from ...services.audit import set_actor
 from ..spec import api, responses
 from . import bp
@@ -86,3 +88,52 @@ def update_inventory(product_id: int):
         db.session.rollback()
         raise PreconditionFailed() from exc
     return InventoryResponse.model_validate(inventory), 200, _etag(inventory)
+
+
+# --------------------------------------------------------------------------- orders
+
+
+@bp.get("/admin/orders")
+@require_role(UserRole.ADMIN)
+@api.validate(query=OrderListQuery, resp=responses(401, 403, 422, HTTP_200=OrderPage), tags=[TAG], security=SECURITY)
+def admin_list_orders():
+    """All orders, newest first, optionally filtered by status."""
+    return admin_orders.list_all(request.context.query)
+
+
+@bp.get("/admin/orders/<string:order_number>")
+@require_role(UserRole.ADMIN)
+@api.validate(resp=responses(401, 403, 404, HTTP_200=AdminOrderDetail), tags=[TAG], security=SECURITY)
+def admin_get_order(order_number: str):
+    """Any order, with the customer's email."""
+    return admin_orders.detail(admin_orders.get(order_number))
+
+
+@bp.post("/admin/orders/<string:order_number>/status")
+@require_role(UserRole.ADMIN)
+@api.validate(
+    json=AdminStatusChange,
+    resp=responses(401, 403, 404, 409, 422, HTTP_200=AdminOrderDetail),
+    tags=[TAG],
+    security=SECURITY,
+)
+def admin_advance_order(order_number: str):
+    """Move a paid order through fulfilment: fulfilling, shipped, delivered. The database rejects
+    illegal jumps (409 invalid_status_transition). Recorded in the status history with the admin."""
+    order = admin_orders.advance(current_user(), order_number, request.context.json.to)
+    return admin_orders.detail(order)
+
+
+@bp.post("/admin/orders/<string:order_number>/refund")
+@require_role(UserRole.ADMIN)
+@api.validate(
+    json=RefundRequest,
+    resp=responses(401, 403, 404, 409, 502, HTTP_200=AdminOrderDetail),
+    tags=[TAG],
+    security=SECURITY,
+)
+def admin_refund_order(order_number: str):
+    """Refund the order's payment in full through Stripe. 409 if the order cannot be refunded in
+    its current state (checked before any money moves); 502 if Stripe did not complete it."""
+    order = admin_orders.refund(current_user(), order_number, request.context.json.reason)
+    return admin_orders.detail(order)

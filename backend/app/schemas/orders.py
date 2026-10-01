@@ -110,3 +110,21 @@ class OrderListQuery(BaseModel):
     limit: int = Field(default=20, ge=1, le=50)
     cursor: int | None = Field(default=None, ge=1)
     status: OrderStatus | None = None
+
+
+class AdminOrderDetail(OrderDetail):
+    customer_email: str
+
+
+class AdminStatusChange(BaseModel):
+    """Fulfilment steps. Payment, cancellation and refunds have their own paths."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    to: Literal["fulfilling", "shipped", "delivered"]
+
+
+class RefundRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    reason: str | None = Field(default=None, max_length=500)
