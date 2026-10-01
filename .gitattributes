@@ -1,0 +1,2 @@
+# Normalise line endings in the repository, independent of each clone's core.autocrlf.
+* text=auto eol=lf
