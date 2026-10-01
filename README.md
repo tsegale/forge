@@ -48,7 +48,7 @@ same variable, so they always match the published port.
 
 ```bash
 export FORGE_DB_PORT=5432   # e.g. 5433 if another PostgreSQL already uses 5432
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --wait db redis
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --wait db redis mailpit
 
 cd backend
 python -m venv .venv && source .venv/bin/activate
@@ -177,6 +177,49 @@ cooler when the CPU is sold without one.
   parity test checks that the SQL filters and the engine agree for every seeded part against a
   set of reference builds.
 
+### Cart, checkout and payments
+
+Guests keep a cart behind an HttpOnly cookie token; signing in merges it into the account's cart.
+Checkout (`POST /checkout`) accepts the cart or a validated build, and either a saved address
+(`/addresses`) or an inline one; the address is snapshotted onto the order.
+
+Checkout is two-phase, and no row lock is ever held across a network call:
+
+1. One transaction locks the inventory rows (always in `product_id` order, so concurrent checkouts
+   cannot deadlock), checks availability (409 `insufficient_stock` lists each short line), snapshots
+   prices, and inserts stock reservations with an expiry. A trigger moves the units from available to
+   reserved. It commits.
+2. Only then is the Stripe PaymentIntent created, with an `Idempotency-Key` derived from the order,
+   so a retry returns the same intent instead of a second charge.
+
+`POST /webhooks/stripe` verifies the signature, then records the event with
+`INSERT ... ON CONFLICT DO NOTHING` in the same transaction as its effects, so each event is applied
+exactly once however often it is delivered. Before an order is marked paid, the payment's amount and
+currency must match the order total; the database enforces the same rule on every transition into
+`paid`. A payment that arrives after the reservation expired and the order was cancelled re-reserves
+the stock if it is still there, or is refunded automatically; either outcome is recorded.
+
+Prices include Namibian VAT (15%). VAT is computed once on the gross total in integer cents, with
+exact half-up rounding, and the net amounts are derived from it, so `total = subtotal + tax +
+shipping` always holds. Shipping is a flat VAT-inclusive fee, free above a threshold (both
+configurable).
+
+Customers see their orders under `/orders` and can cancel an unpaid one. Admins move paid orders
+through fulfilling, shipped and delivered, and refund through Stripe; a refund is checked against the
+order state machine before any money moves. Every status change records the acting user.
+
+### Background jobs
+
+A Celery worker and a single beat scheduler (Redis broker) run:
+
+- the reservation sweeper, every minute: it claims expired unpaid orders with
+  `FOR UPDATE SKIP LOCKED`, so parallel sweepers never block each other or a webhook, releases their
+  stock, cancels them, and then cancels their PaymentIntents;
+- monthly `price_history` partition maintenance, creating the next months' partitions ahead of time;
+- the order confirmation email, sent exactly once per order.
+
+In development, Mailpit catches every email: http://127.0.0.1:8025.
+
 ### Administration
 
 `PATCH /admin/products/{id}` changes price or availability (price changes are recorded in the
@@ -217,6 +260,10 @@ PostgreSQL, not only in Python:
 | Every status change is audited with the acting user | `AFTER` trigger reading a transaction-scoped setting set via `set_config()` |
 | Every price change is recorded | Trigger into `price_history`, range-partitioned by month |
 | Audit tables are append-only | `BEFORE UPDATE` triggers that raise |
+| Stock moves only through reservations | Trigger on `stock_reservations` adjusts reserved and on-hand stock and bumps the inventory version |
+| No overselling | CHECK `quantity_reserved <= quantity_on_hand`, reached only through the reservation trigger |
+| An order is paid only by a matching successful payment | Trigger on every transition into `paid` |
+| Payment outcomes are append-only | `BEFORE UPDATE` trigger on `payment_events` |
 | Order totals are internally consistent | CHECK `total = subtotal + tax + shipping` |
 | Email uniqueness is case-insensitive | `CITEXT` column |
 | One default address per user per type | Partial unique index |
@@ -253,12 +300,15 @@ backend/
     schemas/         Pydantic request and response models
     security/        password hashing, JWTs, route guards
     compat/          compatibility engine: rules, power budget, report (pure, no database access)
-    services/        business logic (auth sessions, catalog queries, builds, ...)
+    payments/        payment gateway interface, Stripe and in-process implementations
+    services/        business logic (auth, catalog, builds, cart, checkout, webhooks, sweeper, ...)
+    tasks.py         Celery tasks; celery_app.py is the worker entry point
     errors.py        error envelope; db_errors.py maps constraint names to HTTP errors
     cli.py           flask seed catalog, flask users create-admin
   migrations/        Alembic: 0001 schema, 0002 reference data and database logic,
                      0003 pg_trgm search and refresh token families,
-                     0004 compatibility inputs and build guards
+                     0004 compatibility inputs and build guards,
+                     0005 checkout and payment integrity
   seed/catalog.json  62 real components with manufacturer specs
   scripts/           ERD and DBML generators
   tests/
@@ -271,6 +321,6 @@ nginx/               reverse proxy config
 - [x] Phase 1: schema, migrations, database logic, seed data, Docker, CI
 - [x] Phase 2: authentication (JWT access and refresh rotation, RBAC, rate limiting), catalog API, OpenAPI docs
 - [x] Phase 3: build compatibility engine and compatible-parts filtering
-- [ ] Phase 4: cart, two-phase checkout with reservations, Stripe webhooks, Celery workers
+- [x] Phase 4: cart, two-phase checkout with reservations, Stripe webhooks, Celery workers
 - [ ] Phase 5: React frontend
 - [ ] Phase 6: hardening, documentation, demo
