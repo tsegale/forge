@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from ..models.enums import KindCode
 from .context import BuildContext
 from .findings import Finding, Severity
+from .power import PowerEstimate, estimate
 from .rules import RULES
 from .rules.base import Rule
 
@@ -18,6 +19,7 @@ KIND_ORDER = {kind.value: index for index, kind in enumerate(KindCode)}
 class Report:
     findings: tuple[Finding, ...]
     missing_kinds: tuple[str, ...]
+    power: PowerEstimate
 
     @property
     def conflicts(self) -> list[Finding]:
@@ -53,4 +55,4 @@ def missing_kinds(ctx: BuildContext, required_kinds: Iterable[str]) -> tuple[str
 
 def evaluate(ctx: BuildContext, required_kinds: Iterable[str], rules: Sequence[Rule] = RULES) -> Report:
     findings = sorted((f for rule in rules for f in rule.check(ctx)), key=lambda f: f.sort_key)
-    return Report(findings=tuple(findings), missing_kinds=missing_kinds(ctx, required_kinds))
+    return Report(findings=tuple(findings), missing_kinds=missing_kinds(ctx, required_kinds), power=estimate(ctx))

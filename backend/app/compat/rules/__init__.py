@@ -4,6 +4,7 @@ from .base import Rule
 from .cooling import CoolerCapacityRule, CoolerFitRule, CoolerSocketRule
 from .physical import FormFactorRule, GpuClearanceRule, PsuFormFactorRule
 from .platform import MemoryRule, SocketRule
+from .power import PowerRule
 
 RULES: list[Rule] = [
     SocketRule(),
@@ -14,4 +15,5 @@ RULES: list[Rule] = [
     CoolerSocketRule(),
     CoolerFitRule(),
     CoolerCapacityRule(),
+    PowerRule(),
 ]
