@@ -50,7 +50,7 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --wait db r
 cd backend
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements-dev.txt
-export FLASK_APP=wsgi.py SECRET_KEY=dev \
+export FLASK_APP=wsgi.py SECRET_KEY=dev JWT_SECRET_KEY=dev-only-jwt-secret-at-least-32-bytes \
        REDIS_URL=redis://127.0.0.1:${FORGE_REDIS_PORT:-6379}/0 \
        DATABASE_URL=postgresql+psycopg://forge:forge@127.0.0.1:${FORGE_DB_PORT}/forge \
        TEST_DATABASE_URL=postgresql+psycopg://forge:forge@127.0.0.1:${FORGE_DB_PORT}/forge_test \
