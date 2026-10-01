@@ -19,7 +19,6 @@ from ..extensions import db
 from ..models import (
     Build,
     CartItem,
-    Inventory,
     Order,
     OrderAddress,
     OrderItem,
@@ -35,6 +34,7 @@ from . import builds as build_service
 from . import cart as cart_service
 from . import pricing
 from .audit import set_actor
+from .stock import lock_inventory
 
 
 @dataclass(frozen=True, slots=True)
@@ -76,13 +76,6 @@ def _shipping_address(user: User, request: CheckoutRequest) -> AddressIn:
     return AddressIn.model_validate(saved, from_attributes=True)
 
 
-def _lock_inventory(product_ids: list[int]) -> dict[int, Inventory]:
-    rows = db.session.scalars(
-        select(Inventory).where(Inventory.product_id.in_(product_ids)).order_by(Inventory.product_id).with_for_update()
-    )
-    return {row.product_id: row for row in rows}
-
-
 def place_order(user: User, request: CheckoutRequest) -> Order:
     """Create a pending_payment order with reserved stock. Commits; raises before committing on
     any problem, leaving nothing behind."""
@@ -104,7 +97,7 @@ def place_order(user: User, request: CheckoutRequest) -> Order:
             details=[{"product_id": pid} for pid in inactive],
         )
 
-    stock = _lock_inventory(product_ids)
+    stock = lock_inventory(product_ids)
     short = [
         {
             "product_id": line.product_id,
