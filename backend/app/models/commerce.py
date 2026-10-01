@@ -25,7 +25,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
 from .catalog import Product
-from .enums import AddressType, OrderStatus, PaymentStatus, ReservationStatus, pg_enum
+from .enums import AddressType, OrderStatus, PaymentEventKind, PaymentStatus, ReservationStatus, pg_enum
 from .mixins import TimestampMixin
 
 ORDER_STATUS = pg_enum(OrderStatus, "order_status")
@@ -86,6 +86,8 @@ class Order(TimestampMixin, db.Model):
     shipping_cents: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
     total_cents: Mapped[int] = mapped_column(Integer, nullable=False)
     reservation_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Set when the confirmation email is sent, so a retried task never sends it twice.
+    confirmation_sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     items: Mapped[list[OrderItem]] = relationship(back_populates="order", cascade="all, delete-orphan")
     addresses: Mapped[list[OrderAddress]] = relationship(back_populates="order", cascade="all, delete-orphan")
@@ -98,6 +100,12 @@ class Order(TimestampMixin, db.Model):
         CheckConstraint("subtotal_cents >= 0 AND tax_cents >= 0 AND shipping_cents >= 0", name="amounts_non_negative"),
         CheckConstraint("total_cents = subtotal_cents + tax_cents + shipping_cents", name="total_consistent"),
         Index("ix_orders_status_created", "status", "created_at"),
+        # The reservation sweeper scans only unpaid orders, oldest expiry first.
+        Index(
+            "ix_orders_pending_reservation_expiry",
+            "reservation_expires_at",
+            postgresql_where=text("status = 'pending_payment'"),
+        ),
     )
 
 
@@ -230,4 +238,20 @@ class ProcessedWebhookEvent(db.Model):
     payload: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
     processed_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=text("now()"), nullable=False
+    )
+
+
+class PaymentEvent(db.Model):
+    """Append-only record of payment outcomes (a trigger forbids updates)."""
+
+    __tablename__ = "payment_events"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    order_id: Mapped[int] = mapped_column(ForeignKey("orders.id", ondelete="RESTRICT"), nullable=False, index=True)
+    payment_id: Mapped[int | None] = mapped_column(ForeignKey("payments.id", ondelete="RESTRICT"))
+    kind: Mapped[PaymentEventKind] = mapped_column(pg_enum(PaymentEventKind, "payment_event_kind"), nullable=False)
+    details: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
+    actor_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=text("clock_timestamp()"), nullable=False
     )

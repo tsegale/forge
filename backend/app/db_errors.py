@@ -49,6 +49,13 @@ CONSTRAINT_ERRORS: dict[str, MappedError] = {
     "order_status_transition": MappedError(
         409, "invalid_status_transition", "The order cannot move to that status from its current status."
     ),
+    # checkout and payments (trigger-raised, migration 0005)
+    "order_payment_required": MappedError(
+        409, "payment_required", "The order cannot be marked paid without a matching successful payment."
+    ),
+    "reservation_transition": MappedError(
+        409, "invalid_reservation_state", "The stock reservation cannot change that way in its current state."
+    ),
     # engagement
     "uq_reviews_one_per_user": MappedError(409, "review_exists", "You have already reviewed this product."),
     "ck_reviews_rating_range": MappedError(422, "invalid_rating", "Rating must be between 1 and 5."),

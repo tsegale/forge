@@ -274,10 +274,21 @@ Table orders {
   shipping_cents integer [not null]
   total_cents integer [not null]
   reservation_expires_at timestamp_with_time_zone
+  confirmation_sent_at timestamp_with_time_zone
   created_at timestamp_with_time_zone [not null]
   updated_at timestamp_with_time_zone [not null]
 
   Note: 'CHECK: subtotal_cents >= 0 AND tax_cents >= 0 AND shipping_cents >= 0; total_cents = subtotal_cents + tax_cents + shipping_cents'
+}
+
+Table payment_events {
+  id integer [pk]
+  order_id integer [not null]
+  payment_id integer
+  kind payment_event_kind [not null]
+  details jsonb [not null]
+  actor_user_id integer
+  created_at timestamp_with_time_zone [not null]
 }
 
 Table payments {
@@ -476,6 +487,9 @@ Ref: order_status_history.changed_by_user_id > users.id
 Ref: order_status_history.order_id > orders.id
 Ref: orders.build_id > builds.id
 Ref: orders.user_id > users.id
+Ref: payment_events.actor_user_id > users.id
+Ref: payment_events.order_id > orders.id
+Ref: payment_events.payment_id > payments.id
 Ref: payments.order_id > orders.id
 Ref: price_alerts.product_id > products.id
 Ref: price_alerts.user_id > users.id
@@ -523,11 +537,26 @@ Enum order_status {
   "refunded"
 }
 
+Enum payment_event_kind {
+  "intent_created"
+  "succeeded"
+  "failed"
+  "canceled"
+  "amount_mismatch"
+  "late_payment_reserved"
+  "late_payment_refund_pending"
+  "late_payment_refunded"
+  "refund_requested"
+  "refunded"
+  "refund_failed"
+}
+
 Enum payment_status {
   "requires_payment"
   "processing"
   "succeeded"
   "failed"
+  "canceled"
   "refunded"
 }
 

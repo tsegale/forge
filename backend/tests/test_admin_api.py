@@ -1,11 +1,13 @@
 """Administrator endpoints: role enforcement, product updates, and conditional stock edits."""
 
+from datetime import UTC, datetime, timedelta
+
 import pytest
 from sqlalchemy import func, select, update
 from sqlalchemy.orm.exc import StaleDataError
 
-from app.models import Inventory, PriceHistory
-from app.models.enums import UserRole
+from app.models import Inventory, Order, PriceHistory, StockReservation
+from app.models.enums import ReservationStatus, UserRole
 
 SKU = "FRG-CPU-R7-7800X3D"
 
@@ -170,3 +172,23 @@ def test_orm_version_check_backstops_a_concurrent_write(session, product):
     inventory.quantity_on_hand += 1
     with pytest.raises(StaleDataError):
         session.flush()
+
+
+def test_a_sale_invalidates_an_admins_etag(client, session, admin, product, make_user):
+    """Reservations change stock through a database trigger that also bumps the version, so an
+    admin edit based on a read from before the sale cannot overwrite the sale's decrement."""
+    stale = client.get(_stock_url(product), headers=admin).headers["ETag"]
+
+    order = Order(user_id=make_user().id, currency="nad", subtotal_cents=100, total_cents=100)
+    session.add(order)
+    session.flush()
+    reservation = StockReservation(
+        order_id=order.id, product_id=product.id, quantity=1, expires_at=datetime.now(UTC) + timedelta(minutes=15)
+    )
+    session.add(reservation)
+    session.flush()
+    reservation.status = ReservationStatus.COMMITTED  # the sale
+    session.commit()
+
+    response = client.patch(_stock_url(product), json={"quantity_on_hand": 99}, headers=admin | {"If-Match": stale})
+    assert response.status_code == 412

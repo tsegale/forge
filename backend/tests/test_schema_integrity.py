@@ -17,13 +17,23 @@ from app.models import (
     Inventory,
     Order,
     OrderStatusHistory,
+    Payment,
+    PaymentEvent,
     PriceHistory,
     Product,
     PsuProduct,
     RefreshToken,
+    StockReservation,
     User,
 )
-from app.models.enums import BuildStatus, OrderStatus, PsuAtxVersion
+from app.models.enums import (
+    BuildStatus,
+    OrderStatus,
+    PaymentEventKind,
+    PaymentStatus,
+    PsuAtxVersion,
+    ReservationStatus,
+)
 from app.services.audit import set_actor
 
 
@@ -186,8 +196,22 @@ def test_order_total_must_be_consistent(session, user):
         session.flush()
 
 
+def _pay(session, order, amount_cents=None, currency=None) -> Payment:
+    payment = Payment(
+        order_id=order.id,
+        provider_payment_id=f"pi_{uuid.uuid4().hex}",
+        amount_cents=order.total_cents if amount_cents is None else amount_cents,
+        currency=currency or order.currency,
+        status=PaymentStatus.SUCCEEDED,
+    )
+    session.add(payment)
+    session.flush()
+    return payment
+
+
 def test_legal_transitions_are_audited_with_actor(session, user):
     order = _order(session, user)
+    _pay(session, order)
     set_actor(session, user.id)
     order.status = OrderStatus.PAID
     session.flush()
@@ -353,3 +377,163 @@ def test_seeded_psus_record_atx_version(session):
     assert {versions[s] for s in ("FRG-PSU-SS-GX750", "FRG-PSU-CR-RM850E", "FRG-PSU-CR-RM1000X")} == {
         PsuAtxVersion.V3_1
     }
+
+
+# --------------------------------------------------------------------- paid requires a matching payment (0005)
+
+
+def _expect(session, constraint):
+    with pytest.raises(IntegrityError) as exc, session.begin_nested():
+        session.flush()
+    assert _constraint_name(exc.value) == constraint
+
+
+def test_paid_requires_a_succeeded_payment(session, user):
+    order = _order(session, user)
+    order.status = OrderStatus.PAID
+    _expect(session, "order_payment_required")
+
+
+@pytest.mark.parametrize(
+    ("amount_delta", "currency", "status"),
+    [(-1, None, PaymentStatus.SUCCEEDED), (0, "USD", PaymentStatus.SUCCEEDED), (0, None, PaymentStatus.PROCESSING)],
+    ids=["short-by-one-cent", "wrong-currency", "not-succeeded"],
+)
+def test_paid_requires_the_payment_to_match(session, user, amount_delta, currency, status):
+    order = _order(session, user)
+    payment = _pay(session, order, amount_cents=order.total_cents + amount_delta, currency=currency)
+    payment.status = status
+    session.flush()
+    order.status = OrderStatus.PAID
+    _expect(session, "order_payment_required")
+
+
+def test_currency_comparison_ignores_case(session, user):
+    order = _order(session, user)
+    _pay(session, order, currency="nad")
+    order.status = OrderStatus.PAID
+    session.flush()
+
+
+def test_late_payment_transitions(session, user):
+    late = _order(session, user)
+    late.status = OrderStatus.CANCELLED
+    session.flush()
+    _pay(session, late)
+    late.status = OrderStatus.PAID
+    session.flush()
+
+    refunded = _order(session, user)
+    refunded.status = OrderStatus.CANCELLED
+    session.flush()
+    refunded.status = OrderStatus.REFUNDED
+    session.flush()
+
+
+def test_payment_events_are_append_only(session, user):
+    event = PaymentEvent(order_id=_order(session, user).id, kind=PaymentEventKind.AMOUNT_MISMATCH)
+    session.add(event)
+    session.flush()
+    with pytest.raises(DBAPIError), session.begin_nested():
+        session.execute(update(PaymentEvent).where(PaymentEvent.id == event.id).values(details={"x": 1}))
+
+
+# --------------------------------------------------------------------- reservations move stock (0005)
+
+
+@pytest.fixture()
+def stocked(session, user, product_by_sku):
+    product = product_by_sku("FRG-CPU-R7-7800X3D")
+    product.inventory.quantity_on_hand, product.inventory.quantity_reserved = 10, 0
+    session.flush()
+    return product, _order(session, user)
+
+
+def _stock(session, product) -> tuple[int, int, int]:
+    session.expire(product.inventory)
+    inv = product.inventory
+    return inv.quantity_on_hand, inv.quantity_reserved, inv.version
+
+
+def _reserve(session, order, product, quantity=3) -> StockReservation:
+    reservation = StockReservation(
+        order_id=order.id,
+        product_id=product.id,
+        quantity=quantity,
+        expires_at=datetime.now(UTC) + timedelta(minutes=15),
+    )
+    session.add(reservation)
+    session.flush()
+    return reservation
+
+
+def test_reserving_moves_stock_to_reserved_and_bumps_version(session, stocked):
+    product, order = stocked
+    _, _, version = _stock(session, product)
+    _reserve(session, order, product, 3)
+    assert _stock(session, product) == (10, 3, version + 1)
+
+
+@pytest.mark.parametrize(
+    ("to", "expected"),
+    [
+        (ReservationStatus.COMMITTED, (7, 0)),
+        (ReservationStatus.RELEASED, (10, 0)),
+        (ReservationStatus.EXPIRED, (10, 0)),
+    ],
+)
+def test_resolving_a_reservation(session, stocked, to, expected):
+    product, order = stocked
+    reservation = _reserve(session, order, product, 3)
+    reservation.status = to
+    session.flush()
+    session.refresh(reservation)
+    assert _stock(session, product)[:2] == expected
+    assert reservation.resolved_at is not None  # set by the trigger
+
+
+def test_late_payment_commits_an_expired_reservation_from_stock_on_hand(session, stocked):
+    product, order = stocked
+    reservation = _reserve(session, order, product, 3)
+    reservation.status = ReservationStatus.EXPIRED
+    session.flush()
+    reservation.status = ReservationStatus.COMMITTED
+    session.flush()
+    assert _stock(session, product)[:2] == (7, 0)
+
+
+def test_reservations_cannot_exceed_available_stock(session, stocked):
+    product, order = stocked
+    with pytest.raises(IntegrityError) as exc, session.begin_nested():
+        _reserve(session, order, product, 11)
+    assert _constraint_name(exc.value) == "ck_inventory_reserved_le_on_hand"
+
+
+@pytest.mark.parametrize("change", ["uncommit", "requantity", "delete-active", "insert-committed"])
+def test_illegal_reservation_changes(session, user, stocked, change):
+    product, order = stocked
+    reservation = _reserve(session, order, product, 3)
+    with pytest.raises(IntegrityError) as exc, session.begin_nested():
+        if change == "uncommit":
+            reservation.status = ReservationStatus.COMMITTED
+            session.flush()
+            reservation.status = ReservationStatus.RELEASED
+            session.flush()
+        elif change == "requantity":
+            reservation.quantity = 1
+            session.flush()
+        elif change == "delete-active":
+            session.delete(reservation)
+            session.flush()
+        else:
+            session.execute(
+                insert(StockReservation).values(
+                    order_id=_order(session, user).id,
+                    product_id=product.id,
+                    quantity=1,
+                    status="committed",
+                    expires_at=datetime.now(UTC),
+                    resolved_at=datetime.now(UTC),
+                )
+            )
+    assert _constraint_name(exc.value) == "reservation_transition"

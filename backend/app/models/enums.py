@@ -118,4 +118,22 @@ class PaymentStatus(enum.StrEnum):
     PROCESSING = "processing"
     SUCCEEDED = "succeeded"
     FAILED = "failed"
+    CANCELED = "canceled"
     REFUNDED = "refunded"
+
+
+class PaymentEventKind(enum.StrEnum):
+    """Payment outcomes recorded in the append-only payment_events table, including those that are
+    not order status changes (an amount mismatch, a late payment refunded on a cancelled order)."""
+
+    INTENT_CREATED = "intent_created"
+    SUCCEEDED = "succeeded"
+    FAILED = "failed"
+    CANCELED = "canceled"
+    AMOUNT_MISMATCH = "amount_mismatch"
+    LATE_PAYMENT_RESERVED = "late_payment_reserved"
+    LATE_PAYMENT_REFUND_PENDING = "late_payment_refund_pending"
+    LATE_PAYMENT_REFUNDED = "late_payment_refunded"
+    REFUND_REQUESTED = "refund_requested"
+    REFUNDED = "refunded"
+    REFUND_FAILED = "refund_failed"

@@ -27,6 +27,7 @@ from .commerce import (
     OrderStatusHistory,
     OrderStatusTransition,
     Payment,
+    PaymentEvent,
     ProcessedWebhookEvent,
     StockReservation,
 )
@@ -57,6 +58,7 @@ __all__ = [
     "OrderStatusHistory",
     "OrderStatusTransition",
     "Payment",
+    "PaymentEvent",
     "PriceAlert",
     "PriceHistory",
     "ProcessedWebhookEvent",
