@@ -38,16 +38,29 @@ on an internal network and are not reachable from outside the stack.
 
 ## Local development
 
+`docker-compose.dev.yml` publishes PostgreSQL and Redis on `127.0.0.1` only and creates the
+`forge_test` database on first start. Ports default to 5432 and 6379; set `FORGE_DB_PORT` or
+`FORGE_REDIS_PORT` if either is taken on your machine. The connection URLs below read the
+same variable, so they always match the published port.
+
 ```bash
+export FORGE_DB_PORT=5432   # e.g. 5433 if another PostgreSQL already uses 5432
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --wait db redis
+
 cd backend
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements-dev.txt
 export FLASK_APP=wsgi.py SECRET_KEY=dev \
-       DATABASE_URL=postgresql+psycopg://forge:forge@localhost/forge \
-       TEST_DATABASE_URL=postgresql+psycopg://forge:forge@localhost/forge_test
+       REDIS_URL=redis://127.0.0.1:${FORGE_REDIS_PORT:-6379}/0 \
+       DATABASE_URL=postgresql+psycopg://forge:forge@127.0.0.1:${FORGE_DB_PORT}/forge \
+       TEST_DATABASE_URL=postgresql+psycopg://forge:forge@127.0.0.1:${FORGE_DB_PORT}/forge_test
 flask db upgrade && flask seed catalog
 pytest
 ```
+
+Use `127.0.0.1`, not `localhost`. The ports are bound to IPv4 loopback only, and on Windows a
+`localhost` connection tries `::1` first and stalls until that attempt times out.
+`forge_test` is dropped and rebuilt by every test run, so never point `DATABASE_URL` at it.
 
 ## Database design
 
