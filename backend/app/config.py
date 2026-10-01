@@ -41,6 +41,8 @@ class TestingConfig(BaseConfig):
         os.environ.setdefault("DATABASE_URL", _require("TEST_DATABASE_URL"))
         super().__init__()
         self.SQLALCHEMY_DATABASE_URI = _require("TEST_DATABASE_URL")
+        # Separate Redis database so test runs never touch development rate-limit or cache keys.
+        self.REDIS_URL = _require("TEST_REDIS_URL")
         self.SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True}
 
 

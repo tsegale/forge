@@ -53,7 +53,8 @@ pip install -r requirements-dev.txt
 export FLASK_APP=wsgi.py SECRET_KEY=dev \
        REDIS_URL=redis://127.0.0.1:${FORGE_REDIS_PORT:-6379}/0 \
        DATABASE_URL=postgresql+psycopg://forge:forge@127.0.0.1:${FORGE_DB_PORT}/forge \
-       TEST_DATABASE_URL=postgresql+psycopg://forge:forge@127.0.0.1:${FORGE_DB_PORT}/forge_test
+       TEST_DATABASE_URL=postgresql+psycopg://forge:forge@127.0.0.1:${FORGE_DB_PORT}/forge_test \
+       TEST_REDIS_URL=redis://127.0.0.1:${FORGE_REDIS_PORT:-6379}/15
 flask db upgrade && flask seed catalog
 pytest
 ```
