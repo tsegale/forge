@@ -44,6 +44,8 @@ class BaseConfig:
     # If Redis is unreachable, keep limiting with per-process counters instead of failing open.
     RATELIMIT_SWALLOW_ERRORS = True
     RATELIMIT_IN_MEMORY_FALLBACK_ENABLED = True
+    # Bound every Redis call: a hung Redis must degrade to the fallback, not hang logins.
+    RATELIMIT_STORAGE_OPTIONS = {"socket_connect_timeout": 0.5, "socket_timeout": 0.5}
     LOGIN_LIMIT_PER_IP = "5 per minute"
     LOGIN_FAILURE_LIMIT_PER_ACCOUNT = "10 per 15 minutes"
     REGISTER_LIMIT_PER_IP = "10 per hour"

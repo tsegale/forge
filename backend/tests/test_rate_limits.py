@@ -1,5 +1,7 @@
 """Login and registration rate limits, enforced through the same Redis storage production uses."""
 
+import time
+
 import pytest
 from limits.storage import RedisStorage
 
@@ -87,3 +89,27 @@ def test_behind_a_proxy_clients_are_told_apart_by_forwarded_address(proxied_clie
     assert attempt("198.51.100.7").status_code == 401
     # ...and a spoofed left-most entry does not change the address nginx appended.
     assert attempt("198.51.100.7, 203.0.113.10").status_code == 429
+
+
+@pytest.fixture()
+def redis_down(app, monkeypatch, session):
+    monkeypatch.setenv("TEST_REDIS_URL", "redis://127.0.0.1:1/0")  # nothing listens on port 1
+    outage = create_app("testing")
+    try:
+        yield outage.test_client()
+    finally:
+        # The limiter is a process-wide singleton: point it back at the real Redis, and clear the
+        # outage flag (init_app does not), or later tests would silently run on the fallback.
+        limiter.init_app(app)
+        limiter._storage_dead = False
+        with app.app_context():
+            limiter.reset()
+            assert limiter.storage.check(), "limiter was not restored to the real Redis"
+
+
+def test_limits_still_apply_when_redis_is_unreachable(redis_down):
+    """Fails closed-ish: in-memory counters take over instead of letting every attempt through."""
+    started = time.monotonic()
+    statuses = [_login(redis_down, f"guess{n}@example.com").status_code for n in range(6)]
+    assert statuses == [401] * 5 + [429]
+    assert time.monotonic() - started < 10  # bounded socket timeouts, no hang per request
