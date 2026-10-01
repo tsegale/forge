@@ -139,6 +139,44 @@ row, so pages stay consistent while data changes and deep pages cost the same as
 `next_cursor` is signed and bound to its query; tampering or reusing it with other filters is
 a 400.
 
+### Builds and compatibility
+
+Customers save builds (`/builds`, with parts under `/builds/{id}/items`) and check them with the
+compatibility engine: a set of independent rules behind one interface, each reporting
+structured findings with a stable code, a severity and the measured values behind it.
+
+| Rule | Conflict | Warning |
+| --- | --- | --- |
+| Socket | CPU and motherboard sockets differ | |
+| Memory | wrong DDR generation, more modules than slots, more capacity than supported | more than one distinct kit |
+| Form factor | case does not take the board's form factor | |
+| GPU clearance | card longer than the case allows | |
+| PSU form factor | ATX supply in an SFX bay | SFX in an ATX bay (bracket), SFX-L in an SFX bay |
+| Cooler | no mounting for the socket, tower too tall, radiator without a mount | rated below the CPU's sustained power |
+| Storage | more M.2 drives than slots, more SATA drives than ports | |
+| Power | sustained load above the supply's rating | load above 80%, below the GPU vendor's recommendation, transient spikes beyond tolerance, 16-pin card without a native cable |
+
+The power budget counts the CPU at its sustained package limit, each graphics card at board
+power, and allowances for the rest. Graphics cards spike to about twice board power for
+microseconds: ATX 3.x supplies are specified to ride through 200% excursions, ATX 2.x supplies
+are not, so the same spike can warn on one supply and not another.
+
+A report separates `compatible` (no conflicts) from `complete` (nothing missing). Missing parts
+include the required kinds plus a graphics card when the CPU has no integrated graphics, and a
+cooler when the CPU is sold without one.
+
+- `POST /builds/{id}/validate` records the outcome: a build becomes `validated` only when it is
+  both compatible and complete. It locks the build row before reading the parts, and every part
+  change takes the same lock and resets a validated build to draft (a database trigger), so a
+  validated status always describes exactly the parts that were checked.
+- `POST /compatibility/check` evaluates an unsaved part list, for configuring before signing in.
+- `GET /products?kind=psu&compatible_with=12,40,77` lists only parts that would not conflict with
+  those parts (a CPU, board, PSU, case or cooler is judged as a replacement for the current one).
+  Each rule expresses its conflicts as SQL, so filtering stays in the query and keyset pagination
+  keeps working; parts that would only add warnings stay listed with their warning codes. A
+  parity test checks that the SQL filters and the engine agree for every seeded part against a
+  set of reference builds.
+
 ### Administration
 
 `PATCH /admin/products/{id}` changes price or availability (price changes are recorded in the
@@ -173,6 +211,8 @@ PostgreSQL, not only in Python:
 | Per-build slot limits (one CPU, up to four memory kits) | Constraint trigger; locks the parent build row to serialise concurrent inserts |
 | Every product has exactly one inventory row | `AFTER INSERT` trigger |
 | Reserved stock never exceeds stock on hand | CHECK constraints |
+| A validated build always describes its current parts | `BEFORE` trigger on `build_items` locks the build and resets it to draft |
+| An ordered build's parts can no longer change, and it cannot be deleted | `BEFORE` triggers on `build_items` and `builds` |
 | Order status follows the state machine | `BEFORE UPDATE` trigger against the `order_status_transitions` table |
 | Every status change is audited with the acting user | `AFTER` trigger reading a transaction-scoped setting set via `set_config()` |
 | Every price change is recorded | Trigger into `price_history`, range-partitioned by month |
@@ -212,11 +252,13 @@ backend/
     models/          SQLAlchemy models (identity, catalog, builds, commerce, engagement)
     schemas/         Pydantic request and response models
     security/        password hashing, JWTs, route guards
-    services/        business logic (auth sessions, catalog queries, ...)
+    compat/          compatibility engine: rules, power budget, report (pure, no database access)
+    services/        business logic (auth sessions, catalog queries, builds, ...)
     errors.py        error envelope; db_errors.py maps constraint names to HTTP errors
     cli.py           flask seed catalog, flask users create-admin
   migrations/        Alembic: 0001 schema, 0002 reference data and database logic,
-                     0003 pg_trgm search and refresh token families
+                     0003 pg_trgm search and refresh token families,
+                     0004 compatibility inputs and build guards
   seed/catalog.json  62 real components with manufacturer specs
   scripts/           ERD and DBML generators
   tests/
@@ -228,7 +270,7 @@ nginx/               reverse proxy config
 
 - [x] Phase 1: schema, migrations, database logic, seed data, Docker, CI
 - [x] Phase 2: authentication (JWT access and refresh rotation, RBAC, rate limiting), catalog API, OpenAPI docs
-- [ ] Phase 3: build compatibility engine and compatible-parts filtering
+- [x] Phase 3: build compatibility engine and compatible-parts filtering
 - [ ] Phase 4: cart, two-phase checkout with reservations, Stripe webhooks, Celery workers
 - [ ] Phase 5: React frontend
 - [ ] Phase 6: hardening, documentation, demo
