@@ -80,10 +80,18 @@ def issue_access_token(user_id: int, role: str) -> AccessToken:
 def issue_refresh_token(
     user_id: int, jti: uuid.UUID, family_id: uuid.UUID, family_expires_at: datetime
 ) -> tuple[str, datetime]:
-    """Return the encoded token and its expiry. Expiry never exceeds the family's absolute lifetime."""
+    """Return a new token and its expiry. Expiry never exceeds the family's absolute lifetime."""
+    expires_at = min(_now() + current_app.config["REFRESH_TOKEN_TTL"], family_expires_at)
+    return encode_refresh_token(user_id, jti, family_id, family_expires_at, expires_at), expires_at
+
+
+def encode_refresh_token(
+    user_id: int, jti: uuid.UUID, family_id: uuid.UUID, family_expires_at: datetime, expires_at: datetime
+) -> str:
+    """Sign a refresh token for an already-recorded ``jti`` with its stored expiry. Used to hand
+    the existing successor back during the reuse grace window without creating a new token."""
     now = _now()
-    expires_at = min(now + current_app.config["REFRESH_TOKEN_TTL"], family_expires_at)
-    token = _encode(
+    return _encode(
         {
             "sub": str(user_id),
             "typ": TokenType.REFRESH.value,
@@ -95,7 +103,6 @@ def issue_refresh_token(
             "exp": expires_at,
         }
     )
-    return token, expires_at
 
 
 def decode(token: str, expected: TokenType) -> dict[str, Any]:

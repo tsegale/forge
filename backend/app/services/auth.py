@@ -14,7 +14,14 @@ from ..extensions import db
 from ..models import RefreshToken, User
 from ..schemas.auth import RegisterRequest
 from ..security.passwords import burn_verification, hash_password, needs_rehash, verify_password
-from ..security.tokens import AccessToken, decode_refresh, issue_access_token, issue_refresh_token
+from ..security.tokens import (
+    AccessToken,
+    RefreshClaims,
+    decode_refresh,
+    encode_refresh_token,
+    issue_access_token,
+    issue_refresh_token,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -77,32 +84,62 @@ def _revoke(*conditions: object) -> None:
     )
 
 
+def _within_grace(row: RefreshToken, now: datetime) -> bool:
+    return (
+        row.replaced_by_jti is not None
+        and row.revoked_at is not None
+        and now - row.revoked_at < current_app.config["REFRESH_REUSE_GRACE"]
+    )
+
+
+def _active_successor(row: RefreshToken, now: datetime) -> RefreshToken | None:
+    successor = db.session.scalar(select(RefreshToken).where(RefreshToken.jti == row.replaced_by_jti))
+    if successor is None or successor.revoked_at is not None or successor.expires_at <= now:
+        return None
+    return successor
+
+
+def _reissue_successor(user: User, successor: RefreshToken, claims: RefreshClaims) -> IssuedSession:
+    """Hand back the successor that already exists: same jti and expiry, no new row."""
+    token = encode_refresh_token(
+        user.id, successor.jti, successor.family_id, claims.family_expires_at, successor.expires_at
+    )
+    return IssuedSession(issue_access_token(user.id, user.role.value), token, successor.jti, successor.expires_at)
+
+
+def _end_family(row: RefreshToken, code: str, message: str) -> Unauthorized:
+    _revoke(RefreshToken.family_id == row.family_id)
+    db.session.commit()
+    return Unauthorized(message, code=code)
+
+
 def rotate(refresh_token: str) -> IssuedSession:
     """Exchange a refresh token for a new pair, revoking the presented one.
 
     The token row is locked (SELECT ... FOR UPDATE), so concurrent refreshes with the same
-    token serialise: exactly one rotates it, and the rest see it already revoked. Presenting a
-    revoked token means it was copied, so the whole family is revoked (RFC 9700, section 4.14.2).
+    token serialise: exactly one rotates it, and the rest see it already rotated. A rotated
+    token presented again within REFRESH_REUSE_GRACE (two tabs, a retried request) gets its
+    still-active successor back; any other reuse means the token was copied, so the whole
+    family is revoked (RFC 9700, section 4.14.2).
     """
     claims = decode_refresh(refresh_token)
     row = db.session.scalar(select(RefreshToken).where(RefreshToken.jti == claims.jti).with_for_update())
     if row is None or row.user_id != claims.user_id or row.family_id != claims.family_id:
         raise Unauthorized("The refresh token is invalid.", code="invalid_token")
 
-    if row.revoked_at is not None:
-        _revoke(RefreshToken.family_id == row.family_id)
-        db.session.commit()
-        code = "refresh_token_reused" if row.replaced_by_jti is not None else "refresh_token_revoked"
-        raise Unauthorized("This session has ended. Sign in again.", code=code)
-
+    now = datetime.now(UTC)
     user = db.session.get(User, row.user_id)
     if user is None or not user.is_active:
-        _revoke(RefreshToken.family_id == row.family_id)
-        db.session.commit()
-        raise Unauthorized("The account is not available.", code="account_unavailable")
+        raise _end_family(row, "account_unavailable", "The account is not available.")
+
+    if row.revoked_at is not None:
+        if _within_grace(row, now) and (successor := _active_successor(row, now)) is not None:
+            return _reissue_successor(user, successor, claims)
+        code = "refresh_token_reused" if row.replaced_by_jti is not None else "refresh_token_revoked"
+        raise _end_family(row, code, "This session has ended. Sign in again.")
 
     issued = issue_session(user, row.family_id, claims.family_expires_at)
-    row.revoked_at = datetime.now(UTC)
+    row.revoked_at = now
     row.replaced_by_jti = issued.refresh_jti
     db.session.commit()
     return issued

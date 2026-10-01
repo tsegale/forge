@@ -56,6 +56,9 @@ class BaseConfig:
         self.REDIS_URL = os.environ.get("REDIS_URL", "redis://redis:6379/0")
         # Number of reverse proxies in front of the app whose X-Forwarded-* headers are trusted.
         self.TRUSTED_PROXY_COUNT = int(os.environ.get("TRUSTED_PROXY_COUNT", "0"))
+        # A rotated refresh token presented again within this window (two tabs, a retried request)
+        # gets its existing successor back instead of triggering family revocation.
+        self.REFRESH_REUSE_GRACE = timedelta(seconds=int(os.environ.get("REFRESH_REUSE_GRACE_SECONDS", "10")))
         self.STORE_CURRENCY = os.environ.get("STORE_CURRENCY", "nad")
 
 

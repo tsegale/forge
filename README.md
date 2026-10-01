@@ -104,8 +104,12 @@ to 409 `stock_below_reserved`. Validation failures are 422 with per-field `detai
 - Access tokens are HS256 JWTs with pinned algorithm, issuer, audience and token type.
 - The refresh token lives only in an `HttpOnly; Secure; SameSite=Strict` cookie scoped to
   `/api/v1/auth`. Every refresh rotates it under a row lock. Presenting an already-rotated
-  token is treated as theft and revokes the whole token family (RFC 9700). A login's family
-  has an absolute 30-day lifetime that rotation cannot extend.
+  token is treated as theft and revokes the whole token family (RFC 9700). The exception is a
+  short grace window (`REFRESH_REUSE_GRACE_SECONDS`, default 10): if the token was rotated
+  moments ago and its successor is still unused, the caller gets that same successor back, so
+  two tabs refreshing at once or a retried request do not end the session. No new token is
+  minted in that case. A login's family has an absolute 30-day lifetime that rotation cannot
+  extend.
 - Login is limited to 5 attempts per minute per IP and 10 failures per 15 minutes per account
   (across IPs), stored in Redis; 429 responses carry `Retry-After`.
 - Roles are re-read from the database on every request, so deactivation and demotion take
