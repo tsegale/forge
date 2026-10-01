@@ -13,11 +13,12 @@ import json
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
+from decimal import Decimal
 from typing import Any
 
 from flask import current_app
 from itsdangerous import BadSignature, URLSafeSerializer
-from sqlalchemy import ColumnElement, Select, select, tuple_
+from sqlalchemy import ColumnElement, Numeric, Select, case, cast, func, literal, or_, select, tuple_
 from sqlalchemy.orm import selectin_polymorphic, selectinload
 
 from ..errors import BadRequest, ValidationFailed
@@ -110,6 +111,21 @@ class SortKey:
     decode: Callable[[Any], Any] = lambda v: v
 
 
+# Search relevance is rounded to fixed-precision NUMERIC so the keyset comparison on it is exact.
+RELEVANCE_SCALE = 6
+SUBSTRING_BONUS = 0.5
+
+
+def _relevance_sort(q: str) -> SortKey:
+    tsquery = func.websearch_to_tsquery("english", q)
+    score = (
+        func.ts_rank_cd(Product.search_vector, tsquery)
+        + func.word_similarity(q, Product.name)
+        + case((_substring(q), SUBSTRING_BONUS), else_=0.0)
+    )
+    return SortKey(func.round(cast(score, Numeric), RELEVANCE_SCALE), descending=True, encode=str, decode=Decimal)
+
+
 SORTS: dict[str, SortKey] = {
     "price": SortKey(Product.price_cents, descending=False),
     "-price": SortKey(Product.price_cents, descending=True),
@@ -121,6 +137,32 @@ SORTS: dict[str, SortKey] = {
 
 def _escape_like(value: str) -> str:
     return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
+def _substring(q: str) -> ColumnElement[bool]:
+    pattern = f"%{_escape_like(q)}%"
+    return or_(Product.name.ilike(pattern, escape="\\"), Product.sku.ilike(pattern, escape="\\"))
+
+
+def _search(q: str) -> ColumnElement[bool]:
+    """Full-text for words and stems, trigram ILIKE for fragments inside a token ("x3d" in
+    "7800X3D"), trigram word similarity for typos ("ryzn"). Both trigram paths use the GIN index."""
+    return or_(
+        Product.search_vector.op("@@")(func.websearch_to_tsquery("english", q)),
+        _substring(q),
+        literal(q).op("<%")(Product.name),
+    )
+
+
+def resolve_sort(params: ProductQuery) -> SortKey:
+    if params.sort == "relevance" or (params.sort is None and params.q):
+        if not params.q:
+            raise ValidationFailed(
+                "Sorting by relevance requires a search query.",
+                details=[{"field": "sort", "message": "Requires the 'q' parameter.", "type": "q_required"}],
+            )
+        return _relevance_sort(params.q)
+    return SORTS[params.sort or "name"]
 
 
 def _serializer() -> URLSafeSerializer:
@@ -148,9 +190,8 @@ def _decode_cursor(params: ProductQuery, sort: SortKey) -> tuple[Any, int] | Non
         raise BadRequest("The cursor is invalid.", code="invalid_cursor") from exc
 
 
-def _encode_cursor(params: ProductQuery, sort: SortKey, product: Product) -> str:
-    value = getattr(product, sort.column.key)
-    return _serializer().dumps({"q": _fingerprint(params), "k": [sort.encode(value), product.id]})
+def _encode_cursor(params: ProductQuery, sort: SortKey, sort_value: Any, product_id: int) -> str:
+    return _serializer().dumps({"q": _fingerprint(params), "k": [sort.encode(sort_value), product_id]})
 
 
 def _category_subtree(slug: str) -> Select[tuple[int]]:
@@ -193,6 +234,8 @@ def build_query(params: ProductQuery) -> Select[tuple[Product]]:
         stmt = stmt.options(selectin_polymorphic(Product, SUBTYPES))
     if params.kind is not None:
         stmt = stmt.where(Product.kind_code == params.kind.value)
+    if params.q:
+        stmt = stmt.where(_search(params.q))
     if params.category:
         stmt = stmt.where(Product.category_id.in_(_category_subtree(params.category)))
     if params.brand:
@@ -218,16 +261,19 @@ def _seek(stmt: Select[tuple[Product]], sort: SortKey, after: tuple[Any, int]) -
 
 
 def list_products(params: ProductQuery) -> ProductPage:
-    sort = SORTS[params.sort]
-    stmt = build_query(params)
+    sort = resolve_sort(params)
+    # The sort key is selected alongside each product so the cursor carries the exact value
+    # the database compared, including computed keys such as search relevance.
+    stmt = build_query(params).add_columns(sort.column.label("sort_key"))
     after = _decode_cursor(params, sort)
     if after is not None:
         stmt = _seek(stmt, sort, after)
     order = (sort.column.desc(), Product.id.desc()) if sort.descending else (sort.column.asc(), Product.id.asc())
-    rows = db.session.scalars(stmt.order_by(*order).limit(params.limit + 1)).all()
+    rows = db.session.execute(stmt.order_by(*order).limit(params.limit + 1)).all()
 
     page, has_more = rows[: params.limit], len(rows) > params.limit
+    last = page[-1] if page else None
     return ProductPage(
-        items=[to_summary(p) for p in page],
-        next_cursor=_encode_cursor(params, sort, page[-1]) if has_more else None,
+        items=[to_summary(product) for product, _ in page],
+        next_cursor=_encode_cursor(params, sort, last.sort_key, last[0].id) if has_more and last else None,
     )

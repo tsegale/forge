@@ -214,7 +214,7 @@ class BrandList(BaseModel):
 
 # --------------------------------------------------------------------------- listing
 
-SortOrder = Literal["price", "-price", "name", "-name", "newest"]
+SortOrder = Literal["relevance", "price", "-price", "name", "-name", "newest"]
 
 
 class ProductQuery(BaseModel):
@@ -223,6 +223,9 @@ class ProductQuery(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
+    q: str | None = Field(
+        default=None, min_length=1, max_length=100, description="Search: words, model fragments (x3d) and typos."
+    )
     kind: KindCode | None = None
     category: str | None = Field(default=None, description="Category slug; includes its subcategories.")
     brand: list[str] | None = Field(
@@ -231,7 +234,7 @@ class ProductQuery(BaseModel):
     min_price: int | None = Field(default=None, ge=0, description="Inclusive, in minor units.")
     max_price: int | None = Field(default=None, ge=0, description="Inclusive, in minor units.")
     in_stock: bool | None = None
-    sort: SortOrder = "name"
+    sort: SortOrder | None = Field(default=None, description="Defaults to relevance with q, otherwise name.")
     limit: int = Field(default=24, ge=1, le=100)
     cursor: str | None = Field(default=None, description="Opaque; from next_cursor of the previous page.")
 
@@ -256,6 +259,11 @@ class ProductQuery(BaseModel):
     efficiency: PsuEfficiency | None = Field(default=None, description="psu.")
     modularity: PsuModularity | None = Field(default=None, description="psu.")
     interface: StorageInterface | None = Field(default=None, description="storage.")
+
+    @field_validator("q", mode="before")
+    @classmethod
+    def _strip_q(cls, value: Any) -> Any:
+        return value.strip() or None if isinstance(value, str) else value
 
     @field_validator("brand", mode="before")
     @classmethod

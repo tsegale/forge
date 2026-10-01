@@ -1,5 +1,7 @@
 """Public catalog: taxonomy, brands, product detail, listing, filtering and search."""
 
+from urllib.parse import quote
+
 import pytest
 from sqlalchemy import event, func, select, update
 
@@ -246,3 +248,72 @@ def test_inactive_products_are_not_listed(client, session, product_by_sku):
     product.is_active = False
     session.flush()
     assert product.id not in {i["id"] for i in _walk(client, "kind=cpu", limit=50)}
+
+
+# --------------------------------------------------------------------- search
+
+X3D = {"AMD Ryzen 7 7800X3D", "AMD Ryzen 7 9800X3D", "AMD Ryzen 7 5800X3D"}
+
+
+def _names(client, query: str) -> list[str]:
+    response = client.get(f"{PRODUCTS}?{query}")
+    assert response.status_code == 200, response.get_json()
+    return [i["name"] for i in response.get_json()["items"]]
+
+
+def test_fragment_inside_a_model_number_matches(client):
+    """The headline case: full-text search alone finds nothing for "x3d"."""
+    assert set(_names(client, "q=x3d")) == X3D
+
+
+@pytest.mark.parametrize(
+    ("q", "first"),
+    [
+        ("7800x3d", "AMD Ryzen 7 7800X3D"),
+        ("ryzen 7800X3D", "AMD Ryzen 7 7800X3D"),
+        ("rtx 5080", "NVIDIA GeForce RTX 5080 Founders Edition 16GB"),
+    ],
+)
+def test_best_match_ranks_first(client, q, first):
+    assert _names(client, f"q={q}")[0] == first
+
+
+def test_typos_still_match(client):
+    names = _names(client, "q=ryzn&limit=50")
+    assert names and all("Ryzen" in n for n in names)
+
+
+def test_search_combines_with_filters(client):
+    items = client.get(f"{PRODUCTS}?q=ryzen&kind=cpu&socket=AM4&limit=50").get_json()["items"]
+    assert items and all(i["specs"]["socket_code"] == "AM4" for i in items)
+
+
+@pytest.mark.parametrize("q", ["%", "_", "\\"])
+def test_like_metacharacters_are_literal(client, q):
+    """Unescaped, "%" or "_" would match every product. Escaped, only literal occurrences match
+    (the seed has exactly one: "WD_BLACK SN850X")."""
+    items = client.get(f"{PRODUCTS}?q={quote(q)}&limit=100").get_json()["items"]
+    assert all(q in i["name"] or q in i["sku"] for i in items)
+    assert len(items) <= 1
+
+
+def test_relevance_pagination_is_complete_and_duplicate_free(client):
+    everything = [i["id"] for i in client.get(f"{PRODUCTS}?q=amd&limit=100").get_json()["items"]]
+    paged = [i["id"] for i in _walk(client, "q=amd", limit=2)]
+    assert paged == everything and len(set(paged)) == len(paged) > 2
+
+
+def test_explicit_sort_overrides_relevance(client):
+    items = client.get(f"{PRODUCTS}?q=x3d&sort=price").get_json()["items"]
+    prices = [i["price"]["amount_cents"] for i in items]
+    assert prices == sorted(prices)
+
+
+def test_relevance_sort_requires_a_query(client):
+    response = client.get(f"{PRODUCTS}?sort=relevance")
+    assert response.status_code == 422
+    assert response.get_json()["error"]["details"][0]["type"] == "q_required"
+
+
+def test_blank_query_lists_everything(client, session):
+    assert len(_walk(client, "q=%20%20", limit=100)) == _active_count(session)
