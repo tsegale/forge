@@ -111,7 +111,15 @@ to 409 `stock_below_reserved`. Validation failures are 422 with per-field `detai
   minted in that case. A login's family has an absolute 30-day lifetime that rotation cannot
   extend.
 - Login is limited to 5 attempts per minute per IP and 10 failures per 15 minutes per account
-  (across IPs), stored in Redis; 429 responses carry `Retry-After`.
+  (across IPs), stored in Redis; 429 responses carry `Retry-After`. Behind Nginx the limiter
+  keys on the address Nginx appends to `X-Forwarded-For` (`TRUSTED_PROXY_COUNT=1`), so a client
+  cannot pick its own key by sending that header.
+- If Redis becomes unreachable, limiting continues with in-memory counters instead of failing
+  open, and switches back once Redis recovers. Those counters are per Gunicorn worker and are
+  not shared, so during an outage the effective limit is the configured limit multiplied by
+  the number of workers that receive the traffic: with the image's 3 workers, up to 15 login
+  attempts per minute per IP per container, and the per-account limit is likewise
+  multiplied. Counters also start from zero when the fallback engages.
 - Roles are re-read from the database on every request, so deactivation and demotion take
   effect immediately. Create the first administrator with
   `flask users create-admin --email ... --first-name ... --last-name ...` (password is prompted).
