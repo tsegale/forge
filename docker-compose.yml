@@ -62,6 +62,32 @@ services:
         condition: service_healthy
     networks: [backend, edge]
 
+  # Background jobs: the reservation sweeper, emails, partition maintenance.
+  worker:
+    build: ./backend
+    restart: unless-stopped
+    command: ["celery", "-A", "app.celery_app", "worker", "--loglevel=INFO", "--concurrency=2"]
+    environment: *backend-env
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    networks: [backend]
+
+  # Exactly one scheduler, or periodic jobs would run more than once.
+  beat:
+    build: ./backend
+    restart: unless-stopped
+    command: ["celery", "-A", "app.celery_app", "beat", "--loglevel=INFO", "--schedule=/tmp/celerybeat-schedule"]
+    environment: *backend-env
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    networks: [backend]
+
   nginx:
     image: nginx:1.27-alpine
     restart: unless-stopped

@@ -40,6 +40,10 @@ def create_app(config_name: str | None = None) -> Flask:
 
     register_docs(app)
 
+    from .tasks import init_celery
+
+    init_celery(app)
+
     from .cli import register_cli
 
     register_cli(app)

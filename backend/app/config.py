@@ -37,6 +37,12 @@ def _payment_settings(production: bool) -> dict[str, str]:
     return {"PAYMENT_GATEWAY": gateway, "STRIPE_SECRET_KEY": secret, "STRIPE_WEBHOOK_SECRET": webhook_secret}
 
 
+# Periodic jobs for Celery beat, by task name (defined in app/tasks.py).
+BEAT_SCHEDULE: dict[str, dict] = {
+    "sweep-expired-reservations": {"task": "forge.sweep_expired_reservations", "schedule": 60.0},
+}
+
+
 def _jwt_key() -> str:
     key = _require("JWT_SECRET_KEY")
     if len(key.encode()) < MIN_JWT_KEY_BYTES:
@@ -97,6 +103,14 @@ class BaseConfig:
         self.SHIPPING_FLAT_CENTS = int(os.environ.get("SHIPPING_FLAT_CENTS", "15000"))
         self.FREE_SHIPPING_THRESHOLD_CENTS = int(os.environ.get("FREE_SHIPPING_THRESHOLD_CENTS", "500000"))
         self.RESERVATION_TTL = timedelta(minutes=int(os.environ.get("RESERVATION_TTL_MINUTES", "15")))
+        self.CELERY = {
+            "broker_url": os.environ.get("CELERY_BROKER_URL", self.REDIS_URL.rsplit("/", 1)[0] + "/1"),
+            "task_ignore_result": True,
+            "task_acks_late": True,  # a worker that dies mid-task leaves it for another worker
+            "worker_prefetch_multiplier": 1,
+            "timezone": "UTC",
+            "beat_schedule": BEAT_SCHEDULE,
+        }
 
 
 class DevelopmentConfig(BaseConfig):
@@ -124,6 +138,8 @@ class TestingConfig(BaseConfig):
         self.SQLALCHEMY_DATABASE_URI = _require("TEST_DATABASE_URL")
         # Separate Redis database so test runs never touch development rate-limit or cache keys.
         self.REDIS_URL = _require("TEST_REDIS_URL")
+        # Tasks run inline in tests: no broker, and errors surface in the calling test.
+        self.CELERY = self.CELERY | {"task_always_eager": True, "task_eager_propagates": True}
         self.SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True}
 
 
