@@ -21,6 +21,10 @@ from itsdangerous import BadSignature, URLSafeSerializer
 from sqlalchemy import ColumnElement, Numeric, Select, case, cast, func, literal, or_, select, tuple_
 from sqlalchemy.orm import selectin_polymorphic, selectinload
 
+from ..compat import BuildContext, Part
+from ..compat.context import SINGLE_SLOT_KINDS
+from ..compat.findings import Severity
+from ..compat.rules import RULES
 from ..errors import BadRequest, ValidationFailed
 from ..extensions import db
 from ..models import (
@@ -41,7 +45,7 @@ from ..models import (
 )
 from ..models.enums import KindCode
 from ..schemas.catalog import ProductPage, ProductQuery
-from .catalog import SUBTYPES, to_summary
+from .catalog import SUBTYPES, load_products, to_summary
 
 KIND_CLASSES: dict[KindCode, type[Product]] = {
     KindCode.CPU: CpuProduct,
@@ -227,7 +231,52 @@ def _spec_predicates(params: ProductQuery) -> list[ColumnElement[bool]]:
     return [SPEC_FILTERS[name][params.kind](value) for name, value in used.items()]
 
 
-def build_query(params: ProductQuery) -> Select[tuple[Product]]:
+def compatibility_base(params: ProductQuery) -> BuildContext | None:
+    """The build that candidates are judged against: the compatible_with parts, minus the part
+    a candidate of a single-slot kind would replace."""
+    if params.compatible_with is None:
+        return None
+    if params.kind is None:
+        raise ValidationFailed(
+            "compatible_with requires a kind.",
+            details=[
+                {"field": "compatible_with", "message": "Requires the 'kind' parameter.", "type": "kind_required"}
+            ],
+        )
+    products = load_products(list(dict.fromkeys(params.compatible_with)))
+    unknown = [pid for pid in params.compatible_with if pid not in products]
+    if unknown:
+        raise ValidationFailed(
+            "Some compatible_with products do not exist.",
+            details=[
+                {"field": "compatible_with", "message": f"Unknown product id {pid}.", "type": "product_unknown"}
+                for pid in unknown
+            ],
+        )
+    quantities: dict[int, int] = {}
+    for pid in params.compatible_with:  # a repeated id means more than one of that part
+        quantities[pid] = quantities.get(pid, 0) + 1
+    ctx = BuildContext(Part(products[pid], qty) for pid, qty in quantities.items())
+    return ctx.without_kind(params.kind) if params.kind in SINGLE_SLOT_KINDS else ctx
+
+
+def _compatibility_predicates(base: BuildContext, kind: KindCode) -> list[ColumnElement[bool]]:
+    """Each rule's conflicts, as SQL over candidates of ``kind``. Warnings never filter."""
+    return [p for rule in RULES if (p := rule.compatible_filter(base, kind)) is not None]
+
+
+def _candidate_warnings(base: BuildContext, product: Product) -> list[str]:
+    candidate = base.with_candidate(product)
+    codes = {
+        f.code
+        for rule in RULES
+        for f in rule.check(candidate)
+        if f.severity is Severity.WARNING and product.id in f.product_ids
+    }
+    return sorted(codes)
+
+
+def build_query(params: ProductQuery, base: BuildContext | None = None) -> Select[tuple[Product]]:
     entity = KIND_CLASSES.get(params.kind, Product) if params.kind else Product
     stmt = select(entity).where(Product.is_active).options(selectinload(Product.inventory))
     if entity is Product:
@@ -251,7 +300,10 @@ def build_query(params: ProductQuery) -> Select[tuple[Product]]:
             .scalar_subquery()
         )
         stmt = stmt.where(Product.id.in_(available) if params.in_stock else Product.id.not_in(available))
-    return stmt.where(*_spec_predicates(params))
+    stmt = stmt.where(*_spec_predicates(params))
+    if base is not None and params.kind is not None:
+        stmt = stmt.where(*_compatibility_predicates(base, params.kind))
+    return stmt
 
 
 def _seek(stmt: Select[tuple[Product]], sort: SortKey, after: tuple[Any, int]) -> Select[tuple[Product]]:
@@ -262,9 +314,10 @@ def _seek(stmt: Select[tuple[Product]], sort: SortKey, after: tuple[Any, int]) -
 
 def list_products(params: ProductQuery) -> ProductPage:
     sort = resolve_sort(params)
+    base = compatibility_base(params)
     # The sort key is selected alongside each product so the cursor carries the exact value
     # the database compared, including computed keys such as search relevance.
-    stmt = build_query(params).add_columns(sort.column.label("sort_key"))
+    stmt = build_query(params, base).add_columns(sort.column.label("sort_key"))
     after = _decode_cursor(params, sort)
     if after is not None:
         stmt = _seek(stmt, sort, after)
@@ -274,6 +327,13 @@ def list_products(params: ProductQuery) -> ProductPage:
     page, has_more = rows[: params.limit], len(rows) > params.limit
     last = page[-1] if page else None
     return ProductPage(
-        items=[to_summary(product) for product, _ in page],
+        items=[_summarise(product, base) for product, _ in page],
         next_cursor=_encode_cursor(params, sort, last.sort_key, last[0].id) if has_more and last else None,
     )
+
+
+def _summarise(product: Product, base: BuildContext | None):
+    summary = to_summary(product)
+    if base is not None:
+        summary.compatibility_warnings = _candidate_warnings(base, product)
+    return summary

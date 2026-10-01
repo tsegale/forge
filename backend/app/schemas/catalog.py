@@ -197,6 +197,10 @@ class ProductSummary(BaseModel):
     price: Price
     availability: Availability
     specs: Specs
+    compatibility_warnings: list[str] | None = Field(
+        default=None,
+        description="With compatible_with: warning codes this part would add to that build. Null otherwise.",
+    )
 
 
 class ProductDetail(ProductSummary):
@@ -237,6 +241,13 @@ class ProductQuery(BaseModel):
     sort: SortOrder | None = Field(default=None, description="Defaults to relevance with q, otherwise name.")
     limit: int = Field(default=24, ge=1, le=100)
     cursor: str | None = Field(default=None, description="Opaque; from next_cursor of the previous page.")
+    compatible_with: list[int] | None = Field(
+        default=None,
+        max_length=50,
+        description="Product ids of a build (comma-separated or repeated). Lists only parts of `kind` that "
+        "would not conflict with it; a part of a single-slot kind (cpu, motherboard, psu, case, cooler) is "
+        "judged as a replacement for the build's current one. Requires `kind`.",
+    )
 
     # Spec filters. Each applies only to the kinds listed in its description; requires `kind`.
     socket: str | None = Field(default=None, description="cpu, motherboard, cooler (supported socket).")
@@ -265,9 +276,9 @@ class ProductQuery(BaseModel):
     def _strip_q(cls, value: Any) -> Any:
         return value.strip() or None if isinstance(value, str) else value
 
-    @field_validator("brand", mode="before")
+    @field_validator("brand", "compatible_with", mode="before")
     @classmethod
-    def _split_brands(cls, value: Any) -> Any:
+    def _split_lists(cls, value: Any) -> Any:
         values = [value] if isinstance(value, str) else value
         if not isinstance(values, list):
             return value
