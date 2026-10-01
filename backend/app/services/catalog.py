@@ -47,14 +47,18 @@ SUBTYPES = [
 ]
 
 
-def product_query() -> Select[tuple[Product]]:
-    """Active products with spec columns, brand and stock loaded in a fixed number of queries:
+def product_query(*, active_only: bool = True) -> Select[tuple[Product]]:
+    """Products with spec columns, brand and stock loaded in a fixed number of queries:
     one per spec kind present on the page (selectin_polymorphic), not one per product."""
-    return (
-        select(Product)
-        .where(Product.is_active)
-        .options(selectin_polymorphic(Product, SUBTYPES), selectinload(Product.inventory))
-    )
+    stmt = select(Product).options(selectin_polymorphic(Product, SUBTYPES), selectinload(Product.inventory))
+    return stmt.where(Product.is_active) if active_only else stmt
+
+
+def load_products(ids: list[int]) -> dict[int, Product]:
+    """Products by id, including inactive ones (a saved build keeps parts that were delisted)."""
+    if not ids:
+        return {}
+    return {p.id: p for p in db.session.scalars(product_query(active_only=False).where(Product.id.in_(ids)))}
 
 
 def category_tree() -> list[CategoryNode]:
