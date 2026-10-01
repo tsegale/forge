@@ -139,7 +139,7 @@ Table cooler_specs {
   radiator_mm smallint
   tdp_rating_w smallint
 
-  Note: 'CHECK: (cooler_type = \'air\' AND height_mm IS NOT NULL AND radiator_mm IS NULL) OR (cooler_type = \'aio\' AND radiator_mm IN (120, 140, 240, 280, 360, 420)); kind_code = \'cooler\''
+  Note: 'CHECK: kind_code = \'cooler\'; (cooler_type = \'air\' AND height_mm IS NOT NULL AND radiator_mm IS NULL) OR (cooler_type = \'aio\' AND radiator_mm IN (120, 140, 240, 280, 360, 420))'
 }
 
 Table cooler_supported_sockets {
@@ -159,7 +159,7 @@ Table cpu_specs {
   max_power_w smallint [not null]
   has_integrated_graphics boolean [not null]
 
-  Note: 'CHECK: boost_clock_mhz >= base_clock_mhz; max_power_w >= tdp_w; threads >= cores AND cores > 0; kind_code = \'cpu\''
+  Note: 'CHECK: boost_clock_mhz >= base_clock_mhz; kind_code = \'cpu\'; max_power_w >= tdp_w; threads >= cores AND cores > 0'
 }
 
 Table gpu_specs {
@@ -173,7 +173,7 @@ Table gpu_specs {
   power_connectors varchar(60) [not null]
   recommended_psu_w smallint [not null]
 
-  Note: 'CHECK: kind_code = \'gpu\'; length_mm > 0 AND tdp_w > 0'
+  Note: 'CHECK: length_mm > 0 AND tdp_w > 0; kind_code = \'gpu\''
 }
 
 Table inventory {
@@ -183,7 +183,7 @@ Table inventory {
   version integer [not null]
   updated_at timestamp_with_time_zone [not null]
 
-  Note: 'CHECK: quantity_reserved <= quantity_on_hand; quantity_on_hand >= 0; quantity_reserved >= 0'
+  Note: 'CHECK: quantity_on_hand >= 0; quantity_reserved <= quantity_on_hand; quantity_reserved >= 0'
 }
 
 Table memory_specs {
@@ -212,7 +212,7 @@ Table motherboard_specs {
   m2_slots smallint [not null]
   sata_ports smallint [not null]
 
-  Note: 'CHECK: m2_slots >= 0 AND sata_ports >= 0; kind_code = \'motherboard\'; memory_slots IN (2, 4, 8)'
+  Note: 'CHECK: kind_code = \'motherboard\'; memory_slots IN (2, 4, 8); m2_slots >= 0 AND sata_ports >= 0'
 }
 
 Table order_addresses {
@@ -242,7 +242,7 @@ Table order_items {
     (order_id, product_id) [unique]
   }
 
-  Note: 'CHECK: quantity > 0 AND unit_price_cents >= 0; line_total_cents = unit_price_cents * quantity'
+  Note: 'CHECK: line_total_cents = unit_price_cents * quantity; quantity > 0 AND unit_price_cents >= 0'
 }
 
 Table order_status_history {
@@ -276,7 +276,7 @@ Table orders {
   created_at timestamp_with_time_zone [not null]
   updated_at timestamp_with_time_zone [not null]
 
-  Note: 'CHECK: total_cents = subtotal_cents + tax_cents + shipping_cents; subtotal_cents >= 0 AND tax_cents >= 0 AND shipping_cents >= 0'
+  Note: 'CHECK: subtotal_cents >= 0 AND tax_cents >= 0 AND shipping_cents >= 0; total_cents = subtotal_cents + tax_cents + shipping_cents'
 }
 
 Table payments {
@@ -357,7 +357,7 @@ Table psu_specs {
   form_factor psu_form_factor [not null]
   has_12v_2x6 boolean [not null]
 
-  Note: 'CHECK: wattage_w >= 300; kind_code = \'psu\''
+  Note: 'CHECK: kind_code = \'psu\'; wattage_w >= 300'
 }
 
 Table refresh_tokens {
@@ -420,7 +420,7 @@ Table storage_specs {
   capacity_gb integer [not null]
   pcie_gen smallint
 
-  Note: 'CHECK: kind_code = \'storage\'; (interface = \'nvme\' AND form_factor = \'m2_2280\' AND pcie_gen IS NOT NULL) OR (interface = \'sata\' AND pcie_gen IS NULL)'
+  Note: 'CHECK: (interface = \'nvme\' AND form_factor = \'m2_2280\' AND pcie_gen IS NOT NULL) OR (interface = \'sata\' AND pcie_gen IS NULL); kind_code = \'storage\''
 }
 
 Table users {
@@ -441,53 +441,53 @@ Ref: addresses.user_id > users.id
 Ref: build_items.build_id > builds.id
 Ref: build_items.(product_id, kind_code) > products.(id, kind_code)
 Ref: builds.user_id > users.id
-Ref: cart_items.product_id > products.id
 Ref: cart_items.cart_id > carts.id
+Ref: cart_items.product_id > products.id
 Ref: carts.user_id > users.id
 Ref: case_specs.product_id - products.id
 Ref: case_specs.(product_id, kind_code) > products.(id, kind_code)
 Ref: case_supported_form_factors.case_product_id > case_specs.product_id
 Ref: case_supported_form_factors.form_factor_code > board_form_factors.code
-Ref: categories.parent_id > categories.id
 Ref: categories.kind_code > component_kinds.code
-Ref: cooler_specs.(product_id, kind_code) > products.(id, kind_code)
+Ref: categories.parent_id > categories.id
 Ref: cooler_specs.product_id - products.id
+Ref: cooler_specs.(product_id, kind_code) > products.(id, kind_code)
 Ref: cooler_supported_sockets.cooler_product_id > cooler_specs.product_id
 Ref: cooler_supported_sockets.socket_code > sockets.code
 Ref: cpu_specs.product_id - products.id
-Ref: cpu_specs.socket_code > sockets.code
 Ref: cpu_specs.(product_id, kind_code) > products.(id, kind_code)
+Ref: cpu_specs.socket_code > sockets.code
 Ref: gpu_specs.product_id - products.id
 Ref: gpu_specs.(product_id, kind_code) > products.(id, kind_code)
 Ref: inventory.product_id - products.id
-Ref: memory_specs.(product_id, kind_code) > products.(id, kind_code)
 Ref: memory_specs.product_id - products.id
+Ref: memory_specs.(product_id, kind_code) > products.(id, kind_code)
 Ref: motherboard_specs.form_factor_code > board_form_factors.code
-Ref: motherboard_specs.socket_code > sockets.code
-Ref: motherboard_specs.(product_id, kind_code) > products.(id, kind_code)
 Ref: motherboard_specs.product_id - products.id
+Ref: motherboard_specs.(product_id, kind_code) > products.(id, kind_code)
+Ref: motherboard_specs.socket_code > sockets.code
 Ref: order_addresses.order_id > orders.id
 Ref: order_items.order_id > orders.id
 Ref: order_items.product_id > products.id
-Ref: order_status_history.order_id > orders.id
 Ref: order_status_history.changed_by_user_id > users.id
+Ref: order_status_history.order_id > orders.id
 Ref: orders.build_id > builds.id
 Ref: orders.user_id > users.id
 Ref: payments.order_id > orders.id
 Ref: price_alerts.product_id > products.id
 Ref: price_alerts.user_id > users.id
 Ref: price_history.product_id > products.id
-Ref: products.(category_id, kind_code) > categories.(id, kind_code)
 Ref: products.brand_id > brands.id
-Ref: psu_specs.(product_id, kind_code) > products.(id, kind_code)
+Ref: products.(category_id, kind_code) > categories.(id, kind_code)
 Ref: psu_specs.product_id - products.id
+Ref: psu_specs.(product_id, kind_code) > products.(id, kind_code)
 Ref: refresh_tokens.user_id > users.id
 Ref: reviews.product_id > products.id
 Ref: reviews.user_id > users.id
-Ref: stock_reservations.product_id > inventory.product_id
 Ref: stock_reservations.order_id > orders.id
-Ref: storage_specs.(product_id, kind_code) > products.(id, kind_code)
+Ref: stock_reservations.product_id > inventory.product_id
 Ref: storage_specs.product_id - products.id
+Ref: storage_specs.(product_id, kind_code) > products.(id, kind_code)
 
 Enum address_type {
   "shipping"

@@ -6,8 +6,9 @@ drift from the real schema. Paste the output into https://dbdiagram.io to render
 
 import os
 import sys
+from collections.abc import Iterable
 
-from sqlalchemy import CheckConstraint, Enum, ForeignKeyConstraint, UniqueConstraint
+from sqlalchemy import CheckConstraint, Constraint, Enum, ForeignKeyConstraint, UniqueConstraint
 from sqlalchemy.dialects import postgresql
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -62,6 +63,17 @@ def col_type(col) -> str:
     return col.type.compile(dialect=postgresql.dialect()).replace(" ", "_").lower()
 
 
+def _ordered(constraints: Iterable[Constraint]) -> list[Constraint]:
+    """Table.constraints is a set; sort it so the export is byte-identical across runs."""
+
+    def key(c: Constraint) -> tuple[str, str, str]:
+        columns = ",".join(col.name for col in getattr(c, "columns", ()))
+        sqltext = str(c.sqltext) if isinstance(c, CheckConstraint) else ""
+        return (str(c.name or ""), columns, sqltext)
+
+    return sorted(constraints, key=key)
+
+
 def main() -> None:
     create_app("production")
     meta = db.Model.metadata
@@ -75,9 +87,10 @@ def main() -> None:
 
     for name in sorted(meta.tables):
         table = meta.tables[name]
+        constraints = _ordered(table.constraints)
         single_uniques = {
             next(iter(c.columns)).name
-            for c in table.constraints
+            for c in constraints
             if isinstance(c, UniqueConstraint) and len(c.columns) == 1
         }
         lines = [f"Table {name} {{"]
@@ -94,13 +107,13 @@ def main() -> None:
             if col.computed is not None:
                 attrs.append("note: 'generated'")
             lines.append(f"  {col.name} {col_type(col)}" + (f" [{', '.join(attrs)}]" if attrs else ""))
-        composite = [c for c in table.constraints if isinstance(c, UniqueConstraint) and len(c.columns) > 1]
+        composite = [c for c in constraints if isinstance(c, UniqueConstraint) and len(c.columns) > 1]
         if composite:
             lines.append("\n  indexes {")
             for c in composite:
                 lines.append(f"    ({', '.join(col.name for col in c.columns)}) [unique]")
             lines.append("  }")
-        checks = [c for c in table.constraints if isinstance(c, CheckConstraint)]
+        checks = [c for c in constraints if isinstance(c, CheckConstraint)]
         if checks:
             note = "; ".join(str(c.sqltext).replace("'", "\\'") for c in checks)
             lines.append(f"\n  Note: 'CHECK: {note}'")
@@ -108,7 +121,7 @@ def main() -> None:
         out.extend(lines)
 
     for name in sorted(meta.tables):
-        for fk in meta.tables[name].constraints:
+        for fk in _ordered(meta.tables[name].constraints):
             if not isinstance(fk, ForeignKeyConstraint):
                 continue
             src = ", ".join(c.name for c in fk.columns)
