@@ -3,6 +3,8 @@
 import os
 from datetime import timedelta
 
+TEST_WEBHOOK_SECRET = "whsec_forge_test_signing_secret"
+
 # HS256 keys must be at least as long as the hash output (RFC 7518, section 3.2).
 MIN_JWT_KEY_BYTES = 32
 
@@ -12,6 +14,27 @@ def _require(name: str) -> str:
     if not value:
         raise RuntimeError(f"Missing required environment variable: {name}")
     return value
+
+
+def _payment_settings(production: bool) -> dict[str, str]:
+    """Stripe keys come only from the environment. Without a secret key outside production the
+    in-process fake gateway is used; a live key is refused anywhere but production."""
+    secret = os.environ.get("STRIPE_SECRET_KEY", "").strip()
+    gateway = os.environ.get("PAYMENT_GATEWAY", "stripe" if (secret or production) else "fake")
+    if gateway not in ("stripe", "fake"):
+        raise RuntimeError("PAYMENT_GATEWAY must be 'stripe' or 'fake'")
+    if gateway == "fake" and production:
+        raise RuntimeError("The fake payment gateway cannot be used in production")
+    if gateway == "stripe":
+        secret = _require("STRIPE_SECRET_KEY").strip()
+        if not secret.startswith(("sk_test_", "sk_live_", "rk_test_", "rk_live_")):
+            raise RuntimeError("STRIPE_SECRET_KEY is not a Stripe secret key")
+        if "_live_" in secret and not production:
+            raise RuntimeError("Refusing a live Stripe key outside production")
+        webhook_secret = _require("STRIPE_WEBHOOK_SECRET").strip()
+    else:
+        webhook_secret = os.environ.get("STRIPE_WEBHOOK_SECRET", "whsec_local_fake_gateway").strip()
+    return {"PAYMENT_GATEWAY": gateway, "STRIPE_SECRET_KEY": secret, "STRIPE_WEBHOOK_SECRET": webhook_secret}
 
 
 def _jwt_key() -> str:
@@ -53,6 +76,8 @@ class BaseConfig:
     def __init__(self) -> None:
         self.SECRET_KEY = _require("SECRET_KEY")
         self.JWT_SECRET_KEY = _jwt_key()
+        for key, value in _payment_settings(production=isinstance(self, ProductionConfig)).items():
+            setattr(self, key, value)
         self.SQLALCHEMY_DATABASE_URI = _require("DATABASE_URL")
         self.SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True, "pool_size": 10, "max_overflow": 20}
         self.REDIS_URL = os.environ.get("REDIS_URL", "redis://redis:6379/0")
@@ -80,6 +105,9 @@ class TestingConfig(BaseConfig):
     def __init__(self) -> None:
         os.environ.setdefault("SECRET_KEY", "test-secret-not-for-production")
         os.environ.setdefault("JWT_SECRET_KEY", "test-jwt-secret-not-for-production-0123456789")
+        # Tests never reach Stripe: the fake gateway, with a fixed secret for signed test webhooks.
+        os.environ["PAYMENT_GATEWAY"] = "fake"
+        os.environ["STRIPE_WEBHOOK_SECRET"] = TEST_WEBHOOK_SECRET
         os.environ.setdefault("DATABASE_URL", _require("TEST_DATABASE_URL"))
         super().__init__()
         self.SQLALCHEMY_DATABASE_URI = _require("TEST_DATABASE_URL")

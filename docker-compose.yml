@@ -5,6 +5,8 @@ x-backend-env: &backend-env
   REDIS_URL: redis://redis:6379/0
   SECRET_KEY: ${SECRET_KEY}
   JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+  STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+  STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
   STORE_CURRENCY: ${STORE_CURRENCY:-nad}
   FORGE_ENV: ${FORGE_ENV:-production}
   TRUSTED_PROXY_COUNT: 1   # nginx; makes per-IP rate limits see the real client address

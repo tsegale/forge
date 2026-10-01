@@ -24,6 +24,10 @@ def create_app(config_name: str | None = None) -> Flask:
     migrate.init_app(app, db, compare_type=True)
     limiter.init_app(app)
 
+    from . import payments
+
+    payments.init_app(app)
+
     from .errors import register_error_handlers
 
     register_error_handlers(app)
