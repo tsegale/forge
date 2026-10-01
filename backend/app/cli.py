@@ -9,7 +9,9 @@ from pathlib import Path
 import click
 from flask import Flask
 from flask.cli import AppGroup
+from pydantic import ValidationError
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 
 from .extensions import db
 from .models import (
@@ -28,7 +30,11 @@ from .models import (
     PsuProduct,
     Socket,
     StorageProduct,
+    User,
 )
+from .models.enums import UserRole
+from .schemas.auth import RegisterRequest
+from .security.passwords import hash_password
 
 KIND_TO_CLASS: dict[str, type[Product]] = {
     "cpu": CpuProduct,
@@ -44,6 +50,7 @@ KIND_TO_CLASS: dict[str, type[Product]] = {
 DEFAULT_SEED = Path(__file__).resolve().parent.parent / "seed" / "catalog.json"
 
 seed_cli = AppGroup("seed", help="Load seed data.")
+users_cli = AppGroup("users", help="Manage user accounts.")
 
 
 def slugify(value: str) -> str:
@@ -128,5 +135,35 @@ def seed_catalog(path: Path) -> None:
     click.echo(f"Catalog seeded: {created} created, {updated} updated.")
 
 
+@users_cli.command("create-admin")
+@click.option("--email", required=True)
+@click.option("--first-name", required=True)
+@click.option("--last-name", required=True)
+@click.password_option(help="Prompted (hidden, confirmed) when omitted. Never pass it on a shared shell.")
+def create_admin(email: str, first_name: str, last_name: str, password: str) -> None:
+    """Create an administrator. The API never lets anyone self-assign the admin role."""
+    try:
+        data = RegisterRequest(email=email, password=password, first_name=first_name, last_name=last_name)
+    except ValidationError as exc:
+        problems = "; ".join(f"{'.'.join(map(str, e['loc']))}: {e['msg']}" for e in exc.errors())
+        raise click.UsageError(problems) from exc
+    db.session.add(
+        User(
+            email=str(data.email),
+            password_hash=hash_password(data.password),
+            first_name=data.first_name,
+            last_name=data.last_name,
+            role=UserRole.ADMIN,
+        )
+    )
+    try:
+        db.session.commit()
+    except IntegrityError as exc:
+        db.session.rollback()
+        raise click.ClickException(f"An account with email {data.email} already exists.") from exc
+    click.echo(f"Admin {data.email} created.")
+
+
 def register_cli(app: Flask) -> None:
     app.cli.add_command(seed_cli)
+    app.cli.add_command(users_cli)
