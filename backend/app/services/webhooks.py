@@ -18,11 +18,12 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 
 from ..extensions import db
-from ..models import Order, Payment, PaymentEvent, ProcessedWebhookEvent
-from ..models.enums import OrderStatus, PaymentEventKind, PaymentStatus, ReservationStatus
+from ..models import Build, Order, Payment, PaymentEvent, ProcessedWebhookEvent
+from ..models.enums import BuildStatus, OrderStatus, PaymentEventKind, PaymentStatus, ReservationStatus
 from ..payments import WebhookEvent, gateway
+from . import refunds
 from .audit import set_actor
-from .stock import resolve_reservations
+from .stock import lock_inventory, order_reservations, resolve_reservations
 
 logger = logging.getLogger(__name__)
 PROVIDER = "stripe"
@@ -162,8 +163,48 @@ def on_canceled(event: WebhookEvent, outcome: Outcome) -> None:
 
 
 def on_late_payment(order: Order, payment: Payment, intent: Mapping[str, Any], outcome: Outcome) -> None:
-    """A payment that succeeded after the order was cancelled (implemented in the next step)."""
-    _event(order, payment, PaymentEventKind.LATE_PAYMENT_REFUND_PENDING, provider_payment_id=intent["id"])
+    """The customer paid after their reservation expired and the order was cancelled.
+
+    Re-reserve if the stock is still there (the order becomes paid after all); otherwise record
+    that a refund is due, commit, and refund outside the transaction. Either way it is recorded."""
+    reservations = order_reservations(order.id)
+    stock = lock_inventory(r.product_id for r in reservations)
+    shortfall = [
+        {"product_id": r.product_id, "needed": r.quantity, "available": max(stock[r.product_id].quantity_available, 0)}
+        for r in reservations
+        if stock[r.product_id].quantity_available < r.quantity
+    ]
+    if not shortfall:
+        resolve_reservations(
+            order.id, (ReservationStatus.EXPIRED, ReservationStatus.RELEASED), ReservationStatus.COMMITTED
+        )
+        db.session.flush()
+        order.status = OrderStatus.PAID  # cancelled -> paid, allowed only with this succeeded payment
+        if order.build_id is not None:
+            build = db.session.get(Build, order.build_id)
+            if build is not None:
+                build.status = BuildStatus.ORDERED
+        _event(order, payment, PaymentEventKind.LATE_PAYMENT_RESERVED, provider_payment_id=intent["id"])
+        outcome.after_commit.extend(after_paid(order.id))
+        return
+
+    _event(
+        order,
+        payment,
+        PaymentEventKind.LATE_PAYMENT_REFUND_PENDING,
+        provider_payment_id=intent["id"],
+        shortfall=shortfall,
+    )
+    order_id, payment_id, number = order.id, payment.id, order.order_number
+    outcome.after_commit.append(
+        lambda: refunds.refund(
+            order_id=order_id,
+            payment_id=payment_id,
+            idempotency_key=f"forge-order-{number}-late-refund",
+            succeeded_kind=PaymentEventKind.LATE_PAYMENT_REFUNDED,
+            actor_user_id=None,
+        )
+    )
 
 
 def after_paid(order_id: int) -> list[AfterCommit]:
