@@ -1,30 +1,28 @@
 """Checkout phase one: one transaction reserves stock and creates the order, or creates nothing."""
 
 import threading
-import time
 import uuid
 from datetime import UTC, datetime, timedelta
 
 import pytest
-from sqlalchemy import delete, func, select, text, update
+from sqlalchemy import func, select, text
 
 from app.extensions import db
 from app.models import (
     Address,
     Build,
     BuildItem,
-    Cart,
     Inventory,
     Order,
     OrderStatusHistory,
     Product,
-    StockReservation,
     User,
 )
-from app.models.enums import BuildStatus, ReservationStatus
+from app.models.enums import BuildStatus
 from app.security.passwords import hash_password
 from app.security.tokens import issue_access_token
 from app.services.pricing import compute
+from tests.realdb import purge_users, wait_for_lock_waiters
 
 CHECKOUT = "/api/v1/checkout"
 CPU, RAM = "FRG-CPU-R7-7800X3D", "FRG-RAM-CR-VEN-32-6000"
@@ -195,32 +193,6 @@ def test_someone_elses_build_is_404(client, session, buyer, product_by_sku, make
 # --------------------------------------------------------------------- the last unit
 
 
-def _lock_waiters(conn) -> int:
-    conn.execute(text("SELECT pg_stat_clear_snapshot()"))
-    return conn.execute(
-        text(
-            "SELECT count(*) FROM pg_stat_activity WHERE datname = current_database() "
-            "AND wait_event_type = 'Lock' AND pid <> pg_backend_pid()"
-        )
-    ).scalar_one()
-
-
-def _purge_users(emails):
-    """Real-commit cleanup. Active reservations must be released first: the database refuses to
-    delete them (they hold stock)."""
-    users = db.session.scalars(select(User.id).where(User.email.in_(emails))).all()
-    orders = db.session.scalars(select(Order.id).where(Order.user_id.in_(users))).all()
-    db.session.execute(
-        update(StockReservation)
-        .where(StockReservation.order_id.in_(orders), StockReservation.status == ReservationStatus.ACTIVE)
-        .values(status=ReservationStatus.RELEASED)
-    )
-    db.session.execute(delete(Order).where(Order.id.in_(orders)))
-    db.session.execute(delete(Cart).where(Cart.user_id.in_(users)))
-    db.session.execute(delete(User).where(User.id.in_(users)))
-    db.session.commit()
-
-
 def test_two_buyers_racing_for_the_last_unit(app):
     """Both checkouts queue on the inventory row lock; exactly one gets the unit."""
     emails = [f"race-{uuid.uuid4().hex[:8]}@example.com" for _ in range(2)]
@@ -251,9 +223,7 @@ def test_two_buyers_racing_for_the_last_unit(app):
             threads = [threading.Thread(target=buy, args=(h,)) for h in headers]
             for t in threads:
                 t.start()
-            deadline = time.monotonic() + 10
-            while _lock_waiters(holder) < 2 and time.monotonic() < deadline:
-                time.sleep(0.02)
+            wait_for_lock_waiters(holder, 2)
             holder.commit()
         for t in threads:
             t.join(timeout=30)
@@ -266,7 +236,7 @@ def test_two_buyers_racing_for_the_last_unit(app):
             assert db.session.get(Inventory, product_id).quantity_reserved == 1
     finally:
         with app.app_context():
-            _purge_users(emails)
+            purge_users(emails)
             inventory = db.session.get(Inventory, product_id)
             inventory.quantity_on_hand, inventory.quantity_reserved = original
             db.session.commit()

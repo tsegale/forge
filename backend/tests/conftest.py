@@ -9,9 +9,12 @@ from sqlalchemy import select, text
 
 from app import create_app
 from app.cli import DEFAULT_SEED, load_catalog
+from app.config import TEST_WEBHOOK_SECRET
 from app.extensions import db, limiter
 from app.models import Product, User
 from app.models.enums import UserRole
+from app.payments import EXTENSION_KEY as GATEWAY_KEY
+from app.payments import FakeGateway
 from app.security.passwords import hash_password
 from app.security.tokens import issue_access_token
 
@@ -110,3 +113,11 @@ def auth_headers(app):
         return {"Authorization": f"Bearer {token}"}
 
     return _headers
+
+
+@pytest.fixture(autouse=True)
+def fake_gateway(app):
+    """A fresh in-process payment gateway per test (it records calls and can be told to fail)."""
+    fake = FakeGateway(webhook_secret=TEST_WEBHOOK_SECRET)
+    app.extensions[GATEWAY_KEY] = fake
+    return fake
