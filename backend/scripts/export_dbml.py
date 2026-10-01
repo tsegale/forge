@@ -89,9 +89,7 @@ def main() -> None:
         table = meta.tables[name]
         constraints = _ordered(table.constraints)
         single_uniques = {
-            next(iter(c.columns)).name
-            for c in constraints
-            if isinstance(c, UniqueConstraint) and len(c.columns) == 1
+            next(iter(c.columns)).name for c in constraints if isinstance(c, UniqueConstraint) and len(c.columns) == 1
         }
         lines = [f"Table {name} {{"]
         for col in table.columns:
