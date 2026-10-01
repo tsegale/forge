@@ -363,13 +363,14 @@ Table psu_specs {
 Table refresh_tokens {
   id integer [pk]
   jti uuid [unique, not null]
+  family_id uuid [not null]
   user_id integer [not null]
   issued_at timestamp_with_time_zone [not null]
   expires_at timestamp_with_time_zone [not null]
   revoked_at timestamp_with_time_zone
   replaced_by_jti uuid
 
-  Note: 'CHECK: expires_at > issued_at'
+  Note: 'CHECK: expires_at > issued_at; replaced_by_jti IS NULL OR revoked_at IS NOT NULL'
 }
 
 Table reviews {

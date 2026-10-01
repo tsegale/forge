@@ -159,6 +159,8 @@ class Product(TimestampMixin, db.Model):
         UniqueConstraint("id", "kind_code", name="uq_products_id_kind"),
         CheckConstraint("price_cents >= 0", name="price_non_negative"),
         Index("ix_products_search_vector", "search_vector", postgresql_using="gin"),
+        # Trigram index: substring and fuzzy matches that full-text search cannot do ("x3d" in "7800X3D").
+        Index("ix_products_name_trgm", "name", postgresql_using="gin", postgresql_ops={"name": "gin_trgm_ops"}),
         Index("ix_products_attributes", "attributes", postgresql_using="gin"),
         Index("ix_products_kind_active_price", "kind_code", "is_active", "price_cents"),
         Index("ix_products_brand_id", "brand_id"),

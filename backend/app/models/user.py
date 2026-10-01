@@ -86,6 +86,9 @@ class RefreshToken(db.Model):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     jti: Mapped[uuid.UUID] = mapped_column(Uuid, unique=True, nullable=False)
+    # Every token minted by rotating from one login shares a family. Presenting an already-rotated
+    # token is treated as theft and revokes the whole family (RFC 9700 refresh token reuse detection).
+    family_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False, index=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     issued_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"), nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -94,4 +97,7 @@ class RefreshToken(db.Model):
 
     user: Mapped[User] = relationship(back_populates="refresh_tokens")
 
-    __table_args__ = (CheckConstraint("expires_at > issued_at", name="expiry_after_issue"),)
+    __table_args__ = (
+        CheckConstraint("expires_at > issued_at", name="expiry_after_issue"),
+        CheckConstraint("replaced_by_jti IS NULL OR revoked_at IS NOT NULL", name="replaced_by_requires_revoked"),
+    )

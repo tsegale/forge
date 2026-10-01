@@ -1,5 +1,8 @@
 """Database-level invariants. These must hold even if application code is bypassed."""
 
+import uuid
+from datetime import UTC, datetime, timedelta
+
 import pytest
 from sqlalchemy import func, insert, select, text, update
 from sqlalchemy.exc import DBAPIError, IntegrityError
@@ -16,6 +19,7 @@ from app.models import (
     OrderStatusHistory,
     PriceHistory,
     Product,
+    RefreshToken,
     User,
 )
 from app.models.enums import OrderStatus
@@ -207,3 +211,55 @@ def test_email_uniqueness_is_case_insensitive(session, user):
     session.add(User(email="builder@EXAMPLE.com", password_hash="x", first_name="A", last_name="B"))
     with pytest.raises(IntegrityError):
         session.flush()
+
+
+# --------------------------------------------------------------------- refresh tokens
+
+
+def _refresh_token(user, **overrides) -> RefreshToken:
+    jti = uuid.uuid4()
+    values = {
+        "jti": jti,
+        "family_id": jti,
+        "user_id": user.id,
+        "expires_at": datetime.now(UTC) + timedelta(days=14),
+    }
+    return RefreshToken(**(values | overrides))
+
+
+def test_refresh_token_requires_a_family(session, user):
+    session.add(_refresh_token(user, family_id=None))
+    with pytest.raises(IntegrityError) as exc:
+        session.flush()
+    assert exc.value.orig.diag.column_name == "family_id"
+
+
+def test_rotated_refresh_token_must_be_revoked(session, user):
+    session.add(_refresh_token(user, replaced_by_jti=uuid.uuid4()))
+    with pytest.raises(IntegrityError) as exc:
+        session.flush()
+    assert _constraint_name(exc.value) == "ck_refresh_tokens_replaced_by_requires_revoked"
+
+
+# --------------------------------------------------------------------- search
+
+
+def test_trigram_index_uses_gin_trgm_ops(session):
+    indexdef = session.scalar(text("SELECT indexdef FROM pg_indexes WHERE indexname = 'ix_products_name_trgm'"))
+    assert "USING gin" in indexdef and "gin_trgm_ops" in indexdef
+
+
+def test_trigram_substring_finds_model_suffix(session):
+    """Full-text search tokenises "7800X3D" as one word, so "x3d" needs a trigram-indexed ILIKE.
+    Word similarity alone is not enough: only 2 of the 4 trigrams of "x3d" occur in "7800x3d"."""
+    fts = session.scalars(
+        select(Product.name).where(Product.search_vector.op("@@")(func.websearch_to_tsquery("english", "x3d")))
+    ).all()
+    substring = session.scalars(select(Product.name).where(Product.name.ilike("%x3d%"))).all()
+    assert fts == []
+    assert set(substring) == {"AMD Ryzen 7 7800X3D", "AMD Ryzen 7 9800X3D", "AMD Ryzen 7 5800X3D"}
+
+
+def test_trigram_word_similarity_tolerates_typos(session):
+    names = session.scalars(select(Product.name).where(Product.name.op("%>")("ryzn"))).all()
+    assert names and all("Ryzen" in name for name in names)
