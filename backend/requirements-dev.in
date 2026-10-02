@@ -1,0 +1,8 @@
+# Development and CI tools, constrained to the runtime lock so tests run on exactly the shipped versions.
+-c requirements.txt
+-r requirements.in
+pytest~=9.1.1
+pytest-cov~=7.1.0
+ruff~=0.16.9
+openapi-spec-validator~=0.9.0
+pip-tools~=7.6.1

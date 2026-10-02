@@ -44,6 +44,8 @@ jobs:
           cache: pip
           cache-dependency-path: backend/requirements*.txt
       - run: pip install -r requirements-dev.txt
+      - name: Installed packages are mutually compatible
+        run: pip check
       - name: Lint
         run: ruff check .
       - name: Tests (real PostgreSQL, migrations round-tripped)

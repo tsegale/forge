@@ -282,6 +282,23 @@ python scripts/export_dbml.py > ../docs/schema.dbml   # paste into dbdiagram.io
 cd scripts && python render_erd.py ../../docs         # requires Graphviz
 ```
 
+## Dependencies
+
+Direct dependencies live in `backend/requirements.in` (runtime) and `backend/requirements-dev.in`
+(tools, constrained to the runtime lock). `pip-tools` compiles them into fully pinned
+`requirements.txt` and `requirements-dev.txt`, including every transitive package. Compile on Linux,
+the platform the image runs on, so platform-specific packages resolve correctly:
+
+```bash
+cd backend
+docker run --rm -v "$PWD":/w -w /w python:3.12-slim sh -c "pip install -q pip-tools==7.6.1 && \
+  pip-compile -q --strip-extras --allow-unsafe -o requirements.txt requirements.in && \
+  pip-compile -q --strip-extras --allow-unsafe -o requirements-dev.txt requirements-dev.in"
+```
+
+Add `--upgrade-package <name>` to move one dependency deliberately. CI runs `pip check` after
+installing, so an incompatible set fails the build instead of being installed silently.
+
 ## Testing
 
 Tests run against a real PostgreSQL database, never SQLite, because triggers, partitions
