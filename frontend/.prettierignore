@@ -4,3 +4,4 @@ playwright-report
 test-results
 src/api/schema.d.ts
 package-lock.json
+src/api/openapi.json
