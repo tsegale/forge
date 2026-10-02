@@ -19,6 +19,8 @@ export class ApiError extends Error {
   readonly code: string
   readonly details: unknown
   readonly requestId: string | null
+  /** From a Retry-After header (429, 503): how long to wait before trying again. */
+  readonly retryAfterMs: number | null
 
   constructor(
     status: number,
@@ -26,6 +28,7 @@ export class ApiError extends Error {
     message: string,
     details: unknown = null,
     requestId: string | null = null,
+    retryAfterMs: number | null = null,
   ) {
     super(message)
     this.name = 'ApiError'
@@ -33,6 +36,7 @@ export class ApiError extends Error {
     this.code = code
     this.details = details
     this.requestId = requestId
+    this.retryAfterMs = retryAfterMs
   }
 
   /** Per-field validation problems (422), keyed by field path. */
@@ -56,13 +60,33 @@ function isEnvelope(value: unknown): value is Envelope {
   return typeof error === 'object' && error !== null && 'code' in error && 'message' in error
 }
 
+/**
+ * Parse Retry-After, which is either delta-seconds ("120") or an HTTP date. Null when absent or
+ * unreadable; a date in the past means "now".
+ */
+export function parseRetryAfter(value: string | null, now = Date.now()): number | null {
+  if (!value) return null
+  const trimmed = value.trim()
+  if (/^\d+$/.test(trimmed)) return Number(trimmed) * 1000
+  const at = Date.parse(trimmed)
+  return Number.isNaN(at) ? null : Math.max(0, at - now)
+}
+
 /** Build an ApiError from a response body, whatever shape it has. */
-export function toApiError(status: number, body: unknown): ApiError {
+export function toApiError(status: number, body: unknown, headers?: Headers): ApiError {
+  const retryAfterMs = parseRetryAfter(headers?.get('Retry-After') ?? null)
   if (isEnvelope(body)) {
     const { code, message, details, request_id } = body.error
-    return new ApiError(status, code, message, details ?? null, request_id ?? null)
+    return new ApiError(status, code, message, details ?? null, request_id ?? null, retryAfterMs)
   }
-  return new ApiError(status, 'unexpected_response', 'Something went wrong. Please try again.')
+  return new ApiError(
+    status,
+    'unexpected_response',
+    'Something went wrong. Please try again.',
+    null,
+    null,
+    retryAfterMs,
+  )
 }
 
 /** Network failures (offline, DNS, CORS) never reach the server, so they get their own code. */

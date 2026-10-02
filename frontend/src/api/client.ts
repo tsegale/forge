@@ -53,7 +53,7 @@ export async function unwrap<T>(call: Promise<Result<T>>): Promise<T> {
   }
   if (!result.response.ok || result.data === undefined) {
     if (result.response.status === 204) return undefined as T
-    throw toApiError(result.response.status, result.error)
+    throw toApiError(result.response.status, result.error, result.response.headers)
   }
   return result.data
 }
