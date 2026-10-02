@@ -39,6 +39,35 @@ API documentation is then at http://localhost:8080/api/v1/docs/swagger/.
 exactly once per deploy instead of racing inside every API replica. PostgreSQL and Redis sit
 on an internal network and are not reachable from outside the stack.
 
+### Demo stack (production images, test-mode payments, caught email)
+
+The demo runs the production compose file plus the development override, which adds Mailpit and
+points every service's outgoing email at it (production otherwise requires a real `MAIL_SERVER`).
+`.env` needs the secrets from `.env.example` and test-mode Stripe keys.
+
+```bash
+# 1. Forward Stripe test-mode webhooks to the stack (official Stripe CLI, https://docs.stripe.com/stripe-cli).
+#    It prints "Your webhook signing secret is whsec_...": put that in .env as STRIPE_WEBHOOK_SECRET.
+stripe listen --forward-to localhost:8080/api/v1/webhooks/stripe
+
+# 2. In a second terminal: build and start everything, then seed and create an admin.
+export COMPOSE_FILE=docker-compose.yml:docker-compose.dev.yml   # on Windows use ; instead of :
+docker compose up -d --build --wait
+docker compose run --rm api flask seed catalog
+docker compose run --rm api flask users create-admin --email admin@example.com --first-name Demo --last-name Admin
+```
+
+| What | Where |
+| --- | --- |
+| API through Nginx | http://localhost:8080/api/v1 |
+| API documentation | http://localhost:8080/api/v1/docs/swagger/ |
+| Emails sent by the worker (Mailpit) | http://127.0.0.1:8025 |
+
+Pay with Stripe's test card `4242 4242 4242 4242` (any future expiry, any CVC). The webhook marks
+the order paid, the stock moves from reserved to sold, and the confirmation email appears in
+Mailpit. If you change `STRIPE_WEBHOOK_SECRET`, run `docker compose up -d` again so the services
+pick it up. If PostgreSQL's port 5432 is taken locally, also `export FORGE_DB_PORT=5433`.
+
 ## Local development
 
 `docker-compose.dev.yml` publishes PostgreSQL and Redis on `127.0.0.1` only and creates the
