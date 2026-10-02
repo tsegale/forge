@@ -95,3 +95,50 @@ def test_only_unpaid_orders_can_be_cancelled(client, session, buyer, product_by_
 
 def test_orders_require_authentication(client):
     assert client.get(ORDERS).status_code == 401
+
+
+def test_reorder_puts_the_lines_back_in_the_emptied_cart(client, buyer, product_by_sku):
+    _, headers = buyer
+    ram, ssd = product_by_sku(RAM), product_by_sku(SSD)
+    client.post("/api/v1/cart/items", json={"product_id": ssd.id, "quantity": 1}, headers=headers)
+    number = _place(client, headers, ram, 2)  # checkout empties the cart, SSD included
+    assert client.get("/api/v1/cart", headers=headers).get_json()["items"] == []
+
+    client.post("/api/v1/cart/items", json={"product_id": ram.id, "quantity": 1}, headers=headers)
+    response = client.post(f"{ORDERS}/{number}/reorder", headers=headers)
+
+    assert response.status_code == 200
+    body = response.get_json()
+    assert body["unavailable_product_ids"] == []
+    lines = {line["product"]["id"]: line["quantity"] for line in body["items"]}
+    assert lines == {ram.id: 3, ssd.id: 1}  # quantities add to what is already there
+
+
+def test_reorder_skips_products_no_longer_sold(client, session, buyer, product_by_sku):
+    _, headers = buyer
+    ram, ssd = product_by_sku(RAM), product_by_sku(SSD)
+    client.post("/api/v1/cart/items", json={"product_id": ssd.id, "quantity": 1}, headers=headers)
+    number = _place(client, headers, ram)
+    ssd.is_active = False
+    session.commit()
+
+    body = client.post(f"{ORDERS}/{number}/reorder", headers=headers).get_json()
+
+    assert body["unavailable_product_ids"] == [ssd.id]
+    assert [line["product"]["id"] for line in body["items"]] == [ram.id]
+
+
+def test_reorder_caps_a_line_at_the_cart_limit(client, buyer, product_by_sku):
+    _, headers = buyer
+    ram = product_by_sku(RAM)
+    number = _place(client, headers, ram, 5)
+    client.post("/api/v1/cart/items", json={"product_id": ram.id, "quantity": 97}, headers=headers)
+
+    body = client.post(f"{ORDERS}/{number}/reorder", headers=headers).get_json()
+
+    assert body["items"][0]["quantity"] == 99
+
+
+def test_reorder_is_only_for_my_orders(client, buyer, product_by_sku, make_user, auth_headers):
+    number = _place(client, buyer[1], product_by_sku(RAM))
+    assert client.post(f"{ORDERS}/{number}/reorder", headers=auth_headers(make_user())).status_code == 404

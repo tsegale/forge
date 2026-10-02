@@ -30,6 +30,12 @@ class CartResponse(BaseModel):
     totals: Totals
 
 
+class ReorderResponse(CartResponse):
+    unavailable_product_ids: list[int] = Field(
+        description="Products from the order that are no longer sold and were not added."
+    )
+
+
 class CartItemCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

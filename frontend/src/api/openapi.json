@@ -3282,6 +3282,40 @@
         "title": "RegisterRequest",
         "type": "object"
       },
+      "ReorderResponse": {
+        "properties": {
+          "item_count": {
+            "title": "Item Count",
+            "type": "integer"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CartLine"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/Totals"
+          },
+          "unavailable_product_ids": {
+            "description": "Products from the order that are no longer sold and were not added.",
+            "items": {
+              "type": "integer"
+            },
+            "title": "Unavailable Product Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items",
+          "item_count",
+          "totals",
+          "unavailable_product_ids"
+        ],
+        "title": "ReorderResponse",
+        "type": "object"
+      },
       "ShippingAddress": {
         "properties": {
           "city": {
@@ -6657,6 +6691,74 @@
         "summary": "Start (or resume) payment for an unpaid order. Safe to repeat: the same PaymentIntent is returned each time. 503 if the payment provider is unavailable; try again shortly.",
         "tags": [
           "Checkout"
+        ]
+      }
+    },
+    "/api/v1/orders/{order_number}/reorder": {
+      "post": {
+        "description": "",
+        "operationId": "post__api_v1_orders_{order_number}_reorder",
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "order_number",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReorderResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Add an order's items to the cart (checkout empties the cart, so this is how a customer checks out again after an unpaid order's hold expires, or buys the same parts again). Products no longer sold are skipped and listed in unavailable_product_ids.",
+        "tags": [
+          "Orders"
         ]
       }
     },

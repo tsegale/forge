@@ -612,6 +612,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/orders/{order_number}/reorder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add an order's items to the cart (checkout empties the cart, so this is how a customer checks out again after an unpaid order's hold expires, or buys the same parts again). Products no longer sold are skipped and listed in unavailable_product_ids. */
+        post: operations["post__api_v1_orders_{order_number}_reorder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/products": {
         parameters: {
             query?: never;
@@ -1974,6 +1991,19 @@ export interface components {
             last_name: string;
             /** Password */
             password: string;
+        };
+        /** ReorderResponse */
+        ReorderResponse: {
+            /** Item Count */
+            item_count: number;
+            /** Items */
+            items: components["schemas"]["CartLine"][];
+            totals: components["schemas"]["Totals"];
+            /**
+             * Unavailable Product Ids
+             * @description Products from the order that are no longer sold and were not added.
+             */
+            unavailable_product_ids: number[];
         };
         /** ShippingAddress */
         ShippingAddress: {
@@ -4311,6 +4341,55 @@ export interface operations {
             };
             /** @description Service Unavailable */
             503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    "post__api_v1_orders_{order_number}_reorder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_number: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReorderResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

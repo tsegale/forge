@@ -13,7 +13,7 @@ from sqlalchemy.dialects.postgresql import insert
 
 from ..errors import NotFound, ValidationFailed
 from ..extensions import db
-from ..models import Cart, CartItem, Product, User
+from ..models import Cart, CartItem, Order, Product, User
 from ..schemas.cart import CartLine, CartResponse, Totals
 from ..schemas.catalog import Price
 from . import pricing
@@ -109,18 +109,35 @@ def merge_guest_cart(guest_token: uuid.UUID | None, user: User) -> None:
         return
     target = get_or_create(user, None)
     for line in db.session.scalars(select(CartItem).where(CartItem.cart_id == guest.id)):
-        stmt = insert(CartItem).values(cart_id=target.id, product_id=line.product_id, quantity=line.quantity)
-        db.session.execute(
-            stmt.on_conflict_do_update(
-                constraint="uq_cart_items_cart_product",
-                set_={
-                    "quantity": func.least(CartItem.quantity + stmt.excluded.quantity, MAX_LINE_QUANTITY),
-                    "updated_at": func.now(),
-                },
-            )
-        )
+        _add_capped(target, line.product_id, line.quantity)
     db.session.delete(guest)
     db.session.commit()
+
+
+def add_order_lines(cart: Cart, order: Order) -> list[int]:
+    """Put an order's lines back in the cart, e.g. to check out again after its hold expired.
+    Quantities add to lines already there (capped at 99). Products no longer sold are skipped;
+    their ids are returned so the caller can say so. One transaction: all lines or none."""
+    product_ids = sorted({item.product_id for item in order.items})
+    active = set(db.session.scalars(select(Product.id).where(Product.id.in_(product_ids), Product.is_active.is_(True))))
+    for item in order.items:
+        if item.product_id in active:
+            _add_capped(cart, item.product_id, item.quantity)
+    db.session.commit()
+    return [pid for pid in product_ids if pid not in active]
+
+
+def _add_capped(cart: Cart, product_id: int, quantity: int) -> None:
+    stmt = insert(CartItem).values(cart_id=cart.id, product_id=product_id, quantity=min(quantity, MAX_LINE_QUANTITY))
+    db.session.execute(
+        stmt.on_conflict_do_update(
+            constraint="uq_cart_items_cart_product",
+            set_={
+                "quantity": func.least(CartItem.quantity + stmt.excluded.quantity, MAX_LINE_QUANTITY),
+                "updated_at": func.now(),
+            },
+        )
+    )
 
 
 def _price(cents: int) -> Price:
