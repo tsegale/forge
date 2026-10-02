@@ -28,7 +28,13 @@ const authHeader: Middleware = {
   },
 }
 
-export const api = createClient<paths>({ baseUrl: '/', credentials: 'same-origin' })
+// Same origin as the page (Nginx serves both), so cookies flow and no CORS is involved.
+export const api = createClient<paths>({
+  baseUrl: globalThis.location.origin,
+  credentials: 'same-origin',
+  // Resolve fetch at call time, not at import time, so instrumentation (and test mocks) apply.
+  fetch: (request: Request) => globalThis.fetch(request),
+})
 api.use(authHeader)
 
 interface Result<T> {

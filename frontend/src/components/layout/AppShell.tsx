@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from 'react-router'
 import { Logo } from '@/components/ui/Logo'
+import { AccountMenu } from './AccountMenu'
 
 const NAV = [
   { to: '/', label: 'Catalog', end: true },
@@ -35,6 +36,9 @@ export function AppShell() {
               </NavLink>
             ))}
           </nav>
+          <div className="ml-auto">
+            <AccountMenu />
+          </div>
         </div>
       </header>
       <main id="main" className="mx-auto w-full max-w-7xl flex-1 px-6 py-8">
