@@ -1,0 +1,51 @@
+@import 'tailwindcss';
+
+/*
+ * Forge design tokens. Light theme, no gradients. One restrained accent (deep blue) for primary
+ * actions and focus; status colours carry meaning only: success (compatible, paid), warning
+ * (needs attention), danger (conflict, failure). Neutral slate for everything else.
+ */
+@theme {
+  --font-sans: ui-sans-serif, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: ui-monospace, 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+
+  --color-surface: #ffffff;
+  --color-canvas: #f6f7f9;
+  --color-border: #dfe3e8;
+  --color-border-strong: #c5ccd5;
+  --color-ink: #17202a;
+  --color-ink-muted: #56606d;
+  --color-ink-subtle: #6b7582;
+
+  --color-accent: #1e4fa8;
+  --color-accent-hover: #183f87;
+  --color-accent-soft: #e8eef9;
+
+  --color-success: #17784a;
+  --color-success-soft: #e7f5ee;
+  --color-warning: #8a5a00;
+  --color-warning-soft: #fdf3dc;
+  --color-danger: #b42318;
+  --color-danger-soft: #fdecea;
+
+  --radius-card: 0.5rem;
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
