@@ -15,7 +15,9 @@
             "type": "string"
           }
         },
-        "required": ["attributes"],
+        "required": [
+          "attributes"
+        ],
         "title": "AccessorySpecs",
         "type": "object"
       },
@@ -108,7 +110,12 @@
             "$ref": "#/components/schemas/AddressType"
           }
         },
-        "required": ["recipient_name", "line1", "city", "type"],
+        "required": [
+          "recipient_name",
+          "line1",
+          "city",
+          "type"
+        ],
         "title": "AddressCreate",
         "type": "object"
       },
@@ -193,7 +200,11 @@
             "title": "Region"
           }
         },
-        "required": ["recipient_name", "line1", "city"],
+        "required": [
+          "recipient_name",
+          "line1",
+          "city"
+        ],
         "title": "AddressIn",
         "type": "object"
       },
@@ -207,7 +218,9 @@
             "type": "array"
           }
         },
-        "required": ["items"],
+        "required": [
+          "items"
+        ],
         "title": "AddressList",
         "type": "object"
       },
@@ -302,7 +315,10 @@
         "type": "object"
       },
       "AddressType": {
-        "enum": ["shipping", "billing"],
+        "enum": [
+          "shipping",
+          "billing"
+        ],
         "title": "AddressType",
         "type": "string"
       },
@@ -551,7 +567,10 @@
             "title": "Next Cursor"
           }
         },
-        "required": ["items", "next_cursor"],
+        "required": [
+          "items",
+          "next_cursor"
+        ],
         "title": "AdminProductPage",
         "type": "object"
       },
@@ -652,7 +671,15 @@
             "type": "string"
           }
         },
-        "required": ["id", "sku", "name", "kind_code", "price_cents", "is_active", "updated_at"],
+        "required": [
+          "id",
+          "sku",
+          "name",
+          "kind_code",
+          "price_cents",
+          "is_active",
+          "updated_at"
+        ],
         "title": "AdminProductResponse",
         "type": "object"
       },
@@ -720,12 +747,18 @@
         "description": "Fulfilment steps. Payment, cancellation and refunds have their own paths.",
         "properties": {
           "to": {
-            "enum": ["fulfilling", "shipped", "delivered"],
+            "enum": [
+              "fulfilling",
+              "shipped",
+              "delivered"
+            ],
             "title": "To",
             "type": "string"
           }
         },
-        "required": ["to"],
+        "required": [
+          "to"
+        ],
         "title": "AdminStatusChange",
         "type": "object"
       },
@@ -740,7 +773,10 @@
             "type": "integer"
           }
         },
-        "required": ["in_stock", "quantity_available"],
+        "required": [
+          "in_stock",
+          "quantity_available"
+        ],
         "title": "Availability",
         "type": "object"
       },
@@ -754,7 +790,9 @@
             "type": "array"
           }
         },
-        "required": ["items"],
+        "required": [
+          "items"
+        ],
         "title": "BrandList",
         "type": "object"
       },
@@ -773,7 +811,11 @@
             "type": "string"
           }
         },
-        "required": ["id", "name", "slug"],
+        "required": [
+          "id",
+          "name",
+          "slug"
+        ],
         "title": "BrandResponse",
         "type": "object"
       },
@@ -787,7 +829,9 @@
             "type": "string"
           }
         },
-        "required": ["name"],
+        "required": [
+          "name"
+        ],
         "title": "BuildCreate",
         "type": "object"
       },
@@ -825,7 +869,15 @@
             "type": "string"
           }
         },
-        "required": ["id", "name", "status", "item_count", "subtotal", "updated_at", "items"],
+        "required": [
+          "id",
+          "name",
+          "status",
+          "item_count",
+          "subtotal",
+          "updated_at",
+          "items"
+        ],
         "title": "BuildDetail",
         "type": "object"
       },
@@ -845,7 +897,9 @@
             "type": "integer"
           }
         },
-        "required": ["product_id"],
+        "required": [
+          "product_id"
+        ],
         "title": "BuildItemCreate",
         "type": "object"
       },
@@ -866,7 +920,12 @@
             "type": "integer"
           }
         },
-        "required": ["id", "quantity", "line_total", "product"],
+        "required": [
+          "id",
+          "quantity",
+          "line_total",
+          "product"
+        ],
         "title": "BuildItemResponse",
         "type": "object"
       },
@@ -880,7 +939,9 @@
             "type": "integer"
           }
         },
-        "required": ["quantity"],
+        "required": [
+          "quantity"
+        ],
         "title": "BuildItemUpdate",
         "type": "object"
       },
@@ -894,7 +955,9 @@
             "type": "array"
           }
         },
-        "required": ["items"],
+        "required": [
+          "items"
+        ],
         "title": "BuildList",
         "type": "object"
       },
@@ -907,12 +970,18 @@
             "type": "integer"
           }
         },
-        "required": ["build_id"],
+        "required": [
+          "build_id"
+        ],
         "title": "BuildSource",
         "type": "object"
       },
       "BuildStatus": {
-        "enum": ["draft", "validated", "ordered"],
+        "enum": [
+          "draft",
+          "validated",
+          "ordered"
+        ],
         "title": "BuildStatus",
         "type": "string"
       },
@@ -943,7 +1012,14 @@
             "type": "string"
           }
         },
-        "required": ["id", "name", "status", "item_count", "subtotal", "updated_at"],
+        "required": [
+          "id",
+          "name",
+          "status",
+          "item_count",
+          "subtotal",
+          "updated_at"
+        ],
         "title": "BuildSummary",
         "type": "object"
       },
@@ -957,7 +1033,9 @@
             "type": "string"
           }
         },
-        "required": ["name"],
+        "required": [
+          "name"
+        ],
         "title": "BuildUpdate",
         "type": "object"
       },
@@ -1003,7 +1081,15 @@
             "type": "array"
           }
         },
-        "required": ["compatible", "complete", "conflicts", "warnings", "missing_kinds", "power", "status"],
+        "required": [
+          "compatible",
+          "complete",
+          "conflicts",
+          "warnings",
+          "missing_kinds",
+          "power",
+          "status"
+        ],
         "title": "BuildValidation",
         "type": "object"
       },
@@ -1023,7 +1109,9 @@
             "type": "integer"
           }
         },
-        "required": ["product_id"],
+        "required": [
+          "product_id"
+        ],
         "title": "CartItemCreate",
         "type": "object"
       },
@@ -1037,7 +1125,9 @@
             "type": "integer"
           }
         },
-        "required": ["quantity"],
+        "required": [
+          "quantity"
+        ],
         "title": "CartItemUpdate",
         "type": "object"
       },
@@ -1064,7 +1154,13 @@
             "type": "integer"
           }
         },
-        "required": ["id", "quantity", "line_total", "in_stock", "product"],
+        "required": [
+          "id",
+          "quantity",
+          "line_total",
+          "in_stock",
+          "product"
+        ],
         "title": "CartLine",
         "type": "object"
       },
@@ -1085,7 +1181,11 @@
             "$ref": "#/components/schemas/Totals"
           }
         },
-        "required": ["items", "item_count", "totals"],
+        "required": [
+          "items",
+          "item_count",
+          "totals"
+        ],
         "title": "CartResponse",
         "type": "object"
       },
@@ -1147,7 +1247,9 @@
             "type": "array"
           }
         },
-        "required": ["items"],
+        "required": [
+          "items"
+        ],
         "title": "CategoryList",
         "type": "object"
       },
@@ -1186,7 +1288,12 @@
             "type": "string"
           }
         },
-        "required": ["id", "name", "slug", "kind"],
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "kind"
+        ],
         "title": "CategoryNode",
         "type": "object"
       },
@@ -1205,7 +1312,11 @@
             "type": "string"
           }
         },
-        "required": ["id", "name", "slug"],
+        "required": [
+          "id",
+          "name",
+          "slug"
+        ],
         "title": "CategoryRef",
         "type": "object"
       },
@@ -1225,7 +1336,9 @@
             "type": "integer"
           }
         },
-        "required": ["product_id"],
+        "required": [
+          "product_id"
+        ],
         "title": "CheckItem",
         "type": "object"
       },
@@ -1369,7 +1482,9 @@
             "type": "array"
           }
         },
-        "required": ["items"],
+        "required": [
+          "items"
+        ],
         "title": "CompatibilityCheckRequest",
         "type": "object"
       },
@@ -1411,7 +1526,14 @@
             "type": "array"
           }
         },
-        "required": ["compatible", "complete", "conflicts", "warnings", "missing_kinds", "power"],
+        "required": [
+          "compatible",
+          "complete",
+          "conflicts",
+          "warnings",
+          "missing_kinds",
+          "power"
+        ],
         "title": "CompatibilityReport",
         "type": "object"
       },
@@ -1425,7 +1547,9 @@
             "type": "array"
           }
         },
-        "required": ["items"],
+        "required": [
+          "items"
+        ],
         "title": "ComponentKindList",
         "type": "object"
       },
@@ -1452,7 +1576,13 @@
             "type": "integer"
           }
         },
-        "required": ["code", "label", "max_per_build", "required_in_build", "sort_order"],
+        "required": [
+          "code",
+          "label",
+          "max_per_build",
+          "required_in_build",
+          "sort_order"
+        ],
         "title": "ComponentKindResponse",
         "type": "object"
       },
@@ -1508,12 +1638,21 @@
             "title": "Tdp Rating W"
           }
         },
-        "required": ["cooler_type", "height_mm", "radiator_mm", "tdp_rating_w", "supported_sockets"],
+        "required": [
+          "cooler_type",
+          "height_mm",
+          "radiator_mm",
+          "tdp_rating_w",
+          "supported_sockets"
+        ],
         "title": "CoolerSpecs",
         "type": "object"
       },
       "CoolerType": {
-        "enum": ["air", "aio"],
+        "enum": [
+          "air",
+          "aio"
+        ],
         "title": "CoolerType",
         "type": "string"
       },
@@ -1533,6 +1672,11 @@
           },
           "has_integrated_graphics": {
             "title": "Has Integrated Graphics",
+            "type": "boolean"
+          },
+          "includes_cooler": {
+            "description": "The retail box includes a cooler.",
+            "title": "Includes Cooler",
             "type": "boolean"
           },
           "kind": {
@@ -1566,7 +1710,8 @@
           "boost_clock_mhz",
           "tdp_w",
           "max_power_w",
-          "has_integrated_graphics"
+          "has_integrated_graphics",
+          "includes_cooler"
         ],
         "title": "CpuSpecs",
         "type": "object"
@@ -1608,7 +1753,10 @@
             "title": "Request Id"
           }
         },
-        "required": ["code", "message"],
+        "required": [
+          "code",
+          "message"
+        ],
         "title": "ErrorBody",
         "type": "object"
       },
@@ -1619,7 +1767,9 @@
             "$ref": "#/components/schemas/ErrorBody"
           }
         },
-        "required": ["error"],
+        "required": [
+          "error"
+        ],
         "title": "ErrorResponse",
         "type": "object"
       },
@@ -1653,7 +1803,13 @@
             "type": "string"
           }
         },
-        "required": ["code", "severity", "message", "product_ids", "details"],
+        "required": [
+          "code",
+          "severity",
+          "message",
+          "product_ids",
+          "details"
+        ],
         "title": "FindingResponse",
         "type": "object"
       },
@@ -1748,7 +1904,17 @@
       },
       "KindCode": {
         "description": "Polymorphic identities. Rows live in the component_kinds lookup table.",
-        "enum": ["cpu", "motherboard", "memory", "gpu", "storage", "psu", "case", "cooler", "accessory"],
+        "enum": [
+          "cpu",
+          "motherboard",
+          "memory",
+          "gpu",
+          "storage",
+          "psu",
+          "case",
+          "cooler",
+          "accessory"
+        ],
         "title": "KindCode",
         "type": "string"
       },
@@ -1760,7 +1926,9 @@
             "type": "string"
           }
         },
-        "required": ["status"],
+        "required": [
+          "status"
+        ],
         "title": "Liveness",
         "type": "object"
       },
@@ -1780,7 +1948,10 @@
             "type": "string"
           }
         },
-        "required": ["email", "password"],
+        "required": [
+          "email",
+          "password"
+        ],
         "title": "LoginRequest",
         "type": "object"
       },
@@ -1833,7 +2004,10 @@
         "type": "object"
       },
       "MemoryType": {
-        "enum": ["ddr4", "ddr5"],
+        "enum": [
+          "ddr4",
+          "ddr5"
+        ],
         "title": "MemoryType",
         "type": "string"
       },
@@ -2009,7 +2183,14 @@
             "description": "Gross, VAT included, at the time of purchase."
           }
         },
-        "required": ["product_id", "sku", "name", "quantity", "unit_price", "line_total"],
+        "required": [
+          "product_id",
+          "sku",
+          "name",
+          "quantity",
+          "unit_price",
+          "line_total"
+        ],
         "title": "OrderLine",
         "type": "object"
       },
@@ -2073,12 +2254,23 @@
             "title": "Next Cursor"
           }
         },
-        "required": ["items", "next_cursor"],
+        "required": [
+          "items",
+          "next_cursor"
+        ],
         "title": "OrderPage",
         "type": "object"
       },
       "OrderStatus": {
-        "enum": ["pending_payment", "paid", "fulfilling", "shipped", "delivered", "cancelled", "refunded"],
+        "enum": [
+          "pending_payment",
+          "paid",
+          "fulfilling",
+          "shipped",
+          "delivered",
+          "cancelled",
+          "refunded"
+        ],
         "title": "OrderStatus",
         "type": "string"
       },
@@ -2104,7 +2296,13 @@
             "$ref": "#/components/schemas/Price"
           }
         },
-        "required": ["order_number", "status", "item_count", "total", "created_at"],
+        "required": [
+          "order_number",
+          "status",
+          "item_count",
+          "total",
+          "created_at"
+        ],
         "title": "OrderSummary",
         "type": "object"
       },
@@ -2127,7 +2325,10 @@
             "type": "string"
           }
         },
-        "required": ["client_secret", "status"],
+        "required": [
+          "client_secret",
+          "status"
+        ],
         "title": "PaymentInfo",
         "type": "object"
       },
@@ -2149,7 +2350,11 @@
             "type": "integer"
           }
         },
-        "required": ["sustained_w", "peak_w", "recommended_psu_w"],
+        "required": [
+          "sustained_w",
+          "peak_w",
+          "recommended_psu_w"
+        ],
         "title": "PowerResponse",
         "type": "object"
       },
@@ -2166,7 +2371,10 @@
             "type": "string"
           }
         },
-        "required": ["amount_cents", "currency"],
+        "required": [
+          "amount_cents",
+          "currency"
+        ],
         "title": "Price",
         "type": "object"
       },
@@ -2316,7 +2524,10 @@
             "title": "Next Cursor"
           }
         },
-        "required": ["items", "next_cursor"],
+        "required": [
+          "items",
+          "next_cursor"
+        ],
         "title": "ProductPage",
         "type": "object"
       },
@@ -2656,7 +2867,14 @@
           "sort": {
             "anyOf": [
               {
-                "enum": ["relevance", "price", "-price", "name", "-name", "newest"],
+                "enum": [
+                  "relevance",
+                  "price",
+                  "-price",
+                  "name",
+                  "-name",
+                  "newest"
+                ],
                 "type": "string"
               },
               {
@@ -2807,7 +3025,17 @@
             "title": "Specs"
           }
         },
-        "required": ["id", "sku", "slug", "name", "kind", "brand", "price", "availability", "specs"],
+        "required": [
+          "id",
+          "sku",
+          "slug",
+          "name",
+          "kind",
+          "brand",
+          "price",
+          "availability",
+          "specs"
+        ],
         "title": "ProductSummary",
         "type": "object"
       },
@@ -2845,6 +3073,16 @@
         "title": "ProductUpdate",
         "type": "object"
       },
+      "PsuAtxVersion": {
+        "description": "ATX 3.x supplies are specified to absorb power excursions of 200% of rated output\n(100 microseconds); ATX 2.x supplies make no such guarantee.",
+        "enum": [
+          "2.x",
+          "3.0",
+          "3.1"
+        ],
+        "title": "PsuAtxVersion",
+        "type": "string"
+      },
       "PsuEfficiency": {
         "enum": [
           "80plus",
@@ -2858,17 +3096,29 @@
         "type": "string"
       },
       "PsuFormFactor": {
-        "enum": ["atx", "sfx", "sfx_l"],
+        "enum": [
+          "atx",
+          "sfx",
+          "sfx_l"
+        ],
         "title": "PsuFormFactor",
         "type": "string"
       },
       "PsuModularity": {
-        "enum": ["non_modular", "semi_modular", "fully_modular"],
+        "enum": [
+          "non_modular",
+          "semi_modular",
+          "fully_modular"
+        ],
         "title": "PsuModularity",
         "type": "string"
       },
       "PsuSpecs": {
         "properties": {
+          "atx_version": {
+            "$ref": "#/components/schemas/PsuAtxVersion",
+            "description": "ATX 3.x supplies tolerate 200% power excursions."
+          },
           "efficiency": {
             "$ref": "#/components/schemas/PsuEfficiency"
           },
@@ -2893,7 +3143,14 @@
             "type": "integer"
           }
         },
-        "required": ["wattage_w", "efficiency", "modularity", "form_factor", "has_12v_2x6"],
+        "required": [
+          "wattage_w",
+          "efficiency",
+          "modularity",
+          "form_factor",
+          "has_12v_2x6",
+          "atx_version"
+        ],
         "title": "PsuSpecs",
         "type": "object"
       },
@@ -2943,19 +3200,28 @@
         "properties": {
           "checks": {
             "additionalProperties": {
-              "enum": ["ok", "unavailable"],
+              "enum": [
+                "ok",
+                "unavailable"
+              ],
               "type": "string"
             },
             "title": "Checks",
             "type": "object"
           },
           "status": {
-            "enum": ["ok", "degraded"],
+            "enum": [
+              "ok",
+              "degraded"
+            ],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": ["status", "checks"],
+        "required": [
+          "status",
+          "checks"
+        ],
         "title": "Readiness",
         "type": "object"
       },
@@ -3007,7 +3273,12 @@
             "type": "string"
           }
         },
-        "required": ["email", "password", "first_name", "last_name"],
+        "required": [
+          "email",
+          "password",
+          "first_name",
+          "last_name"
+        ],
         "title": "RegisterRequest",
         "type": "object"
       },
@@ -3100,7 +3371,10 @@
             "type": "integer"
           }
         },
-        "required": ["flat_cents", "free_threshold_cents"],
+        "required": [
+          "flat_cents",
+          "free_threshold_cents"
+        ],
         "title": "ShippingSettings",
         "type": "object"
       },
@@ -3125,7 +3399,11 @@
             "$ref": "#/components/schemas/OrderStatus"
           }
         },
-        "required": ["from_status", "to_status", "at"],
+        "required": [
+          "from_status",
+          "to_status",
+          "at"
+        ],
         "title": "StatusChange",
         "type": "object"
       },
@@ -3140,17 +3418,26 @@
             "type": "integer"
           }
         },
-        "required": ["quantity_on_hand"],
+        "required": [
+          "quantity_on_hand"
+        ],
         "title": "StockUpdate",
         "type": "object"
       },
       "StorageFormFactor": {
-        "enum": ["m2_2280", "2.5in", "3.5in"],
+        "enum": [
+          "m2_2280",
+          "2.5in",
+          "3.5in"
+        ],
         "title": "StorageFormFactor",
         "type": "string"
       },
       "StorageInterface": {
-        "enum": ["nvme", "sata"],
+        "enum": [
+          "nvme",
+          "sata"
+        ],
         "title": "StorageInterface",
         "type": "string"
       },
@@ -3184,7 +3471,12 @@
             "title": "Pcie Gen"
           }
         },
-        "required": ["interface", "form_factor", "capacity_gb", "pcie_gen"],
+        "required": [
+          "interface",
+          "form_factor",
+          "capacity_gb",
+          "pcie_gen"
+        ],
         "title": "StorageSpecs",
         "type": "object"
       },
@@ -3206,7 +3498,10 @@
             "type": "string"
           }
         },
-        "required": ["access_token", "expires_in"],
+        "required": [
+          "access_token",
+          "expires_in"
+        ],
         "title": "TokenResponse",
         "type": "object"
       },
@@ -3230,7 +3525,12 @@
             "description": "What the customer pays."
           }
         },
-        "required": ["subtotal", "shipping", "tax", "total"],
+        "required": [
+          "subtotal",
+          "shipping",
+          "tax",
+          "total"
+        ],
         "title": "Totals",
         "type": "object"
       },
@@ -3261,12 +3561,22 @@
             "$ref": "#/components/schemas/UserRole"
           }
         },
-        "required": ["id", "email", "first_name", "last_name", "role", "created_at"],
+        "required": [
+          "id",
+          "email",
+          "first_name",
+          "last_name",
+          "role",
+          "created_at"
+        ],
         "title": "UserResponse",
         "type": "object"
       },
       "UserRole": {
-        "enum": ["customer", "admin"],
+        "enum": [
+          "customer",
+          "admin"
+        ],
         "title": "UserRole",
         "type": "string"
       },
@@ -3281,7 +3591,10 @@
             "type": "boolean"
           }
         },
-        "required": ["received", "duplicate"],
+        "required": [
+          "received",
+          "duplicate"
+        ],
         "title": "WebhookAck",
         "type": "object"
       }
@@ -3344,7 +3657,9 @@
           }
         ],
         "summary": "Saved addresses, grouped by type with the default first.",
-        "tags": ["Addresses"]
+        "tags": [
+          "Addresses"
+        ]
       },
       "post": {
         "description": "",
@@ -3408,7 +3723,9 @@
           }
         ],
         "summary": "Save an address. Marking it default replaces the previous default of the same type.",
-        "tags": ["Addresses"]
+        "tags": [
+          "Addresses"
+        ]
       }
     },
     "/api/v1/addresses/{address_id}": {
@@ -3468,7 +3785,9 @@
           }
         ],
         "summary": "Delete a saved address. Past orders are unaffected (they hold a snapshot).",
-        "tags": ["Addresses"]
+        "tags": [
+          "Addresses"
+        ]
       },
       "get": {
         "description": "",
@@ -3533,7 +3852,9 @@
           }
         ],
         "summary": "One saved address.",
-        "tags": ["Addresses"]
+        "tags": [
+          "Addresses"
+        ]
       },
       "patch": {
         "description": "",
@@ -3618,7 +3939,9 @@
           }
         ],
         "summary": "Change an address. Orders keep the snapshot taken at checkout.",
-        "tags": ["Addresses"]
+        "tags": [
+          "Addresses"
+        ]
       }
     },
     "/api/v1/admin/inventory/{product_id}": {
@@ -3695,7 +4018,9 @@
           }
         ],
         "summary": "Current stock levels. The ETag header carries the version required to update them.",
-        "tags": ["Admin"]
+        "tags": [
+          "Admin"
+        ]
       },
       "patch": {
         "description": "",
@@ -3810,7 +4135,9 @@
           }
         ],
         "summary": "Set stock on hand. Requires If-Match with the current ETag (optimistic concurrency): 412 if the stock changed since it was read, 428 if If-Match is missing, 409 if the new level would fall below stock already reserved by checkouts.",
-        "tags": ["Admin"]
+        "tags": [
+          "Admin"
+        ]
       }
     },
     "/api/v1/admin/orders": {
@@ -3916,7 +4243,9 @@
           }
         ],
         "summary": "All orders, newest first, optionally filtered by status.",
-        "tags": ["Admin"]
+        "tags": [
+          "Admin"
+        ]
       }
     },
     "/api/v1/admin/orders/{order_number}": {
@@ -3992,7 +4321,9 @@
           }
         ],
         "summary": "Any order, with the customer's email.",
-        "tags": ["Admin"]
+        "tags": [
+          "Admin"
+        ]
       }
     },
     "/api/v1/admin/orders/{order_number}/refund": {
@@ -4098,7 +4429,9 @@
           }
         ],
         "summary": "Refund the order's payment in full through Stripe. 409 if the order cannot be refunded in its current state (checked before any money moves); 502 if Stripe did not complete it.",
-        "tags": ["Admin"]
+        "tags": [
+          "Admin"
+        ]
       }
     },
     "/api/v1/admin/orders/{order_number}/status": {
@@ -4194,7 +4527,9 @@
           }
         ],
         "summary": "Move a paid order through fulfilment: fulfilling, shipped, delivered. The database rejects illegal jumps (409 invalid_status_transition). Recorded in the status history with the admin.",
-        "tags": ["Admin"]
+        "tags": [
+          "Admin"
+        ]
       }
     },
     "/api/v1/admin/products": {
@@ -4339,7 +4674,9 @@
           }
         ],
         "summary": "All products, including inactive ones, with stock levels. Keyset-paged by id.",
-        "tags": ["Admin"]
+        "tags": [
+          "Admin"
+        ]
       }
     },
     "/api/v1/admin/products/{product_id}": {
@@ -4426,7 +4763,9 @@
           }
         ],
         "summary": "Change a product's price or availability. Price changes are recorded in price_history by a trigger.",
-        "tags": ["Admin"]
+        "tags": [
+          "Admin"
+        ]
       }
     },
     "/api/v1/auth/login": {
@@ -4497,7 +4836,9 @@
           }
         },
         "summary": "Exchange credentials for an access token and a refresh cookie.",
-        "tags": ["Auth"]
+        "tags": [
+          "Auth"
+        ]
       }
     },
     "/api/v1/auth/logout": {
@@ -4521,7 +4862,9 @@
           }
         },
         "summary": "End this session (the refresh token family in the cookie). Always succeeds.",
-        "tags": ["Auth"]
+        "tags": [
+          "Auth"
+        ]
       }
     },
     "/api/v1/auth/logout-all": {
@@ -4560,7 +4903,9 @@
           }
         ],
         "summary": "End every session for the authenticated user, on every device.",
-        "tags": ["Auth"]
+        "tags": [
+          "Auth"
+        ]
       }
     },
     "/api/v1/auth/me": {
@@ -4606,7 +4951,9 @@
           }
         ],
         "summary": "The authenticated user's profile.",
-        "tags": ["Auth"]
+        "tags": [
+          "Auth"
+        ]
       }
     },
     "/api/v1/auth/refresh": {
@@ -4647,7 +4994,9 @@
           }
         },
         "summary": "Rotate the refresh cookie and issue a new access token. Reusing a rotated token ends the session.",
-        "tags": ["Auth"]
+        "tags": [
+          "Auth"
+        ]
       }
     },
     "/api/v1/auth/register": {
@@ -4708,7 +5057,9 @@
           }
         },
         "summary": "Create a customer account.",
-        "tags": ["Auth"]
+        "tags": [
+          "Auth"
+        ]
       }
     },
     "/api/v1/brands": {
@@ -4739,7 +5090,9 @@
           }
         },
         "summary": "All brands, alphabetically.",
-        "tags": ["Catalog"]
+        "tags": [
+          "Catalog"
+        ]
       }
     },
     "/api/v1/builds": {
@@ -4785,7 +5138,9 @@
           }
         ],
         "summary": "The user's builds, most recently changed first.",
-        "tags": ["Builds"]
+        "tags": [
+          "Builds"
+        ]
       },
       "post": {
         "description": "",
@@ -4839,7 +5194,9 @@
           }
         ],
         "summary": "Start a new, empty build.",
-        "tags": ["Builds"]
+        "tags": [
+          "Builds"
+        ]
       }
     },
     "/api/v1/builds/{build_id}": {
@@ -4909,7 +5266,9 @@
           }
         ],
         "summary": "Delete a build. Ordered builds cannot be deleted (409 build_locked).",
-        "tags": ["Builds"]
+        "tags": [
+          "Builds"
+        ]
       },
       "get": {
         "description": "",
@@ -4974,7 +5333,9 @@
           }
         ],
         "summary": "A build with its parts, prices and status.",
-        "tags": ["Builds"]
+        "tags": [
+          "Builds"
+        ]
       },
       "patch": {
         "description": "",
@@ -5049,7 +5410,9 @@
           }
         ],
         "summary": "Rename a build.",
-        "tags": ["Builds"]
+        "tags": [
+          "Builds"
+        ]
       }
     },
     "/api/v1/builds/{build_id}/items": {
@@ -5136,7 +5499,9 @@
           }
         ],
         "summary": "Add a part. 409 if the build already holds the maximum of that kind, already contains the product, or has been ordered. A validated build returns to draft.",
-        "tags": ["Builds"]
+        "tags": [
+          "Builds"
+        ]
       }
     },
     "/api/v1/builds/{build_id}/items/{item_id}": {
@@ -5223,7 +5588,9 @@
           }
         ],
         "summary": "Remove a part and return the updated build.",
-        "tags": ["Builds"]
+        "tags": [
+          "Builds"
+        ]
       },
       "patch": {
         "description": "",
@@ -5318,7 +5685,9 @@
           }
         ],
         "summary": "Change a part's quantity.",
-        "tags": ["Builds"]
+        "tags": [
+          "Builds"
+        ]
       }
     },
     "/api/v1/builds/{build_id}/validate": {
@@ -5385,7 +5754,9 @@
           }
         ],
         "summary": "Check a saved build and record the outcome: the build becomes validated only when it is both compatible (no conflicts) and complete (nothing missing); otherwise it returns to draft.",
-        "tags": ["Compatibility"]
+        "tags": [
+          "Compatibility"
+        ]
       }
     },
     "/api/v1/cart": {
@@ -5426,7 +5797,9 @@
           }
         },
         "summary": "Empty the cart.",
-        "tags": ["Cart"]
+        "tags": [
+          "Cart"
+        ]
       },
       "get": {
         "description": "",
@@ -5465,7 +5838,9 @@
           }
         },
         "summary": "The caller's cart with live prices, stock and VAT-inclusive totals. Reserves nothing.",
-        "tags": ["Cart"]
+        "tags": [
+          "Cart"
+        ]
       }
     },
     "/api/v1/cart/items": {
@@ -5516,7 +5891,9 @@
           }
         },
         "summary": "Add a product. Adding one already in the cart increases its quantity (up to 99).",
-        "tags": ["Cart"]
+        "tags": [
+          "Cart"
+        ]
       }
     },
     "/api/v1/cart/items/{item_id}": {
@@ -5578,7 +5955,9 @@
           }
         },
         "summary": "Remove a line.",
-        "tags": ["Cart"]
+        "tags": [
+          "Cart"
+        ]
       },
       "patch": {
         "description": "",
@@ -5648,7 +6027,9 @@
           }
         },
         "summary": "Set a line's quantity.",
-        "tags": ["Cart"]
+        "tags": [
+          "Cart"
+        ]
       }
     },
     "/api/v1/categories": {
@@ -5679,7 +6060,9 @@
           }
         },
         "summary": "The browsing taxonomy as a tree. Leaf categories carry the component kind they sell.",
-        "tags": ["Catalog"]
+        "tags": [
+          "Catalog"
+        ]
       }
     },
     "/api/v1/checkout": {
@@ -5755,7 +6138,9 @@
           }
         ],
         "summary": "Reserve stock and create a pending_payment order from the cart or a validated build.",
-        "tags": ["Checkout"]
+        "tags": [
+          "Checkout"
+        ]
       }
     },
     "/api/v1/compatibility/check": {
@@ -5796,7 +6181,9 @@
           }
         },
         "summary": "Check a list of parts without saving anything, e.g. while a visitor configures a build.",
-        "tags": ["Compatibility"]
+        "tags": [
+          "Compatibility"
+        ]
       }
     },
     "/api/v1/component-kinds": {
@@ -5827,7 +6214,9 @@
           }
         },
         "summary": "The kinds of part a build is made of, in display order, with per-build limits.",
-        "tags": ["Reference"]
+        "tags": [
+          "Reference"
+        ]
       }
     },
     "/api/v1/config": {
@@ -5858,7 +6247,9 @@
           }
         },
         "summary": "Settings the browser needs at runtime. Contains nothing secret: the Stripe publishable key is public by design. Served at runtime so one image works in every environment.",
-        "tags": ["Reference"]
+        "tags": [
+          "Reference"
+        ]
       }
     },
     "/api/v1/health/live": {
@@ -5889,7 +6280,9 @@
           }
         },
         "summary": "Liveness: the process is up and serving requests.",
-        "tags": ["Health"]
+        "tags": [
+          "Health"
+        ]
       }
     },
     "/api/v1/health/ready": {
@@ -5930,7 +6323,9 @@
           }
         },
         "summary": "Readiness: PostgreSQL and Redis are reachable. 503 while any dependency is down.",
-        "tags": ["Health"]
+        "tags": [
+          "Health"
+        ]
       }
     },
     "/api/v1/orders": {
@@ -6026,7 +6421,9 @@
           }
         ],
         "summary": "The user's orders, newest first.",
-        "tags": ["Orders"]
+        "tags": [
+          "Orders"
+        ]
       }
     },
     "/api/v1/orders/{order_number}": {
@@ -6092,7 +6489,9 @@
           }
         ],
         "summary": "One order with its lines, totals, address, payment status and status history.",
-        "tags": ["Orders"]
+        "tags": [
+          "Orders"
+        ]
       }
     },
     "/api/v1/orders/{order_number}/cancel": {
@@ -6168,7 +6567,9 @@
           }
         ],
         "summary": "Cancel an order that is still awaiting payment; its stock is released immediately.",
-        "tags": ["Orders"]
+        "tags": [
+          "Orders"
+        ]
       }
     },
     "/api/v1/orders/{order_number}/payment": {
@@ -6254,7 +6655,9 @@
           }
         ],
         "summary": "Start (or resume) payment for an unpaid order. Safe to repeat: the same PaymentIntent is returned each time. 503 if the payment provider is unavailable; try again shortly.",
-        "tags": ["Checkout"]
+        "tags": [
+          "Checkout"
+        ]
       }
     },
     "/api/v1/products": {
@@ -6407,7 +6810,14 @@
             "schema": {
               "anyOf": [
                 {
-                  "enum": ["relevance", "price", "-price", "name", "-name", "newest"],
+                  "enum": [
+                    "relevance",
+                    "price",
+                    "-price",
+                    "name",
+                    "-name",
+                    "newest"
+                  ],
                   "type": "string"
                 },
                 {
@@ -6855,7 +7265,9 @@
           }
         },
         "summary": "Active products, filtered and sorted, with keyset pagination.",
-        "tags": ["Catalog"]
+        "tags": [
+          "Catalog"
+        ]
       }
     },
     "/api/v1/products/{slug}": {
@@ -6906,7 +7318,9 @@
           }
         },
         "summary": "A single active product with its full specifications and availability.",
-        "tags": ["Catalog"]
+        "tags": [
+          "Catalog"
+        ]
       }
     },
     "/api/v1/webhooks/stripe": {
@@ -6947,7 +7361,9 @@
           }
         },
         "summary": "Stripe event delivery. The Stripe-Signature header is verified against the raw body; each event is applied exactly once, however many times it is delivered.",
-        "tags": ["Webhooks"]
+        "tags": [
+          "Webhooks"
+        ]
       }
     }
   },

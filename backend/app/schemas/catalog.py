@@ -15,6 +15,7 @@ from ..models.enums import (
     CoolerType,
     KindCode,
     MemoryType,
+    PsuAtxVersion,
     PsuEfficiency,
     PsuFormFactor,
     PsuModularity,
@@ -63,6 +64,7 @@ class CpuSpecs(_Orm):
     tdp_w: int
     max_power_w: int
     has_integrated_graphics: bool
+    includes_cooler: bool = Field(description="The retail box includes a cooler.")
 
 
 class MotherboardSpecs(_Orm):
@@ -114,6 +116,7 @@ class PsuSpecs(_Orm):
     modularity: PsuModularity
     form_factor: PsuFormFactor
     has_12v_2x6: bool
+    atx_version: PsuAtxVersion = Field(description="ATX 3.x supplies tolerate 200% power excursions.")
 
 
 class CaseSpecs(_Orm):

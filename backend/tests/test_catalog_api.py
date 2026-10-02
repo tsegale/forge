@@ -317,3 +317,11 @@ def test_relevance_sort_requires_a_query(client):
 
 def test_blank_query_lists_everything(client, session):
     assert len(_walk(client, "q=%20%20", limit=100)) == _active_count(session)
+
+
+def test_specs_expose_the_compatibility_inputs(client, product_by_sku):
+    """The configurator shows these; the engine uses them (migration 0004)."""
+    cpu = client.get(f"{PRODUCTS}/{product_by_sku('FRG-CPU-R5-5600X').slug}").get_json()["specs"]
+    psu = client.get(f"{PRODUCTS}/{product_by_sku('FRG-PSU-CR-SF750').slug}").get_json()["specs"]
+    assert cpu["includes_cooler"] is True
+    assert psu["atx_version"] == "2.x"

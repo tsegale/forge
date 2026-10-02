@@ -1318,6 +1318,11 @@ export interface components {
             /** Has Integrated Graphics */
             has_integrated_graphics: boolean;
             /**
+             * Includes Cooler
+             * @description The retail box includes a cooler.
+             */
+            includes_cooler: boolean;
+            /**
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
@@ -1877,6 +1882,13 @@ export interface components {
             price_cents: number | null;
         };
         /**
+         * PsuAtxVersion
+         * @description ATX 3.x supplies are specified to absorb power excursions of 200% of rated output
+         *     (100 microseconds); ATX 2.x supplies make no such guarantee.
+         * @enum {string}
+         */
+        PsuAtxVersion: "2.x" | "3.0" | "3.1";
+        /**
          * PsuEfficiency
          * @enum {string}
          */
@@ -1893,6 +1905,8 @@ export interface components {
         PsuModularity: "non_modular" | "semi_modular" | "fully_modular";
         /** PsuSpecs */
         PsuSpecs: {
+            /** @description ATX 3.x supplies tolerate 200% power excursions. */
+            atx_version: components["schemas"]["PsuAtxVersion"];
             efficiency: components["schemas"]["PsuEfficiency"];
             form_factor: components["schemas"]["PsuFormFactor"];
             /** Has 12V 2X6 */
