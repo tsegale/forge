@@ -36,7 +36,20 @@ def _payment_settings(production: bool) -> dict[str, str]:
         webhook_secret = _require("STRIPE_WEBHOOK_SECRET").strip()
     else:
         webhook_secret = os.environ.get("STRIPE_WEBHOOK_SECRET", "whsec_local_fake_gateway").strip()
-    return {"PAYMENT_GATEWAY": gateway, "STRIPE_SECRET_KEY": secret, "STRIPE_WEBHOOK_SECRET": webhook_secret}
+    # The publishable key is public by design (Stripe.js uses it in the browser).
+    publishable = os.environ.get("STRIPE_PUBLISHABLE_KEY", "").strip()
+    if publishable and not publishable.startswith(("pk_test_", "pk_live_")):
+        raise RuntimeError("STRIPE_PUBLISHABLE_KEY is not a Stripe publishable key")
+    if "_live_" in publishable and not production:
+        raise RuntimeError("Refusing a live Stripe key outside production")
+    if gateway == "stripe" and production and not publishable:
+        raise RuntimeError("Missing required environment variable: STRIPE_PUBLISHABLE_KEY")
+    return {
+        "PAYMENT_GATEWAY": gateway,
+        "STRIPE_SECRET_KEY": secret,
+        "STRIPE_WEBHOOK_SECRET": webhook_secret,
+        "STRIPE_PUBLISHABLE_KEY": publishable,
+    }
 
 
 # Periodic jobs for Celery beat, by task name (defined in app/tasks.py).

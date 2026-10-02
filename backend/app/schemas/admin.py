@@ -53,3 +53,31 @@ class InventoryResponse(BaseModel):
     quantity_available: int
     version: int = Field(description="Also returned as the ETag header. Send it back in If-Match to update.")
     updated_at: datetime
+
+
+class AdminProductQuery(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    kind: str | None = None
+    q: str | None = Field(default=None, max_length=100, description="Name or SKU contains.")
+    active: bool | None = None
+    limit: int = Field(default=50, ge=1, le=100)
+    cursor: int | None = Field(default=None, ge=1)
+
+
+class AdminProductRow(BaseModel):
+    id: int
+    sku: str
+    name: str
+    kind_code: str
+    price_cents: int
+    is_active: bool
+    quantity_on_hand: int
+    quantity_reserved: int
+    quantity_available: int
+    version: int = Field(description="Send as If-Match when editing this product's stock.")
+
+
+class AdminProductPage(BaseModel):
+    items: list[AdminProductRow]
+    next_cursor: int | None

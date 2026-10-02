@@ -143,9 +143,13 @@ def _escape_like(value: str) -> str:
     return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
 
 
+def ilike_contains(column: Any, text: str) -> ColumnElement[bool]:
+    """Case-insensitive "contains", with LIKE metacharacters in ``text`` matched literally."""
+    return column.ilike(f"%{_escape_like(text)}%", escape="\\")
+
+
 def _substring(q: str) -> ColumnElement[bool]:
-    pattern = f"%{_escape_like(q)}%"
-    return or_(Product.name.ilike(pattern, escape="\\"), Product.sku.ilike(pattern, escape="\\"))
+    return or_(ilike_contains(Product.name, q), ilike_contains(Product.sku, q))
 
 
 def _search(q: str) -> ColumnElement[bool]:

@@ -3,22 +3,71 @@
 from __future__ import annotations
 
 from flask import request
+from sqlalchemy import or_, select
 from sqlalchemy.orm.exc import StaleDataError
 
 from ...errors import NotFound, PreconditionFailed, PreconditionRequired
 from ...extensions import db
 from ...models import Inventory, Product
 from ...models.enums import UserRole
-from ...schemas.admin import AdminProductResponse, InventoryResponse, ProductUpdate, StockUpdate
+from ...schemas.admin import (
+    AdminProductPage,
+    AdminProductQuery,
+    AdminProductResponse,
+    AdminProductRow,
+    InventoryResponse,
+    ProductUpdate,
+    StockUpdate,
+)
 from ...schemas.orders import AdminOrderDetail, AdminStatusChange, OrderListQuery, OrderPage, RefundRequest
 from ...security.guards import current_user, require_role
 from ...services import admin_orders
 from ...services.audit import set_actor
+from ...services.catalog_query import ilike_contains
 from ..spec import api, responses
 from . import bp
 
 TAG = "Admin"
 SECURITY = {"bearerAuth": []}
+
+
+@bp.get("/admin/products")
+@require_role(UserRole.ADMIN)
+@api.validate(
+    query=AdminProductQuery, resp=responses(401, 403, 422, HTTP_200=AdminProductPage), tags=[TAG], security=SECURITY
+)
+def list_products():
+    """All products, including inactive ones, with stock levels. Keyset-paged by id."""
+    query: AdminProductQuery = request.context.query
+    stmt = select(Product, Inventory).join(Inventory, Inventory.product_id == Product.id)
+    if query.kind:
+        stmt = stmt.where(Product.kind_code == query.kind)
+    if query.active is not None:
+        stmt = stmt.where(Product.is_active.is_(query.active))
+    if query.q:
+        stmt = stmt.where(or_(ilike_contains(Product.name, query.q), ilike_contains(Product.sku, query.q)))
+    if query.cursor:
+        stmt = stmt.where(Product.id > query.cursor)
+    rows = db.session.execute(stmt.order_by(Product.id).limit(query.limit + 1)).all()
+    page = rows[: query.limit]
+    return AdminProductPage(
+        items=[
+            AdminProductRow(
+                id=p.id,
+                sku=p.sku,
+                name=p.name,
+                kind_code=p.kind_code,
+                price_cents=p.price_cents,
+                is_active=p.is_active,
+                quantity_on_hand=inv.quantity_on_hand,
+                quantity_reserved=inv.quantity_reserved,
+                quantity_available=inv.quantity_available,
+                version=inv.version,
+            )
+            for p, inv in page
+        ],
+        next_cursor=page[-1][0].id if len(rows) > query.limit else None,
+    )
 
 
 @bp.patch("/admin/products/<int:product_id>")
