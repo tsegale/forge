@@ -74,6 +74,13 @@ services:
     restart: unless-stopped
     command: ["celery", "-A", "app.celery_app", "worker", "--loglevel=INFO", "--concurrency=2"]
     environment: *backend-env
+    # The image's HEALTHCHECK probes the API over HTTP; a worker proves itself by answering a ping.
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A app.celery_app inspect ping --destination celery@$$HOSTNAME --timeout 10"]
+      interval: 60s
+      timeout: 30s
+      start_period: 30s
+      retries: 3
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -87,6 +94,13 @@ services:
     restart: unless-stopped
     command: ["celery", "-A", "app.celery_app", "beat", "--loglevel=INFO", "--schedule=/tmp/celerybeat-schedule"]
     environment: *backend-env
+    # Beat rewrites its schedule file every few minutes while it is alive.
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import os,sys,time; sys.exit(time.time() - os.path.getmtime('/tmp/celerybeat-schedule') > 600)\""]
+      interval: 60s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
     depends_on:
       migrate:
         condition: service_completed_successfully
