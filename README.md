@@ -53,9 +53,20 @@ stripe listen --forward-to localhost:8080/api/v1/webhooks/stripe
 # 2. In a second terminal: build and start everything, then seed and create an admin.
 export COMPOSE_FILE=docker-compose.yml:docker-compose.dev.yml   # on Windows use ; instead of :
 docker compose up -d --build --wait
-docker compose run --rm api flask seed catalog
-docker compose run --rm api flask users create-admin --email admin@example.com --first-name Demo --last-name Admin
+docker compose run --rm api flask seed demo --yes
 ```
+
+`flask seed demo` is an idempotent reset for presentations: it restores the catalog and its seeded
+stock, clears orders, carts and builds, and creates the accounts below, five past orders (paid,
+fulfilling, shipped, delivered, refunded) and a validated build. Run it again before each demo.
+It refuses to run under the production configuration without `--yes`.
+
+> **Demo only.** These credentials are public. Never run `flask seed demo` against a real store.
+
+| Role | Email | Password |
+| --- | --- | --- |
+| Admin | `demo-admin@example.com` | `forge-demo-admin-2026` |
+| Customer | `demo-customer@example.com` | `forge-demo-customer-2026` |
 
 | What | Where |
 | --- | --- |

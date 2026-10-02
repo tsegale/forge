@@ -107,6 +107,11 @@ class BaseConfig:
     REGISTER_LIMIT_PER_IP = "10 per hour"
 
     def __init__(self) -> None:
+        self.FORGE_ENV_NAME = {
+            ProductionConfig: "production",
+            DevelopmentConfig: "development",
+            TestingConfig: "testing",
+        }.get(type(self), "unknown")
         self.SECRET_KEY = _require("SECRET_KEY")
         self.JWT_SECRET_KEY = _jwt_key()
         for key, value in _payment_settings(production=isinstance(self, ProductionConfig)).items():

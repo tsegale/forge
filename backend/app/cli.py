@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 
 import click
-from flask import Flask
+from flask import Flask, current_app
 from flask.cli import AppGroup
 from pydantic import ValidationError
 from sqlalchemy import select
@@ -162,6 +162,21 @@ def create_admin(email: str, first_name: str, last_name: str, password: str) -> 
         db.session.rollback()
         raise click.ClickException(f"An account with email {data.email} already exists.") from exc
     click.echo(f"Admin {data.email} created.")
+
+
+@seed_cli.command("demo")
+@click.option("--yes", is_flag=True, help="Required under the production configuration.")
+def seed_demo(yes: bool) -> None:
+    """DEMO ONLY: reset orders, carts and builds; restore seeded stock; create the demo accounts
+    and past orders. Idempotent."""
+    from .demo import ADMIN, CUSTOMER, reset  # demo builds on this module's catalog loader
+
+    if current_app.config.get("FORGE_ENV_NAME") == "production" and not yes:
+        raise click.UsageError("This deletes all orders, carts and builds. Re-run with --yes to confirm.")
+    result = reset()
+    click.echo(f"Demo data reset: {result['orders']} past orders.")
+    click.echo(f"  admin:    {ADMIN.email} / {ADMIN.password}")
+    click.echo(f"  customer: {CUSTOMER.email} / {CUSTOMER.password}")
 
 
 def register_cli(app: Flask) -> None:
