@@ -37,12 +37,16 @@ services:
       - "127.0.0.1:${FORGE_MAILPIT_UI_PORT:-8025}:8025"
     networks: [backend, dev]
 
-  # When the full stack runs with this override, send its email to Mailpit.
-  api:
+  # When the full stack runs with this override, send its email to Mailpit. Every service that
+  # loads the app configuration needs these (production config requires MAIL_SERVER), including
+  # the one-shot migrate job, which sends no mail.
+  migrate:
     environment: &dev-mail
       MAIL_SERVER: mailpit
       MAIL_PORT: "1025"
       MAIL_USE_TLS: "false"
+  api:
+    environment: *dev-mail
   worker:
     environment: *dev-mail
   beat:
