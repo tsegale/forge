@@ -1,15 +1,18 @@
 import { useState, type SyntheticEvent } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import { ApiError } from '@/api/errors'
 import { useAuth } from '@/auth/context'
 import { register } from '@/auth/session'
 import { Button } from '@/components/ui/Button'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import { Field } from '@/components/ui/Field'
+import { safeNext } from '@/lib/navigation'
 
 export function RegisterPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
+  const [params] = useSearchParams()
+  const next = params.get('next')
   const [form, setForm] = useState({ first_name: '', last_name: '', email: '', password: '' })
   const [error, setError] = useState<unknown>(null)
   const [busy, setBusy] = useState(false)
@@ -21,7 +24,7 @@ export function RegisterPage() {
     try {
       await register(form)
       await login(form.email, form.password)
-      void navigate('/', { replace: true })
+      void navigate(safeNext(next), { replace: true })
     } catch (caught) {
       setError(caught)
     } finally {
@@ -38,7 +41,10 @@ export function RegisterPage() {
       <h1 className="text-2xl font-semibold">Create an account</h1>
       <p className="mt-1 text-sm text-ink-muted">
         Already registered?{' '}
-        <Link to="/login" className="font-medium text-accent hover:text-accent-hover">
+        <Link
+          to={next ? `/login?next=${encodeURIComponent(next)}` : '/login'}
+          className="font-medium text-accent hover:text-accent-hover"
+        >
           Sign in
         </Link>
       </p>

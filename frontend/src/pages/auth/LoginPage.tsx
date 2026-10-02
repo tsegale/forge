@@ -11,6 +11,7 @@ export function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
   const [params] = useSearchParams()
+  const next = params.get('next')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<unknown>(null)
@@ -22,7 +23,7 @@ export function LoginPage() {
     setError(null)
     try {
       await login(email, password)
-      void navigate(safeNext(params.get('next')), { replace: true })
+      void navigate(safeNext(next), { replace: true })
     } catch (caught) {
       setError(caught)
     } finally {
@@ -36,7 +37,10 @@ export function LoginPage() {
       <h1 className="text-2xl font-semibold">Sign in</h1>
       <p className="mt-1 text-sm text-ink-muted">
         New to Forge?{' '}
-        <Link to="/register" className="font-medium text-accent hover:text-accent-hover">
+        <Link
+          to={next ? `/register?next=${encodeURIComponent(next)}` : '/register'}
+          className="font-medium text-accent hover:text-accent-hover"
+        >
           Create an account
         </Link>
       </p>

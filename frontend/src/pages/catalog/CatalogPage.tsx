@@ -130,9 +130,9 @@ export function CatalogPage() {
 
       <div className="grid grid-cols-1 gap-8 md:grid-cols-[14rem_1fr]">
         <FilterPanel kind={activeKind} params={params} onChange={update} />
-        <section aria-label="Products" aria-busy={products.isLoading}>
+        <section aria-label="Products" aria-busy={products.isPending}>
           {products.isError ? <ErrorMessage error={products.error} /> : null}
-          {!products.isLoading && !products.isError && !items.length ? (
+          {!products.isPending && !products.isError && !items.length ? (
             <p className="text-sm text-ink-muted">
               No products match. Try fewer filters or a different search.
             </p>
