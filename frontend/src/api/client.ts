@@ -1,0 +1,53 @@
+/**
+ * Typed API client. Every path, parameter and response type comes from schema.d.ts, which is
+ * generated from the backend's OpenAPI document (npm run api:types); CI fails if it is stale.
+ */
+import createClient, { type Middleware } from 'openapi-fetch'
+import { networkError, toApiError } from './errors'
+import type { paths } from './schema'
+
+export type { components, paths } from './schema'
+
+/** Access token, held in memory only (never localStorage). Set by the auth layer. */
+let accessToken: string | null = null
+
+export function setAccessToken(token: string | null): void {
+  accessToken = token
+}
+
+export function getAccessToken(): string | null {
+  return accessToken
+}
+
+const authHeader: Middleware = {
+  onRequest({ request }) {
+    if (accessToken && !request.headers.has('Authorization')) {
+      request.headers.set('Authorization', `Bearer ${accessToken}`)
+    }
+    return request
+  },
+}
+
+export const api = createClient<paths>({ baseUrl: '/', credentials: 'same-origin' })
+api.use(authHeader)
+
+interface Result<T> {
+  data?: T
+  error?: unknown
+  response: Response
+}
+
+/** Return the data or throw an ApiError built from the backend's error envelope. */
+export async function unwrap<T>(call: Promise<Result<T>>): Promise<T> {
+  let result: Result<T>
+  try {
+    result = await call
+  } catch {
+    throw networkError()
+  }
+  if (!result.response.ok || result.data === undefined) {
+    if (result.response.status === 204) return undefined as T
+    throw toApiError(result.response.status, result.error)
+  }
+  return result.data
+}

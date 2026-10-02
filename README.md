@@ -322,6 +322,18 @@ python scripts/export_dbml.py > ../docs/schema.dbml   # paste into dbdiagram.io
 cd scripts && python render_erd.py ../../docs         # requires Graphviz
 ```
 
+## API contract for the frontend
+
+The frontend's TypeScript types are generated from the backend's OpenAPI document, so a change to
+an endpoint that the frontend does not account for fails the type check. After changing the API:
+
+```bash
+cd backend && python scripts/export_openapi.py > ../frontend/src/api/openapi.json
+cd ../frontend && npm run api:types
+```
+
+CI fails if either file is stale.
+
 ## Dependencies
 
 Direct dependencies live in `backend/requirements.in` (runtime) and `backend/requirements-dev.in`

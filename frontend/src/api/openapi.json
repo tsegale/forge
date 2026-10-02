@@ -1,0 +1,6993 @@
+{
+  "components": {
+    "schemas": {
+      "AccessorySpecs": {
+        "properties": {
+          "attributes": {
+            "additionalProperties": true,
+            "title": "Attributes",
+            "type": "object"
+          },
+          "kind": {
+            "const": "accessory",
+            "default": "accessory",
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": ["attributes"],
+        "title": "AccessorySpecs",
+        "type": "object"
+      },
+      "AddressCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "city": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "City",
+            "type": "string"
+          },
+          "country_code": {
+            "default": "NA",
+            "description": "ISO 3166-1 alpha-2; defaults to Namibia.",
+            "pattern": "^[A-Za-z]{2}$",
+            "title": "Country Code",
+            "type": "string"
+          },
+          "is_default": {
+            "default": false,
+            "title": "Is Default",
+            "type": "boolean"
+          },
+          "line1": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Line1",
+            "type": "string"
+          },
+          "line2": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Line2"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "pattern": "^\\+?[0-9 ()-]{6,31}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Phone"
+          },
+          "postal_code": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Postal Code"
+          },
+          "recipient_name": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Recipient Name",
+            "type": "string"
+          },
+          "region": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Region"
+          },
+          "type": {
+            "$ref": "#/components/schemas/AddressType"
+          }
+        },
+        "required": ["recipient_name", "line1", "city", "type"],
+        "title": "AddressCreate",
+        "type": "object"
+      },
+      "AddressIn": {
+        "additionalProperties": false,
+        "properties": {
+          "city": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "City",
+            "type": "string"
+          },
+          "country_code": {
+            "default": "NA",
+            "description": "ISO 3166-1 alpha-2; defaults to Namibia.",
+            "pattern": "^[A-Za-z]{2}$",
+            "title": "Country Code",
+            "type": "string"
+          },
+          "line1": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Line1",
+            "type": "string"
+          },
+          "line2": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Line2"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "pattern": "^\\+?[0-9 ()-]{6,31}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Phone"
+          },
+          "postal_code": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Postal Code"
+          },
+          "recipient_name": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Recipient Name",
+            "type": "string"
+          },
+          "region": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Region"
+          }
+        },
+        "required": ["recipient_name", "line1", "city"],
+        "title": "AddressIn",
+        "type": "object"
+      },
+      "AddressList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AddressResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": ["items"],
+        "title": "AddressList",
+        "type": "object"
+      },
+      "AddressResponse": {
+        "properties": {
+          "city": {
+            "title": "City",
+            "type": "string"
+          },
+          "country_code": {
+            "title": "Country Code",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "is_default": {
+            "title": "Is Default",
+            "type": "boolean"
+          },
+          "line1": {
+            "title": "Line1",
+            "type": "string"
+          },
+          "line2": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Line2"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "postal_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Postal Code"
+          },
+          "recipient_name": {
+            "title": "Recipient Name",
+            "type": "string"
+          },
+          "region": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Region"
+          },
+          "type": {
+            "$ref": "#/components/schemas/AddressType"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "recipient_name",
+          "phone",
+          "line1",
+          "line2",
+          "city",
+          "region",
+          "postal_code",
+          "country_code",
+          "is_default"
+        ],
+        "title": "AddressResponse",
+        "type": "object"
+      },
+      "AddressType": {
+        "enum": ["shipping", "billing"],
+        "title": "AddressType",
+        "type": "string"
+      },
+      "AddressUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "city": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "City"
+          },
+          "country_code": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Za-z]{2}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Country Code"
+          },
+          "is_default": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Is Default"
+          },
+          "line1": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Line1"
+          },
+          "line2": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Line2"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "pattern": "^\\+?[0-9 ()-]{6,31}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Phone"
+          },
+          "postal_code": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Postal Code"
+          },
+          "recipient_name": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Recipient Name"
+          },
+          "region": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Region"
+          }
+        },
+        "title": "AddressUpdate",
+        "type": "object"
+      },
+      "AdminOrderDetail": {
+        "properties": {
+          "build_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Build Id"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "customer_email": {
+            "title": "Customer Email",
+            "type": "string"
+          },
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/StatusChange"
+            },
+            "title": "History",
+            "type": "array"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/OrderLine"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "order_number": {
+            "title": "Order Number",
+            "type": "string"
+          },
+          "payment_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Status of the latest payment attempt, if any.",
+            "title": "Payment Status"
+          },
+          "reservation_expires_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Unpaid orders release their stock at this time.",
+            "title": "Reservation Expires At"
+          },
+          "shipping_address": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ShippingAddress"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/OrderStatus"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/Totals"
+          }
+        },
+        "required": [
+          "order_number",
+          "status",
+          "items",
+          "totals",
+          "shipping_address",
+          "build_id",
+          "reservation_expires_at",
+          "created_at",
+          "payment_status",
+          "history",
+          "customer_email"
+        ],
+        "title": "AdminOrderDetail",
+        "type": "object"
+      },
+      "AdminProductPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AdminProductRow"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": ["items", "next_cursor"],
+        "title": "AdminProductPage",
+        "type": "object"
+      },
+      "AdminProductQuery": {
+        "additionalProperties": false,
+        "properties": {
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Active"
+          },
+          "cursor": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Cursor"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Kind"
+          },
+          "limit": {
+            "default": 50,
+            "maximum": 100,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "q": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Name or SKU contains.",
+            "title": "Q"
+          }
+        },
+        "title": "AdminProductQuery",
+        "type": "object"
+      },
+      "AdminProductResponse": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "is_active": {
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "kind_code": {
+            "title": "Kind Code",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "price_cents": {
+            "title": "Price Cents",
+            "type": "integer"
+          },
+          "sku": {
+            "title": "Sku",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": ["id", "sku", "name", "kind_code", "price_cents", "is_active", "updated_at"],
+        "title": "AdminProductResponse",
+        "type": "object"
+      },
+      "AdminProductRow": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "is_active": {
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "kind_code": {
+            "title": "Kind Code",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "price_cents": {
+            "title": "Price Cents",
+            "type": "integer"
+          },
+          "quantity_available": {
+            "title": "Quantity Available",
+            "type": "integer"
+          },
+          "quantity_on_hand": {
+            "title": "Quantity On Hand",
+            "type": "integer"
+          },
+          "quantity_reserved": {
+            "title": "Quantity Reserved",
+            "type": "integer"
+          },
+          "sku": {
+            "title": "Sku",
+            "type": "string"
+          },
+          "version": {
+            "description": "Send as If-Match when editing this product's stock.",
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "sku",
+          "name",
+          "kind_code",
+          "price_cents",
+          "is_active",
+          "quantity_on_hand",
+          "quantity_reserved",
+          "quantity_available",
+          "version"
+        ],
+        "title": "AdminProductRow",
+        "type": "object"
+      },
+      "AdminStatusChange": {
+        "additionalProperties": false,
+        "description": "Fulfilment steps. Payment, cancellation and refunds have their own paths.",
+        "properties": {
+          "to": {
+            "enum": ["fulfilling", "shipped", "delivered"],
+            "title": "To",
+            "type": "string"
+          }
+        },
+        "required": ["to"],
+        "title": "AdminStatusChange",
+        "type": "object"
+      },
+      "Availability": {
+        "properties": {
+          "in_stock": {
+            "title": "In Stock",
+            "type": "boolean"
+          },
+          "quantity_available": {
+            "title": "Quantity Available",
+            "type": "integer"
+          }
+        },
+        "required": ["in_stock", "quantity_available"],
+        "title": "Availability",
+        "type": "object"
+      },
+      "BrandList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BrandResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": ["items"],
+        "title": "BrandList",
+        "type": "object"
+      },
+      "BrandResponse": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          }
+        },
+        "required": ["id", "name", "slug"],
+        "title": "BrandResponse",
+        "type": "object"
+      },
+      "BuildCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": ["name"],
+        "title": "BuildCreate",
+        "type": "object"
+      },
+      "BuildDetail": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "item_count": {
+            "description": "Total parts, counting quantities.",
+            "title": "Item Count",
+            "type": "integer"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BuildItemResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/BuildStatus"
+          },
+          "subtotal": {
+            "$ref": "#/components/schemas/Price"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": ["id", "name", "status", "item_count", "subtotal", "updated_at", "items"],
+        "title": "BuildDetail",
+        "type": "object"
+      },
+      "BuildItemCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "product_id": {
+            "minimum": 1,
+            "title": "Product Id",
+            "type": "integer"
+          },
+          "quantity": {
+            "default": 1,
+            "maximum": 20,
+            "minimum": 1,
+            "title": "Quantity",
+            "type": "integer"
+          }
+        },
+        "required": ["product_id"],
+        "title": "BuildItemCreate",
+        "type": "object"
+      },
+      "BuildItemResponse": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "line_total": {
+            "$ref": "#/components/schemas/Price"
+          },
+          "product": {
+            "$ref": "#/components/schemas/ProductSummary"
+          },
+          "quantity": {
+            "title": "Quantity",
+            "type": "integer"
+          }
+        },
+        "required": ["id", "quantity", "line_total", "product"],
+        "title": "BuildItemResponse",
+        "type": "object"
+      },
+      "BuildItemUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "quantity": {
+            "maximum": 20,
+            "minimum": 1,
+            "title": "Quantity",
+            "type": "integer"
+          }
+        },
+        "required": ["quantity"],
+        "title": "BuildItemUpdate",
+        "type": "object"
+      },
+      "BuildList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BuildSummary"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": ["items"],
+        "title": "BuildList",
+        "type": "object"
+      },
+      "BuildSource": {
+        "additionalProperties": false,
+        "properties": {
+          "build_id": {
+            "minimum": 1,
+            "title": "Build Id",
+            "type": "integer"
+          }
+        },
+        "required": ["build_id"],
+        "title": "BuildSource",
+        "type": "object"
+      },
+      "BuildStatus": {
+        "enum": ["draft", "validated", "ordered"],
+        "title": "BuildStatus",
+        "type": "string"
+      },
+      "BuildSummary": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "item_count": {
+            "description": "Total parts, counting quantities.",
+            "title": "Item Count",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/BuildStatus"
+          },
+          "subtotal": {
+            "$ref": "#/components/schemas/Price"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": ["id", "name", "status", "item_count", "subtotal", "updated_at"],
+        "title": "BuildSummary",
+        "type": "object"
+      },
+      "BuildUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": ["name"],
+        "title": "BuildUpdate",
+        "type": "object"
+      },
+      "BuildValidation": {
+        "properties": {
+          "compatible": {
+            "description": "No part conflicts with another.",
+            "title": "Compatible",
+            "type": "boolean"
+          },
+          "complete": {
+            "description": "Nothing the build needs is missing.",
+            "title": "Complete",
+            "type": "boolean"
+          },
+          "conflicts": {
+            "items": {
+              "$ref": "#/components/schemas/FindingResponse"
+            },
+            "title": "Conflicts",
+            "type": "array"
+          },
+          "missing_kinds": {
+            "description": "Required kinds not present, including a gpu for CPUs without integrated graphics and a cooler for CPUs sold without one.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Missing Kinds",
+            "type": "array"
+          },
+          "power": {
+            "$ref": "#/components/schemas/PowerResponse"
+          },
+          "status": {
+            "$ref": "#/components/schemas/BuildStatus",
+            "description": "validated only when the build is both compatible and complete."
+          },
+          "warnings": {
+            "items": {
+              "$ref": "#/components/schemas/FindingResponse"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": ["compatible", "complete", "conflicts", "warnings", "missing_kinds", "power", "status"],
+        "title": "BuildValidation",
+        "type": "object"
+      },
+      "CartItemCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "product_id": {
+            "minimum": 1,
+            "title": "Product Id",
+            "type": "integer"
+          },
+          "quantity": {
+            "default": 1,
+            "maximum": 99,
+            "minimum": 1,
+            "title": "Quantity",
+            "type": "integer"
+          }
+        },
+        "required": ["product_id"],
+        "title": "CartItemCreate",
+        "type": "object"
+      },
+      "CartItemUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "quantity": {
+            "maximum": 99,
+            "minimum": 1,
+            "title": "Quantity",
+            "type": "integer"
+          }
+        },
+        "required": ["quantity"],
+        "title": "CartItemUpdate",
+        "type": "object"
+      },
+      "CartLine": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "in_stock": {
+            "description": "False if the quantity exceeds what is available right now.",
+            "title": "In Stock",
+            "type": "boolean"
+          },
+          "line_total": {
+            "$ref": "#/components/schemas/Price",
+            "description": "Gross, VAT included."
+          },
+          "product": {
+            "$ref": "#/components/schemas/ProductSummary"
+          },
+          "quantity": {
+            "title": "Quantity",
+            "type": "integer"
+          }
+        },
+        "required": ["id", "quantity", "line_total", "in_stock", "product"],
+        "title": "CartLine",
+        "type": "object"
+      },
+      "CartResponse": {
+        "properties": {
+          "item_count": {
+            "title": "Item Count",
+            "type": "integer"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CartLine"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/Totals"
+          }
+        },
+        "required": ["items", "item_count", "totals"],
+        "title": "CartResponse",
+        "type": "object"
+      },
+      "CaseSpecs": {
+        "properties": {
+          "kind": {
+            "const": "case",
+            "default": "case",
+            "title": "Kind",
+            "type": "string"
+          },
+          "max_cooler_height_mm": {
+            "title": "Max Cooler Height Mm",
+            "type": "integer"
+          },
+          "max_gpu_length_mm": {
+            "title": "Max Gpu Length Mm",
+            "type": "integer"
+          },
+          "max_radiator_mm": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Radiator Mm"
+          },
+          "psu_form_factor": {
+            "$ref": "#/components/schemas/PsuFormFactor"
+          },
+          "supported_form_factors": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Supported Form Factors",
+            "type": "array"
+          }
+        },
+        "required": [
+          "max_gpu_length_mm",
+          "max_cooler_height_mm",
+          "max_radiator_mm",
+          "psu_form_factor",
+          "supported_form_factors"
+        ],
+        "title": "CaseSpecs",
+        "type": "object"
+      },
+      "CategoryList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CategoryNode"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": ["items"],
+        "title": "CategoryList",
+        "type": "object"
+      },
+      "CategoryNode": {
+        "properties": {
+          "children": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/CategoryNode"
+            },
+            "title": "Children",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Component kind sold in this category; null for grouping categories.",
+            "title": "Kind"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          }
+        },
+        "required": ["id", "name", "slug", "kind"],
+        "title": "CategoryNode",
+        "type": "object"
+      },
+      "CategoryRef": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          }
+        },
+        "required": ["id", "name", "slug"],
+        "title": "CategoryRef",
+        "type": "object"
+      },
+      "CheckItem": {
+        "additionalProperties": false,
+        "properties": {
+          "product_id": {
+            "minimum": 1,
+            "title": "Product Id",
+            "type": "integer"
+          },
+          "quantity": {
+            "default": 1,
+            "maximum": 20,
+            "minimum": 1,
+            "title": "Quantity",
+            "type": "integer"
+          }
+        },
+        "required": ["product_id"],
+        "title": "CheckItem",
+        "type": "object"
+      },
+      "CheckoutRequest": {
+        "additionalProperties": false,
+        "description": "Check out the cart or a validated build, shipping to a saved or an inline address.",
+        "properties": {
+          "address": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AddressIn"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "address_id": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Address Id"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "const": "cart",
+                "type": "string"
+              },
+              {
+                "$ref": "#/components/schemas/BuildSource"
+              }
+            ],
+            "default": "cart",
+            "title": "Source"
+          }
+        },
+        "title": "CheckoutRequest",
+        "type": "object"
+      },
+      "CheckoutResponse": {
+        "properties": {
+          "build_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Build Id"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/OrderLine"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "order_number": {
+            "title": "Order Number",
+            "type": "string"
+          },
+          "payment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaymentInfo"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "reservation_expires_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Unpaid orders release their stock at this time.",
+            "title": "Reservation Expires At"
+          },
+          "shipping_address": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ShippingAddress"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/OrderStatus"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/Totals"
+          }
+        },
+        "required": [
+          "order_number",
+          "status",
+          "items",
+          "totals",
+          "shipping_address",
+          "build_id",
+          "reservation_expires_at",
+          "created_at"
+        ],
+        "title": "CheckoutResponse",
+        "type": "object"
+      },
+      "CompatibilityCheckRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CheckItem"
+            },
+            "maxItems": 50,
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": ["items"],
+        "title": "CompatibilityCheckRequest",
+        "type": "object"
+      },
+      "CompatibilityReport": {
+        "properties": {
+          "compatible": {
+            "description": "No part conflicts with another.",
+            "title": "Compatible",
+            "type": "boolean"
+          },
+          "complete": {
+            "description": "Nothing the build needs is missing.",
+            "title": "Complete",
+            "type": "boolean"
+          },
+          "conflicts": {
+            "items": {
+              "$ref": "#/components/schemas/FindingResponse"
+            },
+            "title": "Conflicts",
+            "type": "array"
+          },
+          "missing_kinds": {
+            "description": "Required kinds not present, including a gpu for CPUs without integrated graphics and a cooler for CPUs sold without one.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Missing Kinds",
+            "type": "array"
+          },
+          "power": {
+            "$ref": "#/components/schemas/PowerResponse"
+          },
+          "warnings": {
+            "items": {
+              "$ref": "#/components/schemas/FindingResponse"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": ["compatible", "complete", "conflicts", "warnings", "missing_kinds", "power"],
+        "title": "CompatibilityReport",
+        "type": "object"
+      },
+      "ComponentKindList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ComponentKindResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": ["items"],
+        "title": "ComponentKindList",
+        "type": "object"
+      },
+      "ComponentKindResponse": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "max_per_build": {
+            "title": "Max Per Build",
+            "type": "integer"
+          },
+          "required_in_build": {
+            "title": "Required In Build",
+            "type": "boolean"
+          },
+          "sort_order": {
+            "title": "Sort Order",
+            "type": "integer"
+          }
+        },
+        "required": ["code", "label", "max_per_build", "required_in_build", "sort_order"],
+        "title": "ComponentKindResponse",
+        "type": "object"
+      },
+      "CoolerSpecs": {
+        "properties": {
+          "cooler_type": {
+            "$ref": "#/components/schemas/CoolerType"
+          },
+          "height_mm": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Height Mm"
+          },
+          "kind": {
+            "const": "cooler",
+            "default": "cooler",
+            "title": "Kind",
+            "type": "string"
+          },
+          "radiator_mm": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Radiator Mm"
+          },
+          "supported_sockets": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Supported Sockets",
+            "type": "array"
+          },
+          "tdp_rating_w": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tdp Rating W"
+          }
+        },
+        "required": ["cooler_type", "height_mm", "radiator_mm", "tdp_rating_w", "supported_sockets"],
+        "title": "CoolerSpecs",
+        "type": "object"
+      },
+      "CoolerType": {
+        "enum": ["air", "aio"],
+        "title": "CoolerType",
+        "type": "string"
+      },
+      "CpuSpecs": {
+        "properties": {
+          "base_clock_mhz": {
+            "title": "Base Clock Mhz",
+            "type": "integer"
+          },
+          "boost_clock_mhz": {
+            "title": "Boost Clock Mhz",
+            "type": "integer"
+          },
+          "cores": {
+            "title": "Cores",
+            "type": "integer"
+          },
+          "has_integrated_graphics": {
+            "title": "Has Integrated Graphics",
+            "type": "boolean"
+          },
+          "kind": {
+            "const": "cpu",
+            "default": "cpu",
+            "title": "Kind",
+            "type": "string"
+          },
+          "max_power_w": {
+            "title": "Max Power W",
+            "type": "integer"
+          },
+          "socket_code": {
+            "title": "Socket Code",
+            "type": "string"
+          },
+          "tdp_w": {
+            "title": "Tdp W",
+            "type": "integer"
+          },
+          "threads": {
+            "title": "Threads",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "socket_code",
+          "cores",
+          "threads",
+          "base_clock_mhz",
+          "boost_clock_mhz",
+          "tdp_w",
+          "max_power_w",
+          "has_integrated_graphics"
+        ],
+        "title": "CpuSpecs",
+        "type": "object"
+      },
+      "ErrorBody": {
+        "properties": {
+          "code": {
+            "description": "Stable, machine-readable error code.",
+            "title": "Code",
+            "type": "string"
+          },
+          "details": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Per-field problems for validation errors.",
+            "title": "Details"
+          },
+          "message": {
+            "description": "Human-readable explanation; may change.",
+            "title": "Message",
+            "type": "string"
+          },
+          "request_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Echoed in the X-Request-ID header.",
+            "title": "Request Id"
+          }
+        },
+        "required": ["code", "message"],
+        "title": "ErrorBody",
+        "type": "object"
+      },
+      "ErrorResponse": {
+        "description": "The envelope every error response uses.",
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorBody"
+          }
+        },
+        "required": ["error"],
+        "title": "ErrorResponse",
+        "type": "object"
+      },
+      "FindingResponse": {
+        "properties": {
+          "code": {
+            "description": "Stable identifier, e.g. SOCKET_MISMATCH.",
+            "title": "Code",
+            "type": "string"
+          },
+          "details": {
+            "additionalProperties": true,
+            "description": "The measured values behind the finding.",
+            "title": "Details",
+            "type": "object"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "product_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Product Ids",
+            "type": "array"
+          },
+          "severity": {
+            "description": "conflict: cannot work as specified. warning: works, needs attention.",
+            "title": "Severity",
+            "type": "string"
+          }
+        },
+        "required": ["code", "severity", "message", "product_ids", "details"],
+        "title": "FindingResponse",
+        "type": "object"
+      },
+      "GpuSpecs": {
+        "properties": {
+          "chipset": {
+            "title": "Chipset",
+            "type": "string"
+          },
+          "kind": {
+            "const": "gpu",
+            "default": "gpu",
+            "title": "Kind",
+            "type": "string"
+          },
+          "length_mm": {
+            "title": "Length Mm",
+            "type": "integer"
+          },
+          "power_connectors": {
+            "title": "Power Connectors",
+            "type": "string"
+          },
+          "recommended_psu_w": {
+            "title": "Recommended Psu W",
+            "type": "integer"
+          },
+          "slot_width": {
+            "title": "Slot Width",
+            "type": "number"
+          },
+          "tdp_w": {
+            "title": "Tdp W",
+            "type": "integer"
+          },
+          "vram_gb": {
+            "title": "Vram Gb",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "chipset",
+          "vram_gb",
+          "length_mm",
+          "slot_width",
+          "tdp_w",
+          "power_connectors",
+          "recommended_psu_w"
+        ],
+        "title": "GpuSpecs",
+        "type": "object"
+      },
+      "InventoryResponse": {
+        "properties": {
+          "product_id": {
+            "title": "Product Id",
+            "type": "integer"
+          },
+          "quantity_available": {
+            "title": "Quantity Available",
+            "type": "integer"
+          },
+          "quantity_on_hand": {
+            "title": "Quantity On Hand",
+            "type": "integer"
+          },
+          "quantity_reserved": {
+            "title": "Quantity Reserved",
+            "type": "integer"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "version": {
+            "description": "Also returned as the ETag header. Send it back in If-Match to update.",
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "product_id",
+          "quantity_on_hand",
+          "quantity_reserved",
+          "quantity_available",
+          "version",
+          "updated_at"
+        ],
+        "title": "InventoryResponse",
+        "type": "object"
+      },
+      "KindCode": {
+        "description": "Polymorphic identities. Rows live in the component_kinds lookup table.",
+        "enum": ["cpu", "motherboard", "memory", "gpu", "storage", "psu", "case", "cooler", "accessory"],
+        "title": "KindCode",
+        "type": "string"
+      },
+      "Liveness": {
+        "properties": {
+          "status": {
+            "const": "ok",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": ["status"],
+        "title": "Liveness",
+        "type": "object"
+      },
+      "LoginRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "format": "email",
+            "maxLength": 254,
+            "title": "Email",
+            "type": "string"
+          },
+          "password": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Password",
+            "type": "string"
+          }
+        },
+        "required": ["email", "password"],
+        "title": "LoginRequest",
+        "type": "object"
+      },
+      "MemorySpecs": {
+        "properties": {
+          "cas_latency": {
+            "title": "Cas Latency",
+            "type": "integer"
+          },
+          "height_mm": {
+            "title": "Height Mm",
+            "type": "number"
+          },
+          "kind": {
+            "const": "memory",
+            "default": "memory",
+            "title": "Kind",
+            "type": "string"
+          },
+          "memory_type": {
+            "$ref": "#/components/schemas/MemoryType"
+          },
+          "module_capacity_gb": {
+            "title": "Module Capacity Gb",
+            "type": "integer"
+          },
+          "modules": {
+            "title": "Modules",
+            "type": "integer"
+          },
+          "speed_mts": {
+            "title": "Speed Mts",
+            "type": "integer"
+          },
+          "total_capacity_gb": {
+            "title": "Total Capacity Gb",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "memory_type",
+          "modules",
+          "module_capacity_gb",
+          "total_capacity_gb",
+          "speed_mts",
+          "cas_latency",
+          "height_mm"
+        ],
+        "title": "MemorySpecs",
+        "type": "object"
+      },
+      "MemoryType": {
+        "enum": ["ddr4", "ddr5"],
+        "title": "MemoryType",
+        "type": "string"
+      },
+      "MotherboardSpecs": {
+        "properties": {
+          "chipset": {
+            "title": "Chipset",
+            "type": "string"
+          },
+          "form_factor_code": {
+            "title": "Form Factor Code",
+            "type": "string"
+          },
+          "kind": {
+            "const": "motherboard",
+            "default": "motherboard",
+            "title": "Kind",
+            "type": "string"
+          },
+          "m2_slots": {
+            "title": "M2 Slots",
+            "type": "integer"
+          },
+          "max_memory_gb": {
+            "title": "Max Memory Gb",
+            "type": "integer"
+          },
+          "memory_slots": {
+            "title": "Memory Slots",
+            "type": "integer"
+          },
+          "memory_type": {
+            "$ref": "#/components/schemas/MemoryType"
+          },
+          "sata_ports": {
+            "title": "Sata Ports",
+            "type": "integer"
+          },
+          "socket_code": {
+            "title": "Socket Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "socket_code",
+          "form_factor_code",
+          "chipset",
+          "memory_type",
+          "memory_slots",
+          "max_memory_gb",
+          "m2_slots",
+          "sata_ports"
+        ],
+        "title": "MotherboardSpecs",
+        "type": "object"
+      },
+      "OrderDetail": {
+        "properties": {
+          "build_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Build Id"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/StatusChange"
+            },
+            "title": "History",
+            "type": "array"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/OrderLine"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "order_number": {
+            "title": "Order Number",
+            "type": "string"
+          },
+          "payment_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Status of the latest payment attempt, if any.",
+            "title": "Payment Status"
+          },
+          "reservation_expires_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Unpaid orders release their stock at this time.",
+            "title": "Reservation Expires At"
+          },
+          "shipping_address": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ShippingAddress"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/OrderStatus"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/Totals"
+          }
+        },
+        "required": [
+          "order_number",
+          "status",
+          "items",
+          "totals",
+          "shipping_address",
+          "build_id",
+          "reservation_expires_at",
+          "created_at",
+          "payment_status",
+          "history"
+        ],
+        "title": "OrderDetail",
+        "type": "object"
+      },
+      "OrderLine": {
+        "properties": {
+          "line_total": {
+            "$ref": "#/components/schemas/Price"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "product_id": {
+            "title": "Product Id",
+            "type": "integer"
+          },
+          "quantity": {
+            "title": "Quantity",
+            "type": "integer"
+          },
+          "sku": {
+            "title": "Sku",
+            "type": "string"
+          },
+          "unit_price": {
+            "$ref": "#/components/schemas/Price",
+            "description": "Gross, VAT included, at the time of purchase."
+          }
+        },
+        "required": ["product_id", "sku", "name", "quantity", "unit_price", "line_total"],
+        "title": "OrderLine",
+        "type": "object"
+      },
+      "OrderListQuery": {
+        "additionalProperties": false,
+        "properties": {
+          "cursor": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Cursor"
+          },
+          "limit": {
+            "default": 20,
+            "maximum": 50,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OrderStatus"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "title": "OrderListQuery",
+        "type": "object"
+      },
+      "OrderPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/OrderSummary"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Pass as `cursor` for older orders; null on the last page.",
+            "title": "Next Cursor"
+          }
+        },
+        "required": ["items", "next_cursor"],
+        "title": "OrderPage",
+        "type": "object"
+      },
+      "OrderStatus": {
+        "enum": ["pending_payment", "paid", "fulfilling", "shipped", "delivered", "cancelled", "refunded"],
+        "title": "OrderStatus",
+        "type": "string"
+      },
+      "OrderSummary": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "item_count": {
+            "title": "Item Count",
+            "type": "integer"
+          },
+          "order_number": {
+            "title": "Order Number",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/OrderStatus"
+          },
+          "total": {
+            "$ref": "#/components/schemas/Price"
+          }
+        },
+        "required": ["order_number", "status", "item_count", "total", "created_at"],
+        "title": "OrderSummary",
+        "type": "object"
+      },
+      "PaymentInfo": {
+        "properties": {
+          "client_secret": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Pass to Stripe.js to confirm the payment. Null when the payment could not be started; retry with POST /orders/{order_number}/payment.",
+            "title": "Client Secret"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": ["client_secret", "status"],
+        "title": "PaymentInfo",
+        "type": "object"
+      },
+      "PowerResponse": {
+        "properties": {
+          "peak_w": {
+            "description": "Estimated draw during graphics card power excursions.",
+            "title": "Peak W",
+            "type": "integer"
+          },
+          "recommended_psu_w": {
+            "description": "Smallest ATX 3.x supply with comfortable headroom.",
+            "title": "Recommended Psu W",
+            "type": "integer"
+          },
+          "sustained_w": {
+            "description": "Estimated continuous draw.",
+            "title": "Sustained W",
+            "type": "integer"
+          }
+        },
+        "required": ["sustained_w", "peak_w", "recommended_psu_w"],
+        "title": "PowerResponse",
+        "type": "object"
+      },
+      "Price": {
+        "properties": {
+          "amount_cents": {
+            "description": "Integer minor units.",
+            "title": "Amount Cents",
+            "type": "integer"
+          },
+          "currency": {
+            "description": "ISO 4217 code, lowercase.",
+            "title": "Currency",
+            "type": "string"
+          }
+        },
+        "required": ["amount_cents", "currency"],
+        "title": "Price",
+        "type": "object"
+      },
+      "ProductDetail": {
+        "properties": {
+          "availability": {
+            "$ref": "#/components/schemas/Availability"
+          },
+          "brand": {
+            "$ref": "#/components/schemas/BrandResponse"
+          },
+          "category": {
+            "$ref": "#/components/schemas/CategoryRef"
+          },
+          "compatibility_warnings": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "With compatible_with: warning codes this part would add to that build. Null otherwise.",
+            "title": "Compatibility Warnings"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "price": {
+            "$ref": "#/components/schemas/Price"
+          },
+          "sku": {
+            "title": "Sku",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "specs": {
+            "discriminator": {
+              "mapping": {
+                "accessory": "#/components/schemas/AccessorySpecs",
+                "case": "#/components/schemas/CaseSpecs",
+                "cooler": "#/components/schemas/CoolerSpecs",
+                "cpu": "#/components/schemas/CpuSpecs",
+                "gpu": "#/components/schemas/GpuSpecs",
+                "memory": "#/components/schemas/MemorySpecs",
+                "motherboard": "#/components/schemas/MotherboardSpecs",
+                "psu": "#/components/schemas/PsuSpecs",
+                "storage": "#/components/schemas/StorageSpecs"
+              },
+              "propertyName": "kind"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/CpuSpecs"
+              },
+              {
+                "$ref": "#/components/schemas/MotherboardSpecs"
+              },
+              {
+                "$ref": "#/components/schemas/MemorySpecs"
+              },
+              {
+                "$ref": "#/components/schemas/GpuSpecs"
+              },
+              {
+                "$ref": "#/components/schemas/StorageSpecs"
+              },
+              {
+                "$ref": "#/components/schemas/PsuSpecs"
+              },
+              {
+                "$ref": "#/components/schemas/CaseSpecs"
+              },
+              {
+                "$ref": "#/components/schemas/CoolerSpecs"
+              },
+              {
+                "$ref": "#/components/schemas/AccessorySpecs"
+              }
+            ],
+            "title": "Specs"
+          }
+        },
+        "required": [
+          "id",
+          "sku",
+          "slug",
+          "name",
+          "kind",
+          "brand",
+          "price",
+          "availability",
+          "specs",
+          "description",
+          "category"
+        ],
+        "title": "ProductDetail",
+        "type": "object"
+      },
+      "ProductPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ProductSummary"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Pass as `cursor` to fetch the next page; null on the last page.",
+            "title": "Next Cursor"
+          }
+        },
+        "required": ["items", "next_cursor"],
+        "title": "ProductPage",
+        "type": "object"
+      },
+      "ProductQuery": {
+        "additionalProperties": false,
+        "description": "Query string for GET /products. Unknown parameters are rejected rather than ignored, so a\nmisspelled filter fails loudly instead of silently returning unfiltered results.",
+        "properties": {
+          "brand": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Brand slugs, comma-separated or repeated (brand=amd,intel or brand=amd&brand=intel).",
+            "title": "Brand"
+          },
+          "capacity_min_gb": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "memory (kit total), storage.",
+            "title": "Capacity Min Gb"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Category slug; includes its subcategories.",
+            "title": "Category"
+          },
+          "chipset": {
+            "anyOf": [
+              {
+                "maxLength": 60,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "motherboard, gpu; substring match.",
+            "title": "Chipset"
+          },
+          "compatible_with": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "maxItems": 50,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Product ids of a build (comma-separated or repeated). Lists only parts of `kind` that would not conflict with it; a part of a single-slot kind (cpu, motherboard, psu, case, cooler) is judged as a replacement for the build's current one. Requires `kind`.",
+            "title": "Compatible With"
+          },
+          "cooler_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CoolerType"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "cooler."
+          },
+          "cores_min": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "cpu.",
+            "title": "Cores Min"
+          },
+          "cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Opaque; from next_cursor of the previous page.",
+            "title": "Cursor"
+          },
+          "efficiency": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PsuEfficiency"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "psu."
+          },
+          "fits_cooler_height_mm": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "case: cooler clearance at least this.",
+            "title": "Fits Cooler Height Mm"
+          },
+          "fits_gpu_length_mm": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "case: GPU clearance at least this.",
+            "title": "Fits Gpu Length Mm"
+          },
+          "form_factor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "motherboard (board), case (supported board), psu, storage.",
+            "title": "Form Factor"
+          },
+          "has_integrated_graphics": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "cpu.",
+            "title": "Has Integrated Graphics"
+          },
+          "height_max_mm": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "cooler.",
+            "title": "Height Max Mm"
+          },
+          "in_stock": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "In Stock"
+          },
+          "interface": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StorageInterface"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "storage."
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/KindCode"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "length_max_mm": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "gpu.",
+            "title": "Length Max Mm"
+          },
+          "limit": {
+            "default": 24,
+            "maximum": 100,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "max_price": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Inclusive, in minor units.",
+            "title": "Max Price"
+          },
+          "memory_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MemoryType"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "motherboard, memory."
+          },
+          "min_price": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Inclusive, in minor units.",
+            "title": "Min Price"
+          },
+          "modularity": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PsuModularity"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "psu."
+          },
+          "q": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Search: words, model fragments (x3d) and typos.",
+            "title": "Q"
+          },
+          "socket": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "cpu, motherboard, cooler (supported socket).",
+            "title": "Socket"
+          },
+          "sort": {
+            "anyOf": [
+              {
+                "enum": ["relevance", "price", "-price", "name", "-name", "newest"],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Defaults to relevance with q, otherwise name.",
+            "title": "Sort"
+          },
+          "speed_min_mts": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "memory.",
+            "title": "Speed Min Mts"
+          },
+          "vram_min_gb": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "gpu.",
+            "title": "Vram Min Gb"
+          },
+          "wattage_min_w": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "psu.",
+            "title": "Wattage Min W"
+          }
+        },
+        "title": "ProductQuery",
+        "type": "object"
+      },
+      "ProductSummary": {
+        "properties": {
+          "availability": {
+            "$ref": "#/components/schemas/Availability"
+          },
+          "brand": {
+            "$ref": "#/components/schemas/BrandResponse"
+          },
+          "compatibility_warnings": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "With compatible_with: warning codes this part would add to that build. Null otherwise.",
+            "title": "Compatibility Warnings"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "price": {
+            "$ref": "#/components/schemas/Price"
+          },
+          "sku": {
+            "title": "Sku",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "specs": {
+            "discriminator": {
+              "mapping": {
+                "accessory": "#/components/schemas/AccessorySpecs",
+                "case": "#/components/schemas/CaseSpecs",
+                "cooler": "#/components/schemas/CoolerSpecs",
+                "cpu": "#/components/schemas/CpuSpecs",
+                "gpu": "#/components/schemas/GpuSpecs",
+                "memory": "#/components/schemas/MemorySpecs",
+                "motherboard": "#/components/schemas/MotherboardSpecs",
+                "psu": "#/components/schemas/PsuSpecs",
+                "storage": "#/components/schemas/StorageSpecs"
+              },
+              "propertyName": "kind"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/CpuSpecs"
+              },
+              {
+                "$ref": "#/components/schemas/MotherboardSpecs"
+              },
+              {
+                "$ref": "#/components/schemas/MemorySpecs"
+              },
+              {
+                "$ref": "#/components/schemas/GpuSpecs"
+              },
+              {
+                "$ref": "#/components/schemas/StorageSpecs"
+              },
+              {
+                "$ref": "#/components/schemas/PsuSpecs"
+              },
+              {
+                "$ref": "#/components/schemas/CaseSpecs"
+              },
+              {
+                "$ref": "#/components/schemas/CoolerSpecs"
+              },
+              {
+                "$ref": "#/components/schemas/AccessorySpecs"
+              }
+            ],
+            "title": "Specs"
+          }
+        },
+        "required": ["id", "sku", "slug", "name", "kind", "brand", "price", "availability", "specs"],
+        "title": "ProductSummary",
+        "type": "object"
+      },
+      "ProductUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "is_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Is Active"
+          },
+          "price_cents": {
+            "anyOf": [
+              {
+                "maximum": 2147483647,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Price in minor units (integer, never a float).",
+            "title": "Price Cents"
+          }
+        },
+        "title": "ProductUpdate",
+        "type": "object"
+      },
+      "PsuEfficiency": {
+        "enum": [
+          "80plus",
+          "80plus_bronze",
+          "80plus_silver",
+          "80plus_gold",
+          "80plus_platinum",
+          "80plus_titanium"
+        ],
+        "title": "PsuEfficiency",
+        "type": "string"
+      },
+      "PsuFormFactor": {
+        "enum": ["atx", "sfx", "sfx_l"],
+        "title": "PsuFormFactor",
+        "type": "string"
+      },
+      "PsuModularity": {
+        "enum": ["non_modular", "semi_modular", "fully_modular"],
+        "title": "PsuModularity",
+        "type": "string"
+      },
+      "PsuSpecs": {
+        "properties": {
+          "efficiency": {
+            "$ref": "#/components/schemas/PsuEfficiency"
+          },
+          "form_factor": {
+            "$ref": "#/components/schemas/PsuFormFactor"
+          },
+          "has_12v_2x6": {
+            "title": "Has 12V 2X6",
+            "type": "boolean"
+          },
+          "kind": {
+            "const": "psu",
+            "default": "psu",
+            "title": "Kind",
+            "type": "string"
+          },
+          "modularity": {
+            "$ref": "#/components/schemas/PsuModularity"
+          },
+          "wattage_w": {
+            "title": "Wattage W",
+            "type": "integer"
+          }
+        },
+        "required": ["wattage_w", "efficiency", "modularity", "form_factor", "has_12v_2x6"],
+        "title": "PsuSpecs",
+        "type": "object"
+      },
+      "PublicConfig": {
+        "properties": {
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "reservation_ttl_seconds": {
+            "description": "How long checkout holds stock for payment.",
+            "title": "Reservation Ttl Seconds",
+            "type": "integer"
+          },
+          "shipping": {
+            "$ref": "#/components/schemas/ShippingSettings"
+          },
+          "stripe_publishable_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Null when payments are not configured.",
+            "title": "Stripe Publishable Key"
+          },
+          "vat_rate_bps": {
+            "description": "1500 = 15%. Prices are VAT-inclusive.",
+            "title": "Vat Rate Bps",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "currency",
+          "vat_rate_bps",
+          "shipping",
+          "reservation_ttl_seconds",
+          "stripe_publishable_key"
+        ],
+        "title": "PublicConfig",
+        "type": "object"
+      },
+      "Readiness": {
+        "properties": {
+          "checks": {
+            "additionalProperties": {
+              "enum": ["ok", "unavailable"],
+              "type": "string"
+            },
+            "title": "Checks",
+            "type": "object"
+          },
+          "status": {
+            "enum": ["ok", "degraded"],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": ["status", "checks"],
+        "title": "Readiness",
+        "type": "object"
+      },
+      "RefundRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Reason"
+          }
+        },
+        "title": "RefundRequest",
+        "type": "object"
+      },
+      "RegisterRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "format": "email",
+            "maxLength": 254,
+            "title": "Email",
+            "type": "string"
+          },
+          "first_name": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "First Name",
+            "type": "string"
+          },
+          "last_name": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Last Name",
+            "type": "string"
+          },
+          "password": {
+            "maxLength": 128,
+            "minLength": 12,
+            "title": "Password",
+            "type": "string"
+          }
+        },
+        "required": ["email", "password", "first_name", "last_name"],
+        "title": "RegisterRequest",
+        "type": "object"
+      },
+      "ShippingAddress": {
+        "properties": {
+          "city": {
+            "title": "City",
+            "type": "string"
+          },
+          "country_code": {
+            "title": "Country Code",
+            "type": "string"
+          },
+          "line1": {
+            "title": "Line1",
+            "type": "string"
+          },
+          "line2": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Line2"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "postal_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Postal Code"
+          },
+          "recipient_name": {
+            "title": "Recipient Name",
+            "type": "string"
+          },
+          "region": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Region"
+          }
+        },
+        "required": [
+          "recipient_name",
+          "phone",
+          "line1",
+          "line2",
+          "city",
+          "region",
+          "postal_code",
+          "country_code"
+        ],
+        "title": "ShippingAddress",
+        "type": "object"
+      },
+      "ShippingSettings": {
+        "properties": {
+          "flat_cents": {
+            "description": "VAT-inclusive flat fee.",
+            "title": "Flat Cents",
+            "type": "integer"
+          },
+          "free_threshold_cents": {
+            "description": "Goods total (gross) from which shipping is free.",
+            "title": "Free Threshold Cents",
+            "type": "integer"
+          }
+        },
+        "required": ["flat_cents", "free_threshold_cents"],
+        "title": "ShippingSettings",
+        "type": "object"
+      },
+      "StatusChange": {
+        "properties": {
+          "at": {
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "from_status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OrderStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "to_status": {
+            "$ref": "#/components/schemas/OrderStatus"
+          }
+        },
+        "required": ["from_status", "to_status", "at"],
+        "title": "StatusChange",
+        "type": "object"
+      },
+      "StockUpdate": {
+        "additionalProperties": false,
+        "description": "Only stock on hand is editable. Reserved stock belongs to checkout and changes only through it.",
+        "properties": {
+          "quantity_on_hand": {
+            "maximum": 2147483647,
+            "minimum": 0,
+            "title": "Quantity On Hand",
+            "type": "integer"
+          }
+        },
+        "required": ["quantity_on_hand"],
+        "title": "StockUpdate",
+        "type": "object"
+      },
+      "StorageFormFactor": {
+        "enum": ["m2_2280", "2.5in", "3.5in"],
+        "title": "StorageFormFactor",
+        "type": "string"
+      },
+      "StorageInterface": {
+        "enum": ["nvme", "sata"],
+        "title": "StorageInterface",
+        "type": "string"
+      },
+      "StorageSpecs": {
+        "properties": {
+          "capacity_gb": {
+            "title": "Capacity Gb",
+            "type": "integer"
+          },
+          "form_factor": {
+            "$ref": "#/components/schemas/StorageFormFactor"
+          },
+          "interface": {
+            "$ref": "#/components/schemas/StorageInterface"
+          },
+          "kind": {
+            "const": "storage",
+            "default": "storage",
+            "title": "Kind",
+            "type": "string"
+          },
+          "pcie_gen": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pcie Gen"
+          }
+        },
+        "required": ["interface", "form_factor", "capacity_gb", "pcie_gen"],
+        "title": "StorageSpecs",
+        "type": "object"
+      },
+      "TokenResponse": {
+        "properties": {
+          "access_token": {
+            "title": "Access Token",
+            "type": "string"
+          },
+          "expires_in": {
+            "description": "Access token lifetime in seconds.",
+            "title": "Expires In",
+            "type": "integer"
+          },
+          "token_type": {
+            "const": "Bearer",
+            "default": "Bearer",
+            "title": "Token Type",
+            "type": "string"
+          }
+        },
+        "required": ["access_token", "expires_in"],
+        "title": "TokenResponse",
+        "type": "object"
+      },
+      "Totals": {
+        "description": "VAT-inclusive pricing: total = subtotal + tax + shipping, exactly.",
+        "properties": {
+          "shipping": {
+            "$ref": "#/components/schemas/Price",
+            "description": "Shipping, net of VAT."
+          },
+          "subtotal": {
+            "$ref": "#/components/schemas/Price",
+            "description": "Goods, net of VAT."
+          },
+          "tax": {
+            "$ref": "#/components/schemas/Price",
+            "description": "VAT on goods and shipping (15%)."
+          },
+          "total": {
+            "$ref": "#/components/schemas/Price",
+            "description": "What the customer pays."
+          }
+        },
+        "required": ["subtotal", "shipping", "tax", "total"],
+        "title": "Totals",
+        "type": "object"
+      },
+      "UserResponse": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "first_name": {
+            "title": "First Name",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "last_name": {
+            "title": "Last Name",
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/UserRole"
+          }
+        },
+        "required": ["id", "email", "first_name", "last_name", "role", "created_at"],
+        "title": "UserResponse",
+        "type": "object"
+      },
+      "UserRole": {
+        "enum": ["customer", "admin"],
+        "title": "UserRole",
+        "type": "string"
+      },
+      "WebhookAck": {
+        "properties": {
+          "duplicate": {
+            "title": "Duplicate",
+            "type": "boolean"
+          },
+          "received": {
+            "title": "Received",
+            "type": "boolean"
+          }
+        },
+        "required": ["received", "duplicate"],
+        "title": "WebhookAck",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "bearerFormat": "JWT",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "description": "PC hardware marketplace with a database-enforced build compatibility engine.",
+    "title": "Forge API",
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/addresses": {
+      "get": {
+        "description": "",
+        "operationId": "get__api_v1_addresses",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddressList"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Saved addresses, grouped by type with the default first.",
+        "tags": ["Addresses"]
+      },
+      "post": {
+        "description": "",
+        "operationId": "post__api_v1_addresses",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddressCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddressResponse"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Save an address. Marking it default replaces the previous default of the same type.",
+        "tags": ["Addresses"]
+      }
+    },
+    "/api/v1/addresses/{address_id}": {
+      "delete": {
+        "description": "",
+        "operationId": "delete__api_v1_addresses_{address_id}",
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "address_id",
+            "required": true,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Delete a saved address. Past orders are unaffected (they hold a snapshot).",
+        "tags": ["Addresses"]
+      },
+      "get": {
+        "description": "",
+        "operationId": "get__api_v1_addresses_{address_id}",
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "address_id",
+            "required": true,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddressResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "One saved address.",
+        "tags": ["Addresses"]
+      },
+      "patch": {
+        "description": "",
+        "operationId": "patch__api_v1_addresses_{address_id}",
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "address_id",
+            "required": true,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddressUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddressResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Change an address. Orders keep the snapshot taken at checkout.",
+        "tags": ["Addresses"]
+      }
+    },
+    "/api/v1/admin/inventory/{product_id}": {
+      "get": {
+        "description": "",
+        "operationId": "get__api_v1_admin_inventory_{product_id}",
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "product_id",
+            "required": true,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Current stock levels. The ETag header carries the version required to update them.",
+        "tags": ["Admin"]
+      },
+      "patch": {
+        "description": "",
+        "operationId": "patch__api_v1_admin_inventory_{product_id}",
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "product_id",
+            "required": true,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StockUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Set stock on hand. Requires If-Match with the current ETag (optimistic concurrency): 412 if the stock changed since it was read, 428 if If-Match is missing, 409 if the new level would fall below stock already reserved by checkouts.",
+        "tags": ["Admin"]
+      }
+    },
+    "/api/v1/admin/orders": {
+      "get": {
+        "description": "",
+        "operationId": "get__api_v1_admin_orders",
+        "parameters": [
+          {
+            "description": "",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "",
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Cursor"
+            }
+          },
+          {
+            "description": "",
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/OrderStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderPage"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "All orders, newest first, optionally filtered by status.",
+        "tags": ["Admin"]
+      }
+    },
+    "/api/v1/admin/orders/{order_number}": {
+      "get": {
+        "description": "",
+        "operationId": "get__api_v1_admin_orders_{order_number}",
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "order_number",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOrderDetail"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Any order, with the customer's email.",
+        "tags": ["Admin"]
+      }
+    },
+    "/api/v1/admin/orders/{order_number}/refund": {
+      "post": {
+        "description": "",
+        "operationId": "post__api_v1_admin_orders_{order_number}_refund",
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "order_number",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefundRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOrderDetail"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Refund the order's payment in full through Stripe. 409 if the order cannot be refunded in its current state (checked before any money moves); 502 if Stripe did not complete it.",
+        "tags": ["Admin"]
+      }
+    },
+    "/api/v1/admin/orders/{order_number}/status": {
+      "post": {
+        "description": "",
+        "operationId": "post__api_v1_admin_orders_{order_number}_status",
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "order_number",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminStatusChange"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOrderDetail"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Move a paid order through fulfilment: fulfilling, shipped, delivered. The database rejects illegal jumps (409 invalid_status_transition). Recorded in the status history with the admin.",
+        "tags": ["Admin"]
+      }
+    },
+    "/api/v1/admin/products": {
+      "get": {
+        "description": "",
+        "operationId": "get__api_v1_admin_products",
+        "parameters": [
+          {
+            "description": "",
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Kind"
+            }
+          },
+          {
+            "description": "Name or SKU contains.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Name or SKU contains.",
+              "title": "Q"
+            }
+          },
+          {
+            "description": "",
+            "in": "query",
+            "name": "active",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Active"
+            }
+          },
+          {
+            "description": "",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "",
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminProductPage"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "All products, including inactive ones, with stock levels. Keyset-paged by id.",
+        "tags": ["Admin"]
+      }
+    },
+    "/api/v1/admin/products/{product_id}": {
+      "patch": {
+        "description": "",
+        "operationId": "patch__api_v1_admin_products_{product_id}",
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "product_id",
+            "required": true,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminProductResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Change a product's price or availability. Price changes are recorded in price_history by a trigger.",
+        "tags": ["Admin"]
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "description": "",
+        "operationId": "post__api_v1_auth_login",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "summary": "Exchange credentials for an access token and a refresh cookie.",
+        "tags": ["Auth"]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "description": "",
+        "operationId": "post__api_v1_auth_logout",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "summary": "End this session (the refresh token family in the cookie). Always succeeds.",
+        "tags": ["Auth"]
+      }
+    },
+    "/api/v1/auth/logout-all": {
+      "post": {
+        "description": "",
+        "operationId": "post__api_v1_auth_logout-all",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "End every session for the authenticated user, on every device.",
+        "tags": ["Auth"]
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "description": "",
+        "operationId": "get__api_v1_auth_me",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "The authenticated user's profile.",
+        "tags": ["Auth"]
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "description": "",
+        "operationId": "post__api_v1_auth_refresh",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "summary": "Rotate the refresh cookie and issue a new access token. Reusing a rotated token ends the session.",
+        "tags": ["Auth"]
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "description": "",
+        "operationId": "post__api_v1_auth_register",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "summary": "Create a customer account.",
+        "tags": ["Auth"]
+      }
+    },
+    "/api/v1/brands": {
+      "get": {
+        "description": "",
+        "operationId": "get__api_v1_brands",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrandList"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "summary": "All brands, alphabetically.",
+        "tags": ["Catalog"]
+      }
+    },
+    "/api/v1/builds": {
+      "get": {
+        "description": "",
+        "operationId": "get__api_v1_builds",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BuildList"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "The user's builds, most recently changed first.",
+        "tags": ["Builds"]
+      },
+      "post": {
+        "description": "",
+        "operationId": "post__api_v1_builds",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BuildCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BuildDetail"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Start a new, empty build.",
+        "tags": ["Builds"]
+      }
+    },
+    "/api/v1/builds/{build_id}": {
+      "delete": {
+        "description": "",
+        "operationId": "delete__api_v1_builds_{build_id}",
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "build_id",
+            "required": true,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Delete a build. Ordered builds cannot be deleted (409 build_locked).",
+        "tags": ["Builds"]
+      },
+      "get": {
+        "description": "",
+        "operationId": "get__api_v1_builds_{build_id}",
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "build_id",
+            "required": true,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BuildDetail"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "A build with its parts, prices and status.",
+        "tags": ["Builds"]
+      },
+      "patch": {
+        "description": "",
+        "operationId": "patch__api_v1_builds_{build_id}",
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "build_id",
+            "required": true,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BuildUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BuildDetail"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Rename a build.",
+        "tags": ["Builds"]
+      }
+    },
+    "/api/v1/builds/{build_id}/items": {
+      "post": {
+        "description": "",
+        "operationId": "post__api_v1_builds_{build_id}_items",
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "build_id",
+            "required": true,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BuildItemCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BuildDetail"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Add a part. 409 if the build already holds the maximum of that kind, already contains the product, or has been ordered. A validated build returns to draft.",
+        "tags": ["Builds"]
+      }
+    },
+    "/api/v1/builds/{build_id}/items/{item_id}": {
+      "delete": {
+        "description": "",
+        "operationId": "delete__api_v1_builds_{build_id}_items_{item_id}",
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "build_id",
+            "required": true,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "",
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BuildDetail"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Remove a part and return the updated build.",
+        "tags": ["Builds"]
+      },
+      "patch": {
+        "description": "",
+        "operationId": "patch__api_v1_builds_{build_id}_items_{item_id}",
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "build_id",
+            "required": true,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "",
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BuildItemUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BuildDetail"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Change a part's quantity.",
+        "tags": ["Builds"]
+      }
+    },
+    "/api/v1/builds/{build_id}/validate": {
+      "post": {
+        "description": "",
+        "operationId": "post__api_v1_builds_{build_id}_validate",
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "build_id",
+            "required": true,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BuildValidation"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Check a saved build and record the outcome: the build becomes validated only when it is both compatible (no conflicts) and complete (nothing missing); otherwise it returns to draft.",
+        "tags": ["Compatibility"]
+      }
+    },
+    "/api/v1/cart": {
+      "delete": {
+        "description": "",
+        "operationId": "delete__api_v1_cart",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CartResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "summary": "Empty the cart.",
+        "tags": ["Cart"]
+      },
+      "get": {
+        "description": "",
+        "operationId": "get__api_v1_cart",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CartResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "summary": "The caller's cart with live prices, stock and VAT-inclusive totals. Reserves nothing.",
+        "tags": ["Cart"]
+      }
+    },
+    "/api/v1/cart/items": {
+      "post": {
+        "description": "",
+        "operationId": "post__api_v1_cart_items",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CartItemCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CartResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "summary": "Add a product. Adding one already in the cart increases its quantity (up to 99).",
+        "tags": ["Cart"]
+      }
+    },
+    "/api/v1/cart/items/{item_id}": {
+      "delete": {
+        "description": "",
+        "operationId": "delete__api_v1_cart_items_{item_id}",
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CartResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "summary": "Remove a line.",
+        "tags": ["Cart"]
+      },
+      "patch": {
+        "description": "",
+        "operationId": "patch__api_v1_cart_items_{item_id}",
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CartItemUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CartResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "summary": "Set a line's quantity.",
+        "tags": ["Cart"]
+      }
+    },
+    "/api/v1/categories": {
+      "get": {
+        "description": "",
+        "operationId": "get__api_v1_categories",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryList"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "summary": "The browsing taxonomy as a tree. Leaf categories carry the component kind they sell.",
+        "tags": ["Catalog"]
+      }
+    },
+    "/api/v1/checkout": {
+      "post": {
+        "description": "409 insufficient_stock lists each short line; 409 build_not_validated if the build is not both compatible and complete. Unpaid orders release their stock at reservation_expires_at.",
+        "operationId": "post__api_v1_checkout",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckoutRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckoutResponse"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Reserve stock and create a pending_payment order from the cart or a validated build.",
+        "tags": ["Checkout"]
+      }
+    },
+    "/api/v1/compatibility/check": {
+      "post": {
+        "description": "",
+        "operationId": "post__api_v1_compatibility_check",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompatibilityCheckRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompatibilityReport"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "summary": "Check a list of parts without saving anything, e.g. while a visitor configures a build.",
+        "tags": ["Compatibility"]
+      }
+    },
+    "/api/v1/component-kinds": {
+      "get": {
+        "description": "",
+        "operationId": "get__api_v1_component-kinds",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComponentKindList"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "summary": "The kinds of part a build is made of, in display order, with per-build limits.",
+        "tags": ["Reference"]
+      }
+    },
+    "/api/v1/config": {
+      "get": {
+        "description": "",
+        "operationId": "get__api_v1_config",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicConfig"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "summary": "Settings the browser needs at runtime. Contains nothing secret: the Stripe publishable key is public by design. Served at runtime so one image works in every environment.",
+        "tags": ["Reference"]
+      }
+    },
+    "/api/v1/health/live": {
+      "get": {
+        "description": "",
+        "operationId": "get__api_v1_health_live",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Liveness"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "summary": "Liveness: the process is up and serving requests.",
+        "tags": ["Health"]
+      }
+    },
+    "/api/v1/health/ready": {
+      "get": {
+        "description": "",
+        "operationId": "get__api_v1_health_ready",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Readiness"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Readiness"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Readiness: PostgreSQL and Redis are reachable. 503 while any dependency is down.",
+        "tags": ["Health"]
+      }
+    },
+    "/api/v1/orders": {
+      "get": {
+        "description": "",
+        "operationId": "get__api_v1_orders",
+        "parameters": [
+          {
+            "description": "",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "",
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Cursor"
+            }
+          },
+          {
+            "description": "",
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/OrderStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderPage"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "The user's orders, newest first.",
+        "tags": ["Orders"]
+      }
+    },
+    "/api/v1/orders/{order_number}": {
+      "get": {
+        "description": "",
+        "operationId": "get__api_v1_orders_{order_number}",
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "order_number",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDetail"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "One order with its lines, totals, address, payment status and status history.",
+        "tags": ["Orders"]
+      }
+    },
+    "/api/v1/orders/{order_number}/cancel": {
+      "post": {
+        "description": "",
+        "operationId": "post__api_v1_orders_{order_number}_cancel",
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "order_number",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDetail"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Cancel an order that is still awaiting payment; its stock is released immediately.",
+        "tags": ["Orders"]
+      }
+    },
+    "/api/v1/orders/{order_number}/payment": {
+      "post": {
+        "description": "",
+        "operationId": "post__api_v1_orders_{order_number}_payment",
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "order_number",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentInfo"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Start (or resume) payment for an unpaid order. Safe to repeat: the same PaymentIntent is returned each time. 503 if the payment provider is unavailable; try again shortly.",
+        "tags": ["Checkout"]
+      }
+    },
+    "/api/v1/products": {
+      "get": {
+        "description": "Spec filters (socket, cores_min, vram_min_gb, ...) require `kind`. Follow `next_cursor` for further pages; a cursor is only valid for the query that produced it.",
+        "operationId": "get__api_v1_products",
+        "parameters": [
+          {
+            "description": "Search: words, model fragments (x3d) and typos.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Search: words, model fragments (x3d) and typos.",
+              "title": "Q"
+            }
+          },
+          {
+            "description": "",
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/KindCode"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null
+            }
+          },
+          {
+            "description": "Category slug; includes its subcategories.",
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Category slug; includes its subcategories.",
+              "title": "Category"
+            }
+          },
+          {
+            "description": "Brand slugs, comma-separated or repeated (brand=amd,intel or brand=amd&brand=intel).",
+            "in": "query",
+            "name": "brand",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Brand slugs, comma-separated or repeated (brand=amd,intel or brand=amd&brand=intel).",
+              "title": "Brand"
+            }
+          },
+          {
+            "description": "Inclusive, in minor units.",
+            "in": "query",
+            "name": "min_price",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Inclusive, in minor units.",
+              "title": "Min Price"
+            }
+          },
+          {
+            "description": "Inclusive, in minor units.",
+            "in": "query",
+            "name": "max_price",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Inclusive, in minor units.",
+              "title": "Max Price"
+            }
+          },
+          {
+            "description": "",
+            "in": "query",
+            "name": "in_stock",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "In Stock"
+            }
+          },
+          {
+            "description": "Defaults to relevance with q, otherwise name.",
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": ["relevance", "price", "-price", "name", "-name", "newest"],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Defaults to relevance with q, otherwise name.",
+              "title": "Sort"
+            }
+          },
+          {
+            "description": "",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 24,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Opaque; from next_cursor of the previous page.",
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Opaque; from next_cursor of the previous page.",
+              "title": "Cursor"
+            }
+          },
+          {
+            "description": "Product ids of a build (comma-separated or repeated). Lists only parts of `kind` that would not conflict with it; a part of a single-slot kind (cpu, motherboard, psu, case, cooler) is judged as a replacement for the build's current one. Requires `kind`.",
+            "in": "query",
+            "name": "compatible_with",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "integer"
+                  },
+                  "maxItems": 50,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Product ids of a build (comma-separated or repeated). Lists only parts of `kind` that would not conflict with it; a part of a single-slot kind (cpu, motherboard, psu, case, cooler) is judged as a replacement for the build's current one. Requires `kind`.",
+              "title": "Compatible With"
+            }
+          },
+          {
+            "description": "cpu, motherboard, cooler (supported socket).",
+            "in": "query",
+            "name": "socket",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "cpu, motherboard, cooler (supported socket).",
+              "title": "Socket"
+            }
+          },
+          {
+            "description": "motherboard, memory.",
+            "in": "query",
+            "name": "memory_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/MemoryType"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "motherboard, memory."
+            }
+          },
+          {
+            "description": "motherboard (board), case (supported board), psu, storage.",
+            "in": "query",
+            "name": "form_factor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "motherboard (board), case (supported board), psu, storage.",
+              "title": "Form Factor"
+            }
+          },
+          {
+            "description": "motherboard, gpu; substring match.",
+            "in": "query",
+            "name": "chipset",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 60,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "motherboard, gpu; substring match.",
+              "title": "Chipset"
+            }
+          },
+          {
+            "description": "cpu.",
+            "in": "query",
+            "name": "cores_min",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "cpu.",
+              "title": "Cores Min"
+            }
+          },
+          {
+            "description": "cpu.",
+            "in": "query",
+            "name": "has_integrated_graphics",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "cpu.",
+              "title": "Has Integrated Graphics"
+            }
+          },
+          {
+            "description": "memory (kit total), storage.",
+            "in": "query",
+            "name": "capacity_min_gb",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "memory (kit total), storage.",
+              "title": "Capacity Min Gb"
+            }
+          },
+          {
+            "description": "memory.",
+            "in": "query",
+            "name": "speed_min_mts",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "memory.",
+              "title": "Speed Min Mts"
+            }
+          },
+          {
+            "description": "gpu.",
+            "in": "query",
+            "name": "vram_min_gb",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "gpu.",
+              "title": "Vram Min Gb"
+            }
+          },
+          {
+            "description": "gpu.",
+            "in": "query",
+            "name": "length_max_mm",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "gpu.",
+              "title": "Length Max Mm"
+            }
+          },
+          {
+            "description": "case: GPU clearance at least this.",
+            "in": "query",
+            "name": "fits_gpu_length_mm",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "case: GPU clearance at least this.",
+              "title": "Fits Gpu Length Mm"
+            }
+          },
+          {
+            "description": "case: cooler clearance at least this.",
+            "in": "query",
+            "name": "fits_cooler_height_mm",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "case: cooler clearance at least this.",
+              "title": "Fits Cooler Height Mm"
+            }
+          },
+          {
+            "description": "cooler.",
+            "in": "query",
+            "name": "height_max_mm",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "cooler.",
+              "title": "Height Max Mm"
+            }
+          },
+          {
+            "description": "cooler.",
+            "in": "query",
+            "name": "cooler_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/CoolerType"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "cooler."
+            }
+          },
+          {
+            "description": "psu.",
+            "in": "query",
+            "name": "wattage_min_w",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "psu.",
+              "title": "Wattage Min W"
+            }
+          },
+          {
+            "description": "psu.",
+            "in": "query",
+            "name": "efficiency",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/PsuEfficiency"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "psu."
+            }
+          },
+          {
+            "description": "psu.",
+            "in": "query",
+            "name": "modularity",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/PsuModularity"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "psu."
+            }
+          },
+          {
+            "description": "storage.",
+            "in": "query",
+            "name": "interface",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/StorageInterface"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "storage."
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductPage"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "summary": "Active products, filtered and sorted, with keyset pagination.",
+        "tags": ["Catalog"]
+      }
+    },
+    "/api/v1/products/{slug}": {
+      "get": {
+        "description": "",
+        "operationId": "get__api_v1_products_{slug}",
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductDetail"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "summary": "A single active product with its full specifications and availability.",
+        "tags": ["Catalog"]
+      }
+    },
+    "/api/v1/webhooks/stripe": {
+      "post": {
+        "description": "",
+        "operationId": "post__api_v1_webhooks_stripe",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookAck"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "summary": "Stripe event delivery. The Stripe-Signature header is verified against the raw body; each event is applied exactly once, however many times it is delivered.",
+        "tags": ["Webhooks"]
+      }
+    }
+  },
+  "security": [],
+  "tags": [
+    {
+      "name": "Addresses"
+    },
+    {
+      "name": "Admin"
+    },
+    {
+      "name": "Auth"
+    },
+    {
+      "name": "Builds"
+    },
+    {
+      "name": "Cart"
+    },
+    {
+      "name": "Catalog"
+    },
+    {
+      "name": "Checkout"
+    },
+    {
+      "name": "Compatibility"
+    },
+    {
+      "name": "Health"
+    },
+    {
+      "name": "Reference"
+    },
+    {
+      "name": "Orders"
+    },
+    {
+      "name": "Webhooks"
+    }
+  ]
+}
