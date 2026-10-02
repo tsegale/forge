@@ -298,3 +298,21 @@ def test_concurrent_refreshes_with_one_token_rotate_exactly_once(app):
         with app.app_context():
             db.session.execute(delete(User).where(User.email == email))
             db.session.commit()
+
+
+# --------------------------------------------------------------------- token transport
+
+
+@pytest.mark.parametrize("path", [LOGIN, REFRESH])
+def test_refresh_token_travels_only_in_the_cookie(api, logged_in, make_user, path):
+    """The SPA keeps the access token in memory; the refresh token must never be readable by
+    scripts, so it appears only in the HttpOnly cookie, never in a response body."""
+    user, token = logged_in()
+    if path == LOGIN:
+        response = api(LOGIN, json={"email": user.email, "password": DEFAULT_PASSWORD})
+    else:
+        response = api(REFRESH, token)
+    assert response.status_code == 200
+    assert set(response.get_json()) == {"access_token", "token_type", "expires_in"}
+    cookie = _cookie_value(response)
+    assert cookie and cookie not in response.get_data(as_text=True)
