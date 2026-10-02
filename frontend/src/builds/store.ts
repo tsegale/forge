@@ -62,9 +62,21 @@ globalThis.addEventListener('storage', (event) => {
   emit()
 })
 
-// The saved build belongs to the account that just left: keep the parts, drop the link.
+/** Forget the draft entirely, in memory and in storage. */
+export function clearDraft(): void {
+  current = emptyDraft()
+  try {
+    globalThis.localStorage.removeItem(STORAGE_KEY)
+  } catch {
+    // Storage blocked: nothing was persisted to remove.
+  }
+  emit()
+}
+
+// A build linked to an account is that account's data: never leave it in a shared browser after
+// sign-out. Only a guest's unsaved build (no link) survives.
 onSessionEnded(() => {
-  if (current.buildId !== null) setDraft({ ...current, buildId: null })
+  if (current.buildId !== null) clearDraft()
 })
 
 export function useDraft(): Draft {
