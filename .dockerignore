@@ -1,0 +1,12 @@
+# Root build context (nginx image): only frontend/ and nginx/ are needed.
+.git
+backend
+docs
+**/node_modules
+**/dist
+**/.venv
+**/__pycache__
+frontend/playwright-report
+frontend/test-results
+frontend/coverage
+.env
