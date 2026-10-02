@@ -1,9 +1,12 @@
 import { createBrowserRouter, type RouteObject } from 'react-router'
+import { RequireAuth } from '@/auth/RequireAuth'
 import { AppShell } from '@/components/layout/AppShell'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { RegisterPage } from '@/pages/auth/RegisterPage'
+import { BuildsPage } from '@/pages/builds/BuildsPage'
 import { CatalogPage } from '@/pages/catalog/CatalogPage'
 import { ProductPage } from '@/pages/catalog/ProductPage'
+import { ConfiguratorPage } from '@/pages/configurator/ConfiguratorPage'
 import { NotFound } from '@/pages/NotFound'
 import { Placeholder } from '@/pages/Placeholder'
 
@@ -13,7 +16,15 @@ export const routes: RouteObject[] = [
     children: [
       { index: true, element: <CatalogPage /> },
       { path: 'products/:slug', element: <ProductPage /> },
-      { path: 'configurator', element: <Placeholder title="Build a PC" /> },
+      { path: 'configurator', element: <ConfiguratorPage /> },
+      {
+        path: 'builds',
+        element: (
+          <RequireAuth>
+            <BuildsPage />
+          </RequireAuth>
+        ),
+      },
       { path: 'orders', element: <Placeholder title="Orders" /> },
       { path: 'login', element: <LoginPage /> },
       { path: 'register', element: <RegisterPage /> },

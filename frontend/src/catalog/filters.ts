@@ -1,6 +1,24 @@
 import type { components } from '@/api/schema'
 
 export type ProductQuery = components['schemas']['ProductQuery']
+export type ProductKind = NonNullable<ProductQuery['kind']>
+
+const PRODUCT_KINDS = new Set<string>([
+  'cpu',
+  'motherboard',
+  'memory',
+  'gpu',
+  'storage',
+  'psu',
+  'case',
+  'cooler',
+  'accessory',
+] satisfies ProductKind[])
+
+/** Narrow a kind code from the API (e.g. component-kinds) to the catalog's kind filter. */
+export function isProductKind(value: string): value is ProductKind {
+  return PRODUCT_KINDS.has(value)
+}
 type FilterKey = Exclude<
   keyof ProductQuery,
   | 'q'

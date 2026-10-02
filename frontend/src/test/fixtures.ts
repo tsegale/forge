@@ -38,3 +38,49 @@ export const kinds = {
     { code: 'gpu', label: 'Graphics card', max_per_build: 2, required_in_build: false, sort_order: 40 },
   ],
 }
+
+export function psu(overrides: Partial<ProductSummary> = {}): ProductSummary {
+  return {
+    id: 6,
+    sku: 'FRG-PSU-RM750E',
+    slug: 'corsair-rm750e',
+    name: 'Corsair RM750e',
+    kind: 'psu',
+    brand: { id: 4, name: 'Corsair', slug: 'corsair' },
+    price: nad(189_900),
+    availability: { in_stock: true, quantity_available: 12 },
+    specs: {
+      kind: 'psu',
+      wattage_w: 750,
+      efficiency: '80plus_gold',
+      form_factor: 'atx',
+      modularity: 'fully_modular',
+      has_12v_2x6: true,
+      atx_version: '3.1',
+    },
+    compatibility_warnings: null,
+    ...overrides,
+  }
+}
+
+export const customer = {
+  id: 1,
+  email: 'ada@example.com',
+  first_name: 'Ada',
+  last_name: 'L',
+  role: 'customer',
+  created_at: '2026-10-01T00:00:00Z',
+}
+
+/** An unfinished build's compatibility report: nothing conflicts, parts still missing. */
+export function report(overrides: Partial<components['schemas']['CompatibilityReport']> = {}) {
+  return {
+    compatible: true,
+    complete: false,
+    conflicts: [],
+    warnings: [],
+    missing_kinds: ['gpu'],
+    power: { sustained_w: 192, peak_w: 192, recommended_psu_w: 250 },
+    ...overrides,
+  }
+}

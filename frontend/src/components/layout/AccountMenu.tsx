@@ -36,6 +36,9 @@ export function AccountMenu() {
           <Menu.Item className={ITEM} onSelect={() => void navigate('/orders')}>
             My orders
           </Menu.Item>
+          <Menu.Item className={ITEM} onSelect={() => void navigate('/builds')}>
+            My builds
+          </Menu.Item>
           {user.role === 'admin' ? (
             <Menu.Item className={ITEM} onSelect={() => void navigate('/admin/orders')}>
               Administration
