@@ -10,9 +10,11 @@ export const signedOut = () =>
     ),
   )
 
-export const signedIn = () => [
+export const signedIn = (user: typeof customer = customer) => [
   http.post('/api/v1/auth/refresh', () =>
     HttpResponse.json({ access_token: 'access', token_type: 'Bearer', expires_in: 900 }),
   ),
-  http.get('/api/v1/auth/me', () => HttpResponse.json(customer)),
+  http.get('/api/v1/auth/me', () => HttpResponse.json(user)),
 ]
+
+export const signedInAsAdmin = () => signedIn({ ...customer, id: 2, role: 'admin', first_name: 'Admin' })

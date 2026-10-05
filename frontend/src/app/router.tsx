@@ -1,6 +1,10 @@
-import { createBrowserRouter, type RouteObject } from 'react-router'
+import { createBrowserRouter, Navigate, type RouteObject } from 'react-router'
 import { RequireAuth } from '@/auth/RequireAuth'
 import { AppShell } from '@/components/layout/AppShell'
+import { AdminLayout } from '@/pages/admin/AdminLayout'
+import { AdminOrderPage } from '@/pages/admin/AdminOrderPage'
+import { AdminOrdersPage } from '@/pages/admin/AdminOrdersPage'
+import { InventoryPage } from '@/pages/admin/InventoryPage'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { RegisterPage } from '@/pages/auth/RegisterPage'
 import { BuildsPage } from '@/pages/builds/BuildsPage'
@@ -61,6 +65,20 @@ export const routes: RouteObject[] = [
             <OrderPage />
           </RequireAuth>
         ),
+      },
+      {
+        path: 'admin',
+        element: (
+          <RequireAuth admin>
+            <AdminLayout />
+          </RequireAuth>
+        ),
+        children: [
+          { index: true, element: <Navigate to="orders" replace /> },
+          { path: 'orders', element: <AdminOrdersPage /> },
+          { path: 'orders/:orderNumber', element: <AdminOrderPage /> },
+          { path: 'inventory', element: <InventoryPage /> },
+        ],
       },
       { path: 'login', element: <LoginPage /> },
       { path: 'register', element: <RegisterPage /> },

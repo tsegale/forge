@@ -8,20 +8,12 @@ import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import { OrderStatusBadge } from '@/components/ui/OrderStatusBadge'
 import { formatPrice } from '@/lib/money'
 import { cancelOrder, orderQuery } from '@/orders/api'
+import { paymentLabel } from '@/orders/status'
 import { useBuyAgain } from '@/orders/useBuyAgain'
 import { TotalsTable } from '@/pages/cart/TotalsTable'
 import { OrderTimeline } from './OrderTimeline'
 
 const PLACED = new Intl.DateTimeFormat('en-NA', { dateStyle: 'long', timeStyle: 'short' })
-
-const PAYMENT_LABELS: Record<string, string> = {
-  requires_payment: 'Not paid yet',
-  processing: 'Processing',
-  succeeded: 'Paid by card',
-  failed: 'Last attempt failed',
-  canceled: 'Cancelled',
-  refunded: 'Refunded',
-}
 
 /** One of the customer's orders: progress, parts, totals, address and what they can do next. */
 export function OrderPage() {
@@ -165,7 +157,7 @@ export function OrderPage() {
             ) : null}
             <p>
               <span className="text-ink-muted">Payment: </span>
-              {o.payment_status ? (PAYMENT_LABELS[o.payment_status] ?? o.payment_status) : 'Not started'}
+              {paymentLabel(o.payment_status)}
             </p>
             {o.build_id !== null ? (
               <p>

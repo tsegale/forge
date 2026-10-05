@@ -50,3 +50,17 @@ export function timeline(status: OrderStatus, history: StatusChange[]): Timeline
   }
   return steps
 }
+
+const PAYMENT_LABELS: Record<string, string> = {
+  requires_payment: 'Not paid yet',
+  processing: 'Processing',
+  succeeded: 'Paid by card',
+  failed: 'Last attempt failed',
+  canceled: 'Cancelled',
+  refunded: 'Refunded',
+}
+
+/** The latest payment attempt's status, for people. */
+export function paymentLabel(status: string | null): string {
+  return status ? (PAYMENT_LABELS[status] ?? status) : 'Not started'
+}
