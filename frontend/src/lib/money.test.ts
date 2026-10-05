@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatCents, formatPrice } from './money'
+import { centsToInput, formatCents, formatPrice, parseCents } from './money'
 
 describe('formatCents', () => {
   it.each([
@@ -23,5 +23,26 @@ describe('formatCents', () => {
 
   it('formats a Price from the API', () => {
     expect(formatPrice({ amount_cents: 214_904, currency: 'nad' })).toBe('N$ 2,149.04')
+  })
+})
+
+describe('parseCents', () => {
+  it.each([
+    ['2299', 229_900],
+    ['2,299.5', 229_950],
+    ['N$ 2 299.00', 229_900],
+    ['0.07', 7],
+    ['1234567.89', 123_456_789],
+  ])('%s -> %i', (input, cents) => {
+    expect(parseCents(input)).toBe(cents)
+  })
+
+  it.each(['', 'abc', '-5', '1.234', '1.2.3', '12e3'])('rejects %j', (input) => {
+    expect(parseCents(input)).toBeNull()
+  })
+
+  it('round-trips with centsToInput', () => {
+    expect(centsToInput(229_905)).toBe('2299.05')
+    expect(parseCents(centsToInput(229_905))).toBe(229_905)
   })
 })
