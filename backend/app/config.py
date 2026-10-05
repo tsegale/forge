@@ -171,6 +171,10 @@ class TestingConfig(BaseConfig):
         self.SQLALCHEMY_DATABASE_URI = _require("TEST_DATABASE_URL")
         # Separate Redis database so test runs never touch development rate-limit or cache keys.
         self.REDIS_URL = _require("TEST_REDIS_URL")
+        # Production fails open to an in-memory limiter after 0.5 s without Redis. A slow local
+        # Redis must not trigger that here, or limit tests would silently count in memory; the
+        # fail-open path has its own test against a port where nothing listens.
+        self.RATELIMIT_STORAGE_OPTIONS = {"socket_connect_timeout": 5, "socket_timeout": 5}
         self.MAIL_BACKEND = "memory"
         # Tasks run inline in tests: no broker, and errors surface in the calling test.
         self.CELERY = self.CELERY | {"task_always_eager": True, "task_eager_propagates": True}

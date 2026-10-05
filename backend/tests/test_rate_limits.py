@@ -22,7 +22,10 @@ def test_limits_are_stored_in_redis(app):
         assert isinstance(limiter.storage, RedisStorage)
 
 
-def test_sixth_login_attempt_from_one_ip_is_429(client, make_user):
+def test_sixth_login_attempt_from_one_ip_is_429(app, client, make_user, monkeypatch):
+    # Same count, wider window: each failed attempt runs a full Argon2 hash, and on a slow machine
+    # six of them can outlast a one-minute moving window, letting the first age out.
+    monkeypatch.setitem(app.config, "LOGIN_LIMIT_PER_IP", "5 per hour")
     make_user(email="target@example.com")
     for attempt in range(5):
         assert _login(client, f"guess{attempt}@example.com").status_code == 401
@@ -66,6 +69,7 @@ def test_registration_is_limited_per_ip(client):
 def proxied_client(monkeypatch, session):
     monkeypatch.setenv("TRUSTED_PROXY_COUNT", "1")
     proxied = create_app("testing")
+    proxied.config["LOGIN_LIMIT_PER_IP"] = "5 per hour"  # a window slow hashing cannot outlast
     with proxied.app_context():
         limiter.reset()
     return proxied.test_client()
