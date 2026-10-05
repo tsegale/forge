@@ -48,7 +48,10 @@ points every service's outgoing email at it (production otherwise requires a rea
 ```bash
 # 1. Forward Stripe test-mode webhooks to the stack (official Stripe CLI, https://docs.stripe.com/stripe-cli).
 #    It prints "Your webhook signing secret is whsec_...": put that in .env as STRIPE_WEBHOOK_SECRET.
-stripe listen --forward-to localhost:8080/api/v1/webhooks/stripe
+#    --events lists exactly the events the API handles (current CLI versions require the list).
+stripe listen \
+  --events payment_intent.succeeded,payment_intent.payment_failed,payment_intent.canceled \
+  --forward-to http://127.0.0.1:8080/api/v1/webhooks/stripe
 
 # 2. In a second terminal: build and start everything, then seed and create an admin.
 export COMPOSE_FILE=docker-compose.yml:docker-compose.dev.yml   # on Windows use ; instead of :
