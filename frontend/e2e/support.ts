@@ -30,7 +30,9 @@ export async function signIn(page: Page, next = '/', account = customer): Promis
 export async function cartWithOnly(page: Page, slug: string): Promise<void> {
   await page.goto('/cart')
   const main = page.getByRole('main')
-  await expect(main.getByRole('heading', { level: 1 })).toBeVisible()
+  // A full page load restores the session first; on a freshly started stack that first refresh
+  // can take several seconds, so allow more than the default 5 s.
+  await expect(main.getByRole('heading', { level: 1 })).toBeVisible({ timeout: 15_000 })
   const remove = main.getByRole('button', { name: /^Remove / })
   while ((await remove.count()) > 0) {
     const before = await remove.count()
