@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from 'react-router'
 import { Logo } from '@/components/ui/Logo'
 import { AccountMenu } from './AccountMenu'
+import { CartLink } from './CartLink'
 
 const NAV = [
   { to: '/', label: 'Catalog', end: true },
@@ -36,7 +37,8 @@ export function AppShell() {
               </NavLink>
             ))}
           </nav>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-2">
+            <CartLink />
             <AccountMenu />
           </div>
         </div>

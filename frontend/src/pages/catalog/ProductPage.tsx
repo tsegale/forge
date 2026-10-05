@@ -1,4 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
+import { addToCart, useCartMutation } from '@/cart/api'
+import { Alert } from '@/components/ui/Alert'
 import { Link, useNavigate, useParams } from 'react-router'
 import { addPart } from '@/builds/draft'
 import { setDraft, useDraft } from '@/builds/store'
@@ -17,6 +19,7 @@ export function ProductPage() {
   const kinds = useQuery(componentKindsQuery)
   const draft = useDraft()
   const navigate = useNavigate()
+  const add = useCartMutation((productId: number) => addToCart(productId))
 
   if (product.isPending) return <p className="text-sm text-ink-muted">Loading</p>
   if (product.isError) return <ErrorMessage error={product.error} />
@@ -65,6 +68,26 @@ export function ProductPage() {
         <div className="mt-3">
           <StockBadge availability={p.availability} />
         </div>
+        <Button
+          className="mt-5 w-full"
+          busy={add.isPending}
+          disabled={!p.availability.in_stock}
+          onClick={() => {
+            add.mutate(p.id)
+          }}
+        >
+          Add to cart
+        </Button>
+        {add.isSuccess ? (
+          <div className="mt-3">
+            <Alert tone="success" title="Added to your cart">
+              <Link to="/cart" className="font-medium text-accent hover:underline">
+                View cart
+              </Link>
+            </Alert>
+          </div>
+        ) : null}
+        <ErrorMessage error={add.error} />
         <AddToBuild
           kind={kinds.data?.items.find((k) => k.code === p.kind)}
           inBuild={draft.items.some((item) => item.product.id === p.id)}
@@ -93,7 +116,7 @@ function AddToBuild({
   if (!kind) return null
   const replaces = kind.max_per_build === 1
   return (
-    <div className="mt-5 space-y-2">
+    <div className="mt-2 space-y-2">
       <Button
         variant="secondary"
         className="w-full"

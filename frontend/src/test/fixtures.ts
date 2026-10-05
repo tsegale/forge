@@ -84,3 +84,79 @@ export function report(overrides: Partial<components['schemas']['CompatibilityRe
     ...overrides,
   }
 }
+
+type Cart = components['schemas']['CartResponse']
+type OrderDetail = components['schemas']['OrderDetail']
+
+export const totals = (total: number) => ({
+  subtotal: nad(Math.round((total - 15_000) / 1.15)),
+  shipping: nad(13_043),
+  tax: nad(total - Math.round((total - 15_000) / 1.15) - 13_043),
+  total: nad(total),
+})
+
+export function cartWith(quantity = 1, overrides: Partial<Cart['items'][number]> = {}): Cart {
+  const product = cpu()
+  return {
+    items: [
+      {
+        id: 31,
+        quantity,
+        line_total: nad(product.price.amount_cents * quantity),
+        in_stock: true,
+        product,
+        ...overrides,
+      },
+    ],
+    item_count: quantity,
+    totals: totals(product.price.amount_cents * quantity + 15_000),
+  }
+}
+
+export const emptyCart: Cart = { items: [], item_count: 0, totals: totals(15_000) }
+
+export function order(overrides: Partial<OrderDetail> = {}): OrderDetail {
+  return {
+    order_number: 'FRG-000042',
+    status: 'pending_payment',
+    items: [
+      {
+        product_id: 1,
+        sku: 'FRG-CPU-R7-7800X3D',
+        name: 'AMD Ryzen 7 7800X3D',
+        quantity: 1,
+        unit_price: nad(799_900),
+        line_total: nad(799_900),
+      },
+    ],
+    totals: totals(814_900),
+    shipping_address: {
+      recipient_name: 'Ada Lovelace',
+      phone: null,
+      line1: '12 Independence Avenue',
+      line2: null,
+      city: 'Windhoek',
+      region: null,
+      postal_code: null,
+      country_code: 'NA',
+    },
+    build_id: null,
+    reservation_expires_at: new Date(Date.now() + 10 * 60_000).toISOString(),
+    created_at: '2026-10-02T10:00:00Z',
+    payment_status: 'requires_payment',
+    history: [{ from_status: null, to_status: 'pending_payment', at: '2026-10-02T10:00:00Z' }],
+    ...overrides,
+  }
+}
+
+export const storeConfig = {
+  currency: 'nad',
+  vat_rate_bps: 1500,
+  shipping: { flat_cents: 15_000, free_threshold_cents: 500_000 },
+  reservation_ttl_seconds: 900,
+  stripe_publishable_key: 'pk_test_example',
+}
+
+export const apiError = (code: string, message: string, details: unknown = null) => ({
+  error: { code, message, details, request_id: 'req-1' },
+})

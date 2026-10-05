@@ -12,6 +12,18 @@ export interface AuthContextValue {
 
 export const AuthContext = createContext<AuthContextValue | null>(null)
 
+/**
+ * Whose data user-specific queries hold: the user's id, 'guest', or null while a reload is still
+ * restoring the session (queries keyed by it wait, rather than fetching as a guest by mistake).
+ */
+export type SessionKey = number | 'guest' | null
+
+export function useSessionKey(): SessionKey {
+  const { status, user } = useAuth()
+  if (status === 'loading') return null
+  return user?.id ?? 'guest'
+}
+
 export function useAuth(): AuthContextValue {
   const value = use(AuthContext)
   if (!value) throw new Error('useAuth must be used inside <AuthProvider>')
