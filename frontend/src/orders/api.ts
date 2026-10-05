@@ -1,4 +1,4 @@
-import { queryOptions } from '@tanstack/react-query'
+import { infiniteQueryOptions, queryOptions } from '@tanstack/react-query'
 import { api, unwrap, type components } from '@/api/client'
 import { withSession } from '@/auth/session'
 
@@ -18,6 +18,30 @@ export const createAddress = (body: components['schemas']['AddressCreate']) =>
 /** Reserve stock and create the order; payment is started separately on the pay screen. */
 export const placeOrder = (body: CheckoutRequest) =>
   withSession(() => unwrap(api.POST('/api/v1/checkout', { body })))
+
+export type OrderStatusFilter = components['schemas']['OrderStatus'] | null
+
+/** The customer's orders, newest first, a page at a time (cursor = last order id seen). */
+export const ordersQuery = (status: OrderStatusFilter) =>
+  infiniteQueryOptions({
+    queryKey: ['orders', 'list', status],
+    queryFn: ({ pageParam }) =>
+      withSession(() =>
+        unwrap(
+          api.GET('/api/v1/orders', {
+            params: {
+              query: {
+                limit: 20,
+                ...(status ? { status } : {}),
+                ...(pageParam ? { cursor: pageParam } : {}),
+              },
+            },
+          }),
+        ),
+      ),
+    initialPageParam: null as number | null,
+    getNextPageParam: (page) => page.next_cursor ?? null,
+  })
 
 export const orderQuery = (order_number: string) =>
   queryOptions({

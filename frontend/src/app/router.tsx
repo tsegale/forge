@@ -11,7 +11,8 @@ import { CatalogPage } from '@/pages/catalog/CatalogPage'
 import { ProductPage } from '@/pages/catalog/ProductPage'
 import { ConfiguratorPage } from '@/pages/configurator/ConfiguratorPage'
 import { NotFound } from '@/pages/NotFound'
-import { Placeholder } from '@/pages/Placeholder'
+import { OrderPage } from '@/pages/orders/OrderPage'
+import { OrdersPage } from '@/pages/orders/OrdersPage'
 
 export const routes: RouteObject[] = [
   {
@@ -45,8 +46,22 @@ export const routes: RouteObject[] = [
           </RequireAuth>
         ),
       },
-      { path: 'orders', element: <Placeholder title="Orders" /> },
-      { path: 'orders/:orderNumber', element: <Placeholder title="Order" /> },
+      {
+        path: 'orders',
+        element: (
+          <RequireAuth>
+            <OrdersPage />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'orders/:orderNumber',
+        element: (
+          <RequireAuth>
+            <OrderPage />
+          </RequireAuth>
+        ),
+      },
       { path: 'login', element: <LoginPage /> },
       { path: 'register', element: <RegisterPage /> },
       { path: '*', element: <NotFound /> },
