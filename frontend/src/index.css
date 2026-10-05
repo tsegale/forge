@@ -15,7 +15,7 @@
   --color-border-strong: #c5ccd5;
   --color-ink: #17202a;
   --color-ink-muted: #56606d;
-  --color-ink-subtle: #6b7582;
+  --color-ink-subtle: #5f6976; /* 4.78:1 or better on every background token (WCAG AA) */
 
   --color-accent: #1e4fa8;
   --color-accent-hover: #183f87;

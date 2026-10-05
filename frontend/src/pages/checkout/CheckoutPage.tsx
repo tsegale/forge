@@ -258,23 +258,25 @@ export function CheckoutPage() {
           {buildId === null && cart.data ? (
             <TotalsTable totals={cart.data.totals} />
           ) : (
-            <dl className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <dt className="text-ink-muted">Parts</dt>
-                <dd className="tabular">{formatCents(goods)}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-ink-muted">Shipping</dt>
-                <dd className="tabular">
-                  {shipping === null ? '' : shipping === 0 ? 'Free' : formatCents(shipping)}
-                </dd>
-              </div>
-              <div className="flex justify-between border-t border-border pt-2 text-base font-semibold">
-                <dt>Total</dt>
-                <dd className="tabular">{shipping === null ? '' : formatCents(goods + shipping)}</dd>
-              </div>
-              <p className="text-xs text-ink-subtle">VAT included.</p>
-            </dl>
+            <>
+              <dl className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <dt className="text-ink-muted">Parts</dt>
+                  <dd className="tabular">{formatCents(goods)}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-ink-muted">Shipping</dt>
+                  <dd className="tabular">
+                    {shipping === null ? '' : shipping === 0 ? 'Free' : formatCents(shipping)}
+                  </dd>
+                </div>
+                <div className="flex justify-between border-t border-border pt-2 text-base font-semibold">
+                  <dt>Total</dt>
+                  <dd className="tabular">{shipping === null ? '' : formatCents(goods + shipping)}</dd>
+                </div>
+              </dl>
+              <p className="mt-2 text-xs text-ink-subtle">VAT included.</p>
+            </>
           )}
         </div>
         {short.size ? (
