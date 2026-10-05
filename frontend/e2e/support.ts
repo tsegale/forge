@@ -1,3 +1,4 @@
+import AxeBuilder from '@axe-core/playwright'
 import { expect, type Page } from '@playwright/test'
 
 /**
@@ -9,13 +10,18 @@ export const customer = {
   password: process.env.E2E_CUSTOMER_PASSWORD ?? 'forge-demo-customer-2026',
 }
 
+export const admin = {
+  email: process.env.E2E_ADMIN_EMAIL ?? 'demo-admin@example.com',
+  password: process.env.E2E_ADMIN_PASSWORD ?? 'forge-demo-admin-2026',
+}
+
 export const PSU = { slug: 'seasonic-focus-gx-750-atx-3', name: 'Seasonic FOCUS GX-750 ATX 3' }
 
-export async function signIn(page: Page, next = '/'): Promise<void> {
+export async function signIn(page: Page, next = '/', account = customer): Promise<void> {
   await page.goto(`/login?next=${encodeURIComponent(next)}`)
   const form = page.getByRole('main')
-  await form.getByLabel('Email').fill(customer.email)
-  await form.getByLabel('Password').fill(customer.password)
+  await form.getByLabel('Email').fill(account.email)
+  await form.getByLabel('Password').fill(account.password)
   await form.getByRole('button', { name: 'Sign in' }).click()
   await page.waitForURL((url) => url.pathname === new URL(next, url).pathname)
 }
@@ -44,4 +50,38 @@ export async function placeOrder(page: Page): Promise<string> {
   const number = /FRG-\d+/.exec(page.url())?.[0]
   if (!number) throw new Error(`No order number in ${page.url()}`)
   return number
+}
+
+/**
+ * WCAG 2.1 A and AA checks with axe on the screen as it is now. Stripe's card iframe is
+ * excluded: it is Stripe's own (cross-origin) document, outside what this app can change.
+ */
+export async function expectAccessible(page: Page, screen: string): Promise<void> {
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+    .exclude('iframe')
+    .analyze()
+  const problems = results.violations.map(
+    (v) =>
+      `${v.id} (${v.impact ?? 'unknown'}): ${v.help} [${v.nodes.map((n) => n.target.join(' ')).join(', ')}]`,
+  )
+  expect(problems, `accessibility problems on ${screen}`).toEqual([])
+}
+
+const VISA = '4242424242424242' // Stripe's published test card: succeeds
+
+/** Pay on the pay screen with whichever provider the stack runs: simulated, or Stripe test mode. */
+export async function payOnPayScreen(page: Page): Promise<void> {
+  const pay = page.getByRole('button', { name: /^Pay N\$ / })
+  await expect(pay).toBeVisible()
+  const simulated = page.getByText('Test mode: this store uses simulated payments')
+  if (!(await simulated.isVisible())) {
+    const frame = page.frameLocator('iframe[src*="elements-inner-payment"]')
+    await frame.locator('input[name="number"]').fill(VISA)
+    await frame.locator('input[name="expiry"]').fill('12 / 34')
+    await frame.locator('input[name="cvc"]').fill('123')
+    const postal = frame.locator('input[name="postalCode"]')
+    if (await postal.isVisible()) await postal.fill('10005')
+  }
+  await pay.click()
 }

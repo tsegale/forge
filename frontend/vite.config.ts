@@ -15,6 +15,11 @@ export default defineConfig({
     port: 5173,
     proxy: { '/api': { target: apiTarget, changeOrigin: false } },
   },
+  // `vite preview` serves the production build the same way (used by the end-to-end tests in CI).
+  preview: {
+    port: 4173,
+    proxy: { '/api': { target: apiTarget, changeOrigin: false } },
+  },
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],

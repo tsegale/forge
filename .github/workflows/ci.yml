@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Run by hand to also exercise real Stripe test mode (job e2e-stripe).
+  workflow_dispatch:
 
 jobs:
   backend:
@@ -82,3 +84,124 @@ jobs:
         run: npm test
       - name: Production build
         run: npm run build
+
+  # The presentation demo path in a browser, against the production build and a real API and
+  # database. Payments use the fake gateway's simulator, which pays orders through the real
+  # webhook code; real Stripe runs in e2e-stripe.
+  e2e:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: forge
+          POSTGRES_PASSWORD: forge
+          POSTGRES_DB: forge
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U forge -d forge"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      FLASK_APP: wsgi.py
+      FORGE_ENV: development
+      SECRET_KEY: ci-only-secret
+      JWT_SECRET_KEY: ci-only-jwt-secret-at-least-32-bytes-long
+      DATABASE_URL: postgresql+psycopg://forge:forge@localhost:5432/forge
+      REDIS_URL: redis://localhost:6379/0
+      E2E_BASE_URL: http://127.0.0.1:4173
+      E2E_LOG_DIR: ${{ github.workspace }}/e2e-logs
+      PAYMENT_GATEWAY: fake
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/e2e-setup
+      - name: Start the stack (API, demo data, production build)
+        run: scripts/ci/start-e2e-stack.sh
+      - name: End-to-end tests, with axe checks on every demo screen
+        working-directory: frontend
+        run: npx playwright test
+      - name: Keep the report and server logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-report
+          path: |
+            frontend/playwright-report
+            frontend/test-results
+            e2e-logs
+          retention-days: 7
+
+  # Same suite against real Stripe test mode, including the declined-card spec. Manual only:
+  # needs the STRIPE_SECRET_KEY and STRIPE_PUBLISHABLE_KEY repository secrets (test-mode keys).
+  e2e-stripe:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: forge
+          POSTGRES_PASSWORD: forge
+          POSTGRES_DB: forge
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U forge -d forge"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      FLASK_APP: wsgi.py
+      FORGE_ENV: development
+      SECRET_KEY: ci-only-secret
+      JWT_SECRET_KEY: ci-only-jwt-secret-at-least-32-bytes-long
+      DATABASE_URL: postgresql+psycopg://forge:forge@localhost:5432/forge
+      REDIS_URL: redis://localhost:6379/0
+      E2E_BASE_URL: http://127.0.0.1:4173
+      E2E_LOG_DIR: ${{ github.workspace }}/e2e-logs
+      PAYMENT_GATEWAY: stripe
+      STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+      STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
+      E2E_STRIPE: "1"
+    steps:
+      - name: Stripe keys are test-mode keys
+        run: |
+          case "$STRIPE_SECRET_KEY" in sk_test_*|rk_test_*) ;; *) echo "STRIPE_SECRET_KEY must be a test-mode key" >&2; exit 1;; esac
+          case "$STRIPE_PUBLISHABLE_KEY" in pk_test_*) ;; *) echo "STRIPE_PUBLISHABLE_KEY must be a test-mode key" >&2; exit 1;; esac
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/e2e-setup
+      - name: Install the Stripe CLI
+        run: |
+          curl -fsSL https://packages.stripe.dev/api/security/keypair/stripe-cli-gpg/public             | gpg --dearmor | sudo tee /usr/share/keyrings/stripe.gpg >/dev/null
+          echo "deb [signed-by=/usr/share/keyrings/stripe.gpg] https://packages.stripe.dev/stripe-cli-debian-local stable main"             | sudo tee /etc/apt/sources.list.d/stripe.list >/dev/null
+          sudo apt-get update -q && sudo apt-get install -yq stripe
+      - name: Forward Stripe test webhooks to the API
+        run: |
+          mkdir -p "$E2E_LOG_DIR"
+          secret="$(stripe listen --api-key "$STRIPE_SECRET_KEY" --print-secret)"
+          echo "::add-mask::$secret"
+          echo "STRIPE_WEBHOOK_SECRET=$secret" >> "$GITHUB_ENV"
+          nohup stripe listen --api-key "$STRIPE_SECRET_KEY"             --events payment_intent.succeeded,payment_intent.payment_failed,payment_intent.canceled             --forward-to http://127.0.0.1:8080/api/v1/webhooks/stripe >"$E2E_LOG_DIR/stripe.log" 2>&1 &
+      - name: Start the stack (API, demo data, production build)
+        run: scripts/ci/start-e2e-stack.sh
+      - name: End-to-end tests against Stripe test mode
+        working-directory: frontend
+        run: npx playwright test
+      - name: Keep the report and server logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-stripe-report
+          path: |
+            frontend/playwright-report
+            frontend/test-results
+            e2e-logs
+          retention-days: 7
