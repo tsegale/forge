@@ -12,12 +12,15 @@ const STORAGE_KEY = 'forge.build-draft.v1'
 const listeners = new Set<() => void>()
 let current: Draft = load()
 
+const isId = (value: unknown) => value === null || typeof value === 'number'
+
 function isDraft(value: unknown): value is Draft {
   if (typeof value !== 'object' || value === null) return false
   const draft = value as Partial<Draft>
   return (
     typeof draft.name === 'string' &&
-    (draft.buildId === null || typeof draft.buildId === 'number') &&
+    isId(draft.buildId) &&
+    isId(draft.ownerId ?? null) &&
     Array.isArray(draft.items)
   )
 }
@@ -26,7 +29,8 @@ function load(): Draft {
   try {
     const raw = globalThis.localStorage.getItem(STORAGE_KEY)
     const parsed: unknown = raw ? JSON.parse(raw) : null
-    return isDraft(parsed) ? parsed : emptyDraft()
+    // A draft stored before owners were recorded has none, so a linked one is treated as foreign.
+    return isDraft(parsed) ? { ...parsed, ownerId: parsed.ownerId ?? null } : emptyDraft()
   } catch {
     return emptyDraft() // unreadable or corrupt storage: start fresh
   }
@@ -78,6 +82,15 @@ export function clearDraft(): void {
 onSessionEnded(() => {
   if (current.buildId !== null) clearDraft()
 })
+
+/**
+ * Called whenever the session settles. Sign-out clears a linked draft, but a session can also end
+ * while the app is closed (expired refresh token, cleared cookies); then the next visit finds a
+ * draft linked to an account that is not the one signed in, or to none. Drop it the same way.
+ */
+export function reconcileDraftOwner(userId: number | null): void {
+  if (current.buildId !== null && current.ownerId !== userId) clearDraft()
+}
 
 export function useDraft(): Draft {
   return useSyncExternalStore(subscribe, getDraft, getDraft)

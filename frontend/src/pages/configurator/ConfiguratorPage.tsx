@@ -39,12 +39,12 @@ const sameParts = (a: [number, number][], b: [number, number][]) =>
 /** Whether the draft differs from its saved build (or has none). */
 function isDirty(saved: BuildDetail | undefined, draft: Draft, parts: [number, number][]): boolean {
   if (!saved) return true
-  return saved.name !== draft.name || !sameParts(partsKey(fromBuild(saved)), parts)
+  return saved.name !== draft.name || !sameParts(partsKey(saved.items), parts)
 }
 
 export function ConfiguratorPage() {
   const draft = useDraft()
-  const { status } = useAuth()
+  const { status, user } = useAuth()
   const signedIn = status === 'authenticated'
   const queryClient = useQueryClient()
   const [params, setParams] = useSearchParams()
@@ -52,7 +52,7 @@ export function ConfiguratorPage() {
 
   const kinds = useQuery(componentKindsQuery)
   const items = useFreshItems(draft.items)
-  const parts = partsKey(draft)
+  const parts = partsKey(draft.items)
   const compat = useQuery({ ...compatibilityQuery(parts), enabled: parts.length > 0 })
   const report = parts.length ? compat.data : undefined
   const saved = useQuery({
@@ -64,8 +64,8 @@ export function ConfiguratorPage() {
   const openId = Number(params.get('build')) || null
   const opening = useQuery({ ...buildQuery(openId ?? 0), enabled: signedIn && openId !== null })
   useEffect(() => {
-    if (!opening.data) return
-    setDraft(fromBuild(opening.data))
+    if (!opening.data || !user) return
+    setDraft(fromBuild(opening.data, user.id))
     setParams(
       (current) => {
         current.delete('build')
@@ -73,13 +73,13 @@ export function ConfiguratorPage() {
       },
       { replace: true },
     )
-  }, [opening.data, setParams])
+  }, [opening.data, user, setParams])
 
   const linkSaved = (build: BuildDetail) => {
     queryClient.setQueryData(buildQuery(build.id).queryKey, build)
     void queryClient.invalidateQueries({ queryKey: buildsQuery.queryKey, exact: true })
     // Keep anything changed while the save was in flight; only record the link.
-    setDraft((current) => ({ ...current, buildId: build.id }))
+    setDraft((current) => ({ ...current, buildId: build.id, ownerId: user?.id ?? null }))
   }
 
   const save = useMutation({ mutationFn: () => saveDraft(getDraft()), onSuccess: linkSaved })

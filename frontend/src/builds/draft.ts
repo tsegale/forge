@@ -14,12 +14,19 @@ export interface DraftItem {
 
 export interface Draft {
   name: string
+  /** The saved build this draft edits, and the account it belongs to; both null for a guest. */
   buildId: number | null
+  ownerId: number | null
   items: DraftItem[]
 }
 
 export const DEFAULT_NAME = 'My build'
-export const emptyDraft = (): Draft => ({ name: DEFAULT_NAME, buildId: null, items: [] })
+export const emptyDraft = (): Draft => ({
+  name: DEFAULT_NAME,
+  buildId: null,
+  ownerId: null,
+  items: [],
+})
 
 export function kindCount(draft: Draft, kind: string): number {
   return draft.items.reduce((sum, item) => (item.product.kind === kind ? sum + item.quantity : sum), 0)
@@ -65,17 +72,16 @@ export function subtotalCents(draft: Draft): number {
 }
 
 /** A stable key for the parts list, so queries refetch only when the parts actually change. */
-export function partsKey(draft: Draft): [number, number][] {
-  return draft.items
-    .map((item): [number, number] => [item.product.id, item.quantity])
-    .sort((a, b) => a[0] - b[0])
+export function partsKey(items: readonly DraftItem[]): [number, number][] {
+  return items.map((item): [number, number] => [item.product.id, item.quantity]).sort((a, b) => a[0] - b[0])
 }
 
-/** Load a server build into a draft. */
-export function fromBuild(build: components['schemas']['BuildDetail']): Draft {
+/** Load a server build, owned by `ownerId`, into a draft. */
+export function fromBuild(build: components['schemas']['BuildDetail'], ownerId: number): Draft {
   return {
     name: build.name,
     buildId: build.id,
+    ownerId,
     items: build.items.map((item) => ({ product: item.product, quantity: item.quantity })),
   }
 }

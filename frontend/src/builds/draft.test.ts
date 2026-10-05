@@ -32,7 +32,7 @@ describe('draft', () => {
   it('keys parts by id and quantity regardless of order', () => {
     const a = addPart(addPart(emptyDraft(), memory(11), 4), cpu(), 1)
     const b = addPart(addPart(emptyDraft(), cpu(), 1), memory(11), 4)
-    expect(partsKey(a)).toEqual(partsKey(b))
-    expect(partsKey(removePart(a, 11))).toEqual([[1, 1]])
+    expect(partsKey(a.items)).toEqual(partsKey(b.items))
+    expect(partsKey(removePart(a, 11).items)).toEqual([[1, 1]])
   })
 })

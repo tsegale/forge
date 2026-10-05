@@ -22,7 +22,7 @@ export function BuildsPage() {
   const remove = useMutation({
     mutationFn: deleteBuild,
     onSuccess: (_data, buildId) => {
-      if (draft.buildId === buildId) setDraft((current) => ({ ...current, buildId: null }))
+      if (draft.buildId === buildId) setDraft((current) => ({ ...current, buildId: null, ownerId: null }))
       return queryClient.invalidateQueries({ queryKey: buildsQuery.queryKey })
     },
   })

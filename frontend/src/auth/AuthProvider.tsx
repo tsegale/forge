@@ -1,5 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { reconcileDraftOwner } from '@/builds/store'
 import { AuthContext, type AuthContextValue, type Status } from './context'
 import * as session from './session'
 
@@ -41,6 +42,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     [queryClient],
   )
+
+  useEffect(() => {
+    if (status !== 'loading') reconcileDraftOwner(user?.id ?? null)
+  }, [status, user])
 
   const value = useMemo<AuthContextValue>(
     () => ({ status, user, login, logout: session.logout }),
