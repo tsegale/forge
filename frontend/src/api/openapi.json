@@ -3266,6 +3266,15 @@
             "title": "Currency",
             "type": "string"
           },
+          "payment_provider": {
+            "description": "fake in development and tests: payments are simulated (POST /api/test/payments/...).",
+            "enum": [
+              "stripe",
+              "fake"
+            ],
+            "title": "Payment Provider",
+            "type": "string"
+          },
           "reservation_ttl_seconds": {
             "description": "How long checkout holds stock for payment.",
             "title": "Reservation Ttl Seconds",
@@ -3297,6 +3306,7 @@
           "vat_rate_bps",
           "shipping",
           "reservation_ttl_seconds",
+          "payment_provider",
           "stripe_publishable_key"
         ],
         "title": "PublicConfig",

@@ -1988,6 +1988,12 @@ export interface components {
             /** Currency */
             currency: string;
             /**
+             * Payment Provider
+             * @description fake in development and tests: payments are simulated (POST /api/test/payments/...).
+             * @enum {string}
+             */
+            payment_provider: "stripe" | "fake";
+            /**
              * Reservation Ttl Seconds
              * @description How long checkout holds stock for payment.
              */

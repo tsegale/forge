@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -29,4 +31,7 @@ class PublicConfig(BaseModel):
     vat_rate_bps: int = Field(description="1500 = 15%. Prices are VAT-inclusive.")
     shipping: ShippingSettings
     reservation_ttl_seconds: int = Field(description="How long checkout holds stock for payment.")
+    payment_provider: Literal["stripe", "fake"] = Field(
+        description="fake in development and tests: payments are simulated (POST /api/test/payments/...)."
+    )
     stripe_publishable_key: str | None = Field(description="Null when payments are not configured.")

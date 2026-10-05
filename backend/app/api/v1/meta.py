@@ -35,5 +35,6 @@ def public_config():
             flat_cents=cfg["SHIPPING_FLAT_CENTS"], free_threshold_cents=cfg["FREE_SHIPPING_THRESHOLD_CENTS"]
         ),
         reservation_ttl_seconds=int(cfg["RESERVATION_TTL"].total_seconds()),
+        payment_provider=cfg["PAYMENT_GATEWAY"],
         stripe_publishable_key=cfg["STRIPE_PUBLISHABLE_KEY"] or None,
     )

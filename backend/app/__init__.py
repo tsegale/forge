@@ -36,6 +36,10 @@ def create_app(config_name: str | None = None) -> Flask:
 
     app.register_blueprint(api_v1, url_prefix="/api/v1")
 
+    from .api import test_payments
+
+    test_payments.init_app(app)
+
     from .api.spec import register_docs
 
     register_docs(app)

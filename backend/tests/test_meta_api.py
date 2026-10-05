@@ -26,6 +26,7 @@ def test_public_config(client):
         "vat_rate_bps": 1500,
         "shipping": {"flat_cents": 15_000, "free_threshold_cents": 500_000},
         "reservation_ttl_seconds": 900,
+        "payment_provider": "fake",
         "stripe_publishable_key": None,  # not configured in tests
     }
 
