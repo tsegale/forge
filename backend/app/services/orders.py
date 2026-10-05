@@ -83,8 +83,8 @@ def summary(order: Order) -> OrderSummary:
     )
 
 
-def page(stmt, query: OrderListQuery) -> OrderPage:
-    """Keyset pagination, newest first, on the order id."""
+def page_rows(stmt, query: OrderListQuery) -> tuple[list[Order], int | None]:
+    """Keyset pagination, newest first, on the order id: one page of orders and the next cursor."""
     if query.status is not None:
         stmt = stmt.where(Order.status == query.status)
     if query.cursor is not None:
@@ -92,8 +92,13 @@ def page(stmt, query: OrderListQuery) -> OrderPage:
     rows = db.session.scalars(
         stmt.options(selectinload(Order.items)).order_by(Order.id.desc()).limit(query.limit + 1)
     ).all()
-    items = rows[: query.limit]
-    return OrderPage(items=[summary(o) for o in items], next_cursor=items[-1].id if len(rows) > query.limit else None)
+    items = list(rows[: query.limit])
+    return items, items[-1].id if len(rows) > query.limit else None
+
+
+def page(stmt, query: OrderListQuery) -> OrderPage:
+    items, next_cursor = page_rows(stmt, query)
+    return OrderPage(items=[summary(o) for o in items], next_cursor=next_cursor)
 
 
 def list_for(user: User, query: OrderListQuery) -> OrderPage:

@@ -136,3 +136,35 @@ def test_unpaid_orders_have_nothing_to_refund(client, session, admin, make_user,
     order = session.scalar(select(Order).where(Order.order_number == number))
     response = _refund(client, admin[1], order)
     assert response.status_code == 409 and response.get_json()["error"]["code"] == "nothing_to_refund"
+
+
+def test_detail_offers_only_the_legal_next_actions(client, admin, paid_order):
+    _, headers = admin
+    url = f"/api/v1/admin/orders/{paid_order.order_number}"
+
+    body = client.get(url, headers=headers).get_json()
+    assert (body["next_steps"], body["refundable"]) == (["fulfilling"], True)
+
+    for step, expected in (("fulfilling", (["shipped"], True)), ("shipped", (["delivered"], False))):
+        body = _advance(client, headers, paid_order, step).get_json()
+        assert (body["next_steps"], body["refundable"]) == expected
+
+    body = _advance(client, headers, paid_order, "delivered").get_json()
+    assert (body["next_steps"], body["refundable"]) == ([], True)  # delivered orders can still be refunded
+
+
+def test_an_unpaid_order_cannot_be_refunded_or_fulfilled(client, admin, make_user, auth_headers, product_by_sku):
+    headers = auth_headers(make_user())
+    client.post("/api/v1/cart/items", json={"product_id": product_by_sku(RAM).id}, headers=headers)
+    number = client.post("/api/v1/checkout", json={"address": ADDRESS}, headers=headers).get_json()["order_number"]
+
+    body = client.get(f"/api/v1/admin/orders/{number}", headers=admin[1]).get_json()
+
+    assert (body["next_steps"], body["refundable"]) == ([], False)
+
+
+def test_list_carries_the_customer_and_actions_for_every_row(client, admin, paid_order):
+    items = client.get("/api/v1/admin/orders", headers=admin[1]).get_json()["items"]
+    row = next(i for i in items if i["order_number"] == paid_order.order_number)
+    assert row["customer_email"] == "customer@example.com"
+    assert (row["next_steps"], row["refundable"]) == (["fulfilling"], True)

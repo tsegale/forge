@@ -3,13 +3,15 @@ the admin as the acting user, so the audit log records who did what."""
 
 from __future__ import annotations
 
+from collections import defaultdict
+
 from sqlalchemy import exists, select
 
 from ..errors import APIError, Conflict, NotFound
 from ..extensions import db
 from ..models import Order, OrderStatusTransition, Payment, PaymentEvent, User
 from ..models.enums import OrderStatus, PaymentEventKind, PaymentStatus
-from ..schemas.orders import AdminOrderDetail, OrderListQuery, OrderPage
+from ..schemas.orders import AdminActions, AdminOrderDetail, AdminOrderPage, AdminOrderSummary, OrderListQuery
 from . import orders as order_service
 from . import refunds
 from .audit import set_actor
@@ -31,13 +33,59 @@ def get(order_number: str, *, lock: bool = False) -> Order:
     return order
 
 
+FULFILMENT_STEPS = (OrderStatus.FULFILLING, OrderStatus.SHIPPED, OrderStatus.DELIVERED)
+
+
+def actions(orders: list[Order]) -> dict[int, AdminActions]:
+    """Legal next actions per order, read from order_status_transitions (the table the state
+    machine trigger enforces) and the payments, in two queries for any number of orders."""
+    if not orders:
+        return {}
+    edges: dict[OrderStatus, set[OrderStatus]] = defaultdict(set)
+    for src, dst in db.session.execute(
+        select(OrderStatusTransition.from_status, OrderStatusTransition.to_status).where(
+            OrderStatusTransition.from_status.in_({o.status for o in orders})
+        )
+    ):
+        edges[src].add(dst)
+    paid = set(
+        db.session.scalars(
+            select(Payment.order_id).where(
+                Payment.order_id.in_([o.id for o in orders]), Payment.status == PaymentStatus.SUCCEEDED
+            )
+        )
+    )
+    return {
+        o.id: AdminActions(
+            next_steps=[step.value for step in FULFILMENT_STEPS if step in edges[o.status]],
+            refundable=OrderStatus.REFUNDED in edges[o.status] and o.id in paid,
+        )
+        for o in orders
+    }
+
+
 def detail(order: Order) -> AdminOrderDetail:
     email = db.session.scalar(select(User.email).where(User.id == order.user_id))
-    return AdminOrderDetail(**order_service.detail(order).model_dump(), customer_email=email)
+    return AdminOrderDetail(
+        **order_service.detail(order).model_dump(), **actions([order])[order.id].model_dump(), customer_email=email
+    )
 
 
-def list_all(query: OrderListQuery) -> OrderPage:
-    return order_service.page(select(Order), query)
+def list_all(query: OrderListQuery) -> AdminOrderPage:
+    orders, next_cursor = order_service.page_rows(select(Order), query)
+    emails = dict(db.session.execute(select(User.id, User.email).where(User.id.in_({o.user_id for o in orders}))).all())
+    allowed = actions(orders)
+    return AdminOrderPage(
+        items=[
+            AdminOrderSummary(
+                **order_service.summary(o).model_dump(),
+                **allowed[o.id].model_dump(),
+                customer_email=emails[o.user_id],
+            )
+            for o in orders
+        ],
+        next_cursor=next_cursor,
+    )
 
 
 def advance(admin: User, order_number: str, to: str) -> Order:

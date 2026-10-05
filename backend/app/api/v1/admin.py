@@ -19,7 +19,7 @@ from ...schemas.admin import (
     ProductUpdate,
     StockUpdate,
 )
-from ...schemas.orders import AdminOrderDetail, AdminStatusChange, OrderListQuery, OrderPage, RefundRequest
+from ...schemas.orders import AdminOrderDetail, AdminOrderPage, AdminStatusChange, OrderListQuery, RefundRequest
 from ...security.guards import current_user, require_role
 from ...services import admin_orders
 from ...services.audit import set_actor
@@ -144,9 +144,12 @@ def update_inventory(product_id: int):
 
 @bp.get("/admin/orders")
 @require_role(UserRole.ADMIN)
-@api.validate(query=OrderListQuery, resp=responses(401, 403, 422, HTTP_200=OrderPage), tags=[TAG], security=SECURITY)
+@api.validate(
+    query=OrderListQuery, resp=responses(401, 403, 422, HTTP_200=AdminOrderPage), tags=[TAG], security=SECURITY
+)
 def admin_list_orders():
-    """All orders, newest first, optionally filtered by status."""
+    """All orders, newest first, optionally filtered by status, with each order's customer and the
+    actions an administrator may take next."""
     return admin_orders.list_all(request.context.query)
 
 

@@ -112,7 +112,31 @@ class OrderListQuery(BaseModel):
     status: OrderStatus | None = None
 
 
-class AdminOrderDetail(OrderDetail):
+FulfilmentStep = Literal["fulfilling", "shipped", "delivered"]
+
+
+class AdminActions(BaseModel):
+    """What an administrator may do next, from the database's state machine, so a client never
+    has to know the rules to offer only legal actions."""
+
+    next_steps: list[FulfilmentStep] = Field(
+        description="Fulfilment statuses the order can move to now (POST .../status)."
+    )
+    refundable: bool = Field(
+        description="A refund is allowed from the current status and there is a successful payment."
+    )
+
+
+class AdminOrderSummary(OrderSummary, AdminActions):
+    customer_email: str
+
+
+class AdminOrderPage(BaseModel):
+    items: list[AdminOrderSummary]
+    next_cursor: int | None = Field(description="Pass as `cursor` for older orders; null on the last page.")
+
+
+class AdminOrderDetail(OrderDetail, AdminActions):
     customer_email: str
 
 
@@ -121,7 +145,7 @@ class AdminStatusChange(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    to: Literal["fulfilling", "shipped", "delivered"]
+    to: FulfilmentStep
 
 
 class RefundRequest(BaseModel):

@@ -66,7 +66,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** All orders, newest first, optionally filtered by status. */
+        /** All orders, newest first, optionally filtered by status, with each order's customer and the actions an administrator may take next. */
         get: operations["get__api_v1_admin_orders"];
         put?: never;
         post?: never;
@@ -872,6 +872,11 @@ export interface components {
             history: components["schemas"]["StatusChange"][];
             /** Items */
             items: components["schemas"]["OrderLine"][];
+            /**
+             * Next Steps
+             * @description Fulfilment statuses the order can move to now (POST .../status).
+             */
+            next_steps: ("fulfilling" | "shipped" | "delivered")[];
             /** Order Number */
             order_number: string;
             /**
@@ -880,6 +885,11 @@ export interface components {
              */
             payment_status: string | null;
             /**
+             * Refundable
+             * @description A refund is allowed from the current status and there is a successful payment.
+             */
+            refundable: boolean;
+            /**
              * Reservation Expires At
              * @description Unpaid orders release their stock at this time.
              */
@@ -887,6 +897,42 @@ export interface components {
             shipping_address: components["schemas"]["ShippingAddress"] | null;
             status: components["schemas"]["OrderStatus"];
             totals: components["schemas"]["Totals"];
+        };
+        /** AdminOrderPage */
+        AdminOrderPage: {
+            /** Items */
+            items: components["schemas"]["AdminOrderSummary"][];
+            /**
+             * Next Cursor
+             * @description Pass as `cursor` for older orders; null on the last page.
+             */
+            next_cursor: number | null;
+        };
+        /** AdminOrderSummary */
+        AdminOrderSummary: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Customer Email */
+            customer_email: string;
+            /** Item Count */
+            item_count: number;
+            /**
+             * Next Steps
+             * @description Fulfilment statuses the order can move to now (POST .../status).
+             */
+            next_steps: ("fulfilling" | "shipped" | "delivered")[];
+            /** Order Number */
+            order_number: string;
+            /**
+             * Refundable
+             * @description A refund is allowed from the current status and there is a successful payment.
+             */
+            refundable: boolean;
+            status: components["schemas"]["OrderStatus"];
+            total: components["schemas"]["Price"];
         };
         /** AdminProductPage */
         AdminProductPage: {
@@ -2560,7 +2606,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OrderPage"];
+                    "application/json": components["schemas"]["AdminOrderPage"];
                 };
             };
             /** @description Unauthorized */

@@ -484,6 +484,19 @@
             "title": "Items",
             "type": "array"
           },
+          "next_steps": {
+            "description": "Fulfilment statuses the order can move to now (POST .../status).",
+            "items": {
+              "enum": [
+                "fulfilling",
+                "shipped",
+                "delivered"
+              ],
+              "type": "string"
+            },
+            "title": "Next Steps",
+            "type": "array"
+          },
           "order_number": {
             "title": "Order Number",
             "type": "string"
@@ -499,6 +512,11 @@
             ],
             "description": "Status of the latest payment attempt, if any.",
             "title": "Payment Status"
+          },
+          "refundable": {
+            "description": "A refund is allowed from the current status and there is a successful payment.",
+            "title": "Refundable",
+            "type": "boolean"
           },
           "reservation_expires_at": {
             "anyOf": [
@@ -531,6 +549,8 @@
           }
         },
         "required": [
+          "next_steps",
+          "refundable",
           "order_number",
           "status",
           "items",
@@ -544,6 +564,92 @@
           "customer_email"
         ],
         "title": "AdminOrderDetail",
+        "type": "object"
+      },
+      "AdminOrderPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AdminOrderSummary"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Pass as `cursor` for older orders; null on the last page.",
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "title": "AdminOrderPage",
+        "type": "object"
+      },
+      "AdminOrderSummary": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "customer_email": {
+            "title": "Customer Email",
+            "type": "string"
+          },
+          "item_count": {
+            "title": "Item Count",
+            "type": "integer"
+          },
+          "next_steps": {
+            "description": "Fulfilment statuses the order can move to now (POST .../status).",
+            "items": {
+              "enum": [
+                "fulfilling",
+                "shipped",
+                "delivered"
+              ],
+              "type": "string"
+            },
+            "title": "Next Steps",
+            "type": "array"
+          },
+          "order_number": {
+            "title": "Order Number",
+            "type": "string"
+          },
+          "refundable": {
+            "description": "A refund is allowed from the current status and there is a successful payment.",
+            "title": "Refundable",
+            "type": "boolean"
+          },
+          "status": {
+            "$ref": "#/components/schemas/OrderStatus"
+          },
+          "total": {
+            "$ref": "#/components/schemas/Price"
+          }
+        },
+        "required": [
+          "next_steps",
+          "refundable",
+          "order_number",
+          "status",
+          "item_count",
+          "total",
+          "created_at",
+          "customer_email"
+        ],
+        "title": "AdminOrderSummary",
         "type": "object"
       },
       "AdminProductPage": {
@@ -4234,7 +4340,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OrderPage"
+                  "$ref": "#/components/schemas/AdminOrderPage"
                 }
               }
             },
@@ -4276,7 +4382,7 @@
             "bearerAuth": []
           }
         ],
-        "summary": "All orders, newest first, optionally filtered by status.",
+        "summary": "All orders, newest first, optionally filtered by status, with each order's customer and the actions an administrator may take next.",
         "tags": [
           "Admin"
         ]
