@@ -135,3 +135,38 @@ describe('PayPage', () => {
     expect(attempts).toBe(3)
   })
 })
+
+describe('PayPage with simulated payments', () => {
+  it('pays through the test form, with a decline first', async () => {
+    const outcomes: unknown[] = []
+    let paid = false
+    server.use(
+      http.get('/api/v1/config', () => HttpResponse.json({ ...storeConfig, payment_provider: 'fake' })),
+      http.get(ORDER, () => HttpResponse.json(order(paid ? { status: 'paid' } : {}))),
+      http.post('/api/test/payments/FRG-000042', async ({ request }) => {
+        const body = (await request.json()) as { outcome: string }
+        outcomes.push(body.outcome)
+        if (body.outcome === 'declined') {
+          return HttpResponse.json({ status: 'declined', message: 'Your card was declined.' })
+        }
+        paid = true
+        return HttpResponse.json({ status: 'succeeded' })
+      }),
+    )
+    const router = renderApp('/orders/FRG-000042/pay')
+    expect(await screen.findByText(/Test mode: this store uses simulated payments/)).toBeInTheDocument()
+    expect(screen.queryByTestId('payment-element')).not.toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Simulate a declined card' }))
+    expect(await screen.findByText('Your card was declined')).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Pay N$ 8,149.00' }))
+    await waitFor(
+      () => {
+        expect(router.state.location.pathname).toBe('/orders/FRG-000042')
+      },
+      { timeout: 5000 },
+    )
+    expect(outcomes).toEqual(['declined', 'succeeded'])
+  })
+})

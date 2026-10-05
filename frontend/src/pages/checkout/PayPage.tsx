@@ -18,6 +18,7 @@ import { cancelOrder, orderQuery, reorder, startPayment, type OrderDetail } from
 import { getStripe } from '@/payments/stripe'
 import { TotalsTable } from '@/pages/cart/TotalsTable'
 import { StripePaymentForm } from './StripePaymentForm'
+import { TestPaymentForm } from './TestPaymentForm'
 
 const CONFIRM_POLL_MS = 2000
 /** After this long without the webhook, say so rather than spin indefinitely. */
@@ -63,7 +64,12 @@ export function PayPage() {
   const payment = useQuery({
     queryKey: ['payment', orderNumber],
     queryFn: () => startPayment(orderNumber),
-    enabled: pending && !expired && !confirming && Boolean(config.data?.stripe_publishable_key),
+    // With the fake gateway this still starts a (simulated) intent, which the simulator pays.
+    enabled:
+      pending &&
+      !expired &&
+      !confirming &&
+      (config.data?.payment_provider === 'fake' || Boolean(config.data?.stripe_publishable_key)),
     staleTime: Infinity,
     retry: shouldRetry,
   })
@@ -81,6 +87,7 @@ export function PayPage() {
   }
 
   const key = config.data.stripe_publishable_key
+  const simulated = config.data.payment_provider === 'fake'
 
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_24rem]">
@@ -98,7 +105,7 @@ export function PayPage() {
           <>
             <Countdown expiresAt={o.reservation_expires_at} />
             <div className="rounded-[var(--radius-card)] border border-border bg-surface p-5">
-              {!key ? (
+              {!simulated && !key ? (
                 <Alert tone="warning" title="Online payment is not available">
                   Card payments are not configured for this store.
                 </Alert>
@@ -118,9 +125,15 @@ export function PayPage() {
                     Try again
                   </Button>
                 </div>
+              ) : simulated ? (
+                <TestPaymentForm
+                  orderNumber={o.order_number}
+                  total={o.totals.total}
+                  onSubmitted={onSubmitted}
+                />
               ) : (
                 <PaymentPanel
-                  publishableKey={key}
+                  publishableKey={key ?? ''}
                   clientSecret={payment.data.client_secret}
                   total={o.totals.total}
                   orderNumber={o.order_number}
@@ -128,9 +141,11 @@ export function PayPage() {
                 />
               )}
             </div>
-            <p className="text-xs text-ink-subtle">
-              Payments are processed by Stripe. Card details never reach Forge.
-            </p>
+            {simulated ? null : (
+              <p className="text-xs text-ink-subtle">
+                Payments are processed by Stripe. Card details never reach Forge.
+              </p>
+            )}
           </>
         )}
       </section>
