@@ -113,8 +113,20 @@ export async function logout(): Promise<void> {
   }
 }
 
-/** Restore a session after a reload. Resolves to the user, or null if signed out. */
+/** The API sets this readable, secret-free cookie beside the HttpOnly refresh cookie. */
+const SESSION_HINT = 'forge_session'
+
+/** Whether a session may exist. False means there is certainly none, so there is nothing to restore. */
+export function hasSessionHint(): boolean {
+  return document.cookie.split(';').some((part) => part.trim().startsWith(`${SESSION_HINT}=`))
+}
+
+/**
+ * Restore a session after a reload. Resolves to the user, or null if signed out. Visitors who
+ * never signed in skip the refresh call entirely, so they cause no failed request (or console error).
+ */
 export async function restore(): Promise<User | null> {
+  if (!hasSessionHint()) return null
   return (await refresh()) ? me() : null
 }
 

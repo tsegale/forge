@@ -24,6 +24,7 @@ export const routes: RouteObject[] = [
     element: <AppShell />,
     children: [
       { index: true, element: <CatalogPage /> },
+      { path: 'search', element: <CatalogPage /> },
       { path: 'products/:slug', element: <ProductPage /> },
       { path: 'configurator', element: <ConfiguratorPage /> },
       {

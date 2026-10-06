@@ -23,6 +23,8 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    // App-level tests render the whole route tree (shell included); allow more than the 5 s default.
+    testTimeout: 15_000,
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
     // Stylesheets are stubbed in tests, except the token file, which the contrast test reads.

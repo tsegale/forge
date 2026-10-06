@@ -119,3 +119,30 @@ describe('cross-tab messages', () => {
     otherTab.close()
   })
 })
+
+describe('restore', () => {
+  it('does not call the API at all for a visitor who never signed in', async () => {
+    let calls = 0
+    server.use(
+      http.post('/api/v1/auth/refresh', () => {
+        calls += 1
+        return HttpResponse.json(expired, { status: 401 })
+      }),
+    )
+    document.cookie = 'forge_session=; path=/; max-age=0'
+    const { restore } = await import('./session')
+    expect(await restore()).toBeNull()
+    expect(calls).toBe(0)
+  })
+
+  it('restores the session when the hint says one may exist', async () => {
+    server.use(
+      http.post('/api/v1/auth/refresh', () => HttpResponse.json(tokens('restored'))),
+      http.get('/api/v1/auth/me', () => HttpResponse.json(user)),
+    )
+    document.cookie = 'forge_session=1; path=/'
+    const { restore } = await import('./session')
+    expect(await restore()).toEqual(user)
+    expect(getAccessToken()).toBe('restored')
+  })
+})
