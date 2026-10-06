@@ -1,8 +1,7 @@
+import { useId } from 'react'
 import { CircleAlert, CircleCheck, CircleDashed, LoaderCircle } from 'lucide-react'
 import type { CompatibilityReport } from '@/builds/api'
-import { findingLabel } from './findings'
-
-type Finding = CompatibilityReport['conflicts'][number]
+import { FindingItem, type Finding } from './FindingItem'
 
 function Status({ report }: { report: CompatibilityReport }) {
   if (report.conflicts.length) {
@@ -30,19 +29,13 @@ function Status({ report }: { report: CompatibilityReport }) {
   )
 }
 
-function Findings({ findings, tone }: { findings: Finding[]; tone: 'danger' | 'warning' }) {
+function Findings({ findings }: { findings: Finding[] }) {
   if (!findings.length) return null
   return (
-    <ul className="space-y-2">
+    <ul className="flex flex-col gap-2">
       {findings.map((finding) => (
-        <li
-          key={`${finding.code}-${finding.product_ids.join('-')}`}
-          className={`rounded-md border-l-4 bg-canvas px-3 py-2 text-sm ${
-            tone === 'danger' ? 'border-danger' : 'border-warning'
-          }`}
-        >
-          <p className="font-medium">{findingLabel(finding.code)}</p>
-          <p className="text-ink-muted">{finding.message}</p>
+        <li key={`${finding.code}-${finding.product_ids.join('-')}`}>
+          <FindingItem finding={finding} compact />
         </li>
       ))}
     </ul>
@@ -59,12 +52,13 @@ export function CompatibilityPanel({
   checking: boolean
   kindLabel: (kind: string) => string
 }) {
+  const headingId = useId()
   return (
-    <section aria-labelledby="compat-heading" className="space-y-3">
+    <section aria-labelledby={headingId} className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 id="compat-heading" className="text-sm font-semibold">
+        <h2 id={headingId} className="text-base font-semibold text-ink">
           Compatibility
-        </h3>
+        </h2>
         <span aria-live="polite" className="text-xs text-ink-subtle">
           {checking ? (
             <span className="flex items-center gap-1">
@@ -79,8 +73,8 @@ export function CompatibilityPanel({
           <div aria-live="polite">
             <Status report={report} />
           </div>
-          <Findings findings={report.conflicts} tone="danger" />
-          <Findings findings={report.warnings} tone="warning" />
+          <Findings findings={report.conflicts} />
+          <Findings findings={report.warnings} />
           {report.missing_kinds.length ? (
             <p className="text-sm text-ink-muted">
               Still needed: {report.missing_kinds.map(kindLabel).join(', ')}
