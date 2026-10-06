@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { Link, useLocation, useParams } from 'react-router'
-import { Alert } from '@/components/ui/Alert'
+import { Link, useParams } from 'react-router'
 import { Button } from '@/components/ui/Button'
 import { Dialog } from '@/components/ui/Dialog'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
@@ -18,7 +17,6 @@ const PLACED = new Intl.DateTimeFormat('en-NA', { dateStyle: 'long', timeStyle: 
 /** One of the customer's orders: progress, parts, totals, address and what they can do next. */
 export function OrderPage() {
   const { orderNumber = '' } = useParams()
-  const justPaid = (useLocation().state as { justPaid?: boolean } | null)?.justPaid === true
   const order = useQuery(orderQuery(orderNumber))
   const buyAgain = useBuyAgain()
   const queryClient = useQueryClient()
@@ -84,11 +82,6 @@ export function OrderPage() {
         </div>
       </div>
 
-      {justPaid && o.status === 'paid' ? (
-        <Alert tone="success" title="Payment received">
-          Thank you. A confirmation has been emailed to you, and we will let you know when your order ships.
-        </Alert>
-      ) : null}
       <ErrorMessage error={buyAgain.error} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_20rem]">

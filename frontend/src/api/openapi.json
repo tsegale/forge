@@ -2244,6 +2244,26 @@
         "title": "MotherboardSpecs",
         "type": "object"
       },
+      "MyReview": {
+        "properties": {
+          "review": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReviewResponse"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Null when the customer has not reviewed this product."
+          }
+        },
+        "required": [
+          "review"
+        ],
+        "title": "MyReview",
+        "type": "object"
+      },
       "OrderDetail": {
         "properties": {
           "build_id": {
@@ -9497,7 +9517,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ReviewResponse"
+                  "$ref": "#/components/schemas/MyReview"
                 }
               }
             },
@@ -9539,7 +9559,7 @@
             "bearerAuth": []
           }
         ],
-        "summary": "The signed-in customer's review of this product (404 if they have not written one).",
+        "summary": "The signed-in customer's review of this product, or null. Not having reviewed is a normal state, not an error (404 is only for an unknown product).",
         "tags": [
           "Reviews"
         ]

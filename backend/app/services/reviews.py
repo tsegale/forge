@@ -111,12 +111,9 @@ def list_reviews(slug: str, query: ReviewQuery) -> ReviewPage:
     return ReviewPage(summary=distribution(product.id), items=[to_response(r) for r in page], next_cursor=next_cursor)
 
 
-def own_review(user: User, slug: str) -> Review:
+def own_review(user: User, slug: str) -> Review | None:
     product = get_active(slug)
-    review = db.session.scalar(select(Review).where(Review.product_id == product.id, Review.user_id == user.id))
-    if review is None:
-        raise NotFound("You have not reviewed this product.")
-    return review
+    return db.session.scalar(select(Review).where(Review.product_id == product.id, Review.user_id == user.id))
 
 
 def create(user: User, slug: str, data: ReviewCreate) -> Review:

@@ -725,7 +725,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The signed-in customer's review of this product (404 if they have not written one). */
+        /** The signed-in customer's review of this product, or null. Not having reviewed is a normal state, not an error (404 is only for an unknown product). */
         get: operations["get__api_v1_products_{slug}_reviews_mine"];
         put?: never;
         post?: never;
@@ -1711,6 +1711,11 @@ export interface components {
             sata_ports: number;
             /** Socket Code */
             socket_code: string;
+        };
+        /** MyReview */
+        MyReview: {
+            /** @description Null when the customer has not reviewed this product. */
+            review: components["schemas"]["ReviewResponse"] | null;
         };
         /** OrderDetail */
         OrderDetail: {
@@ -5463,7 +5468,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ReviewResponse"];
+                    "application/json": components["schemas"]["MyReview"];
                 };
             };
             /** @description Unauthorized */

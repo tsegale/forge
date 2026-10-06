@@ -98,7 +98,7 @@ def test_one_review_per_product_then_edit_it(client, ram, reviewer):
     again = _review(client, reviewer[1], ram)
     assert again.status_code == 409 and again.get_json()["error"]["code"] == "review_exists"
 
-    mine = client.get(_url(ram, "/mine"), headers=reviewer[1]).get_json()
+    mine = client.get(_url(ram, "/mine"), headers=reviewer[1]).get_json()["review"]
     edited = client.patch(f"/api/v1/reviews/{mine['id']}", json={"rating": 3, "title": None}, headers=reviewer[1])
     assert edited.status_code == 200
     assert edited.get_json()["rating"] == 3 and edited.get_json()["title"] is None
@@ -132,7 +132,8 @@ def test_only_the_author_edits_and_admins_may_delete(client, ram, reviewer, make
     admin = auth_headers(make_user(role=UserRole.ADMIN))
     assert client.patch(f"/api/v1/reviews/{review_id}", json={"rating": 1}, headers=admin).status_code == 403
     assert client.delete(f"/api/v1/reviews/{review_id}", headers=admin).status_code == 204
-    assert client.get(_url(ram, "/mine"), headers=reviewer[1]).status_code == 404
+    gone = client.get(_url(ram, "/mine"), headers=reviewer[1])
+    assert gone.status_code == 200 and gone.get_json() == {"review": None}
 
 
 def test_writing_requires_sign_in(client, ram):

@@ -60,7 +60,7 @@ describe('PayPage', () => {
     expect(await screen.findByText('Confirming your payment')).toBeInTheDocument()
     await waitFor(
       () => {
-        expect(router.state.location.pathname).toBe('/orders/FRG-000042')
+        expect(router.state.location.pathname).toBe('/orders/FRG-000042/confirmation')
       },
       { timeout: 5000 },
     )
@@ -163,7 +163,7 @@ describe('PayPage with simulated payments', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Pay N$ 8,149.00' }))
     await waitFor(
       () => {
-        expect(router.state.location.pathname).toBe('/orders/FRG-000042')
+        expect(router.state.location.pathname).toBe('/orders/FRG-000042/confirmation')
       },
       { timeout: 5000 },
     )

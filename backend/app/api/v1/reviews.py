@@ -5,7 +5,7 @@ from __future__ import annotations
 from flask import current_app, request
 
 from ...extensions import limiter
-from ...schemas.reviews import ReviewCreate, ReviewPage, ReviewQuery, ReviewResponse, ReviewUpdate
+from ...schemas.reviews import MyReview, ReviewCreate, ReviewPage, ReviewQuery, ReviewResponse, ReviewUpdate
 from ...security.guards import current_user, require_auth
 from ...services import reviews as review_service
 from ..spec import api, responses
@@ -33,10 +33,12 @@ def list_reviews(slug: str):
 
 @bp.get("/products/<string:slug>/reviews/mine")
 @require_auth
-@api.validate(resp=responses(401, 404, HTTP_200=ReviewResponse), tags=[TAG], security=SECURITY)
+@api.validate(resp=responses(401, 404, HTTP_200=MyReview), tags=[TAG], security=SECURITY)
 def my_review(slug: str):
-    """The signed-in customer's review of this product (404 if they have not written one)."""
-    return review_service.to_response(review_service.own_review(current_user(), slug))
+    """The signed-in customer's review of this product, or null. Not having reviewed is a normal
+    state, not an error (404 is only for an unknown product)."""
+    review = review_service.own_review(current_user(), slug)
+    return MyReview(review=review_service.to_response(review) if review else None)
 
 
 @bp.post("/products/<string:slug>/reviews")

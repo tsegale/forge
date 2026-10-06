@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate, type RouteObject } from 'react-router'
 import { RequireAuth } from '@/auth/RequireAuth'
 import { AppShell } from '@/components/layout/AppShell'
+import { CheckoutShell } from '@/components/layout/CheckoutShell'
 import { AdminLayout } from '@/pages/admin/AdminLayout'
 import { AdminOrderPage } from '@/pages/admin/AdminOrderPage'
 import { AdminOrdersPage } from '@/pages/admin/AdminOrdersPage'
@@ -10,6 +11,7 @@ import { RegisterPage } from '@/pages/auth/RegisterPage'
 import { BuildsPage } from '@/pages/builds/BuildsPage'
 import { CartPage } from '@/pages/cart/CartPage'
 import { CheckoutPage } from '@/pages/checkout/CheckoutPage'
+import { ConfirmationPage } from '@/pages/checkout/ConfirmationPage'
 import { PayPage } from '@/pages/checkout/PayPage'
 import { CatalogPage } from '@/pages/catalog/CatalogPage'
 import { ProductPage } from '@/pages/catalog/ProductPage'
@@ -20,6 +22,19 @@ import { OrdersPage } from '@/pages/orders/OrdersPage'
 import { StyleguidePage } from '@/pages/styleguide/StyleguidePage'
 
 export const routes: RouteObject[] = [
+  {
+    // Checkout, payment and confirmation: a focused frame without the store navigation.
+    element: (
+      <RequireAuth>
+        <CheckoutShell />
+      </RequireAuth>
+    ),
+    children: [
+      { path: 'checkout', element: <CheckoutPage /> },
+      { path: 'orders/:orderNumber/pay', element: <PayPage /> },
+      { path: 'orders/:orderNumber/confirmation', element: <ConfirmationPage /> },
+    ],
+  },
   {
     element: <AppShell />,
     children: [
@@ -38,22 +53,6 @@ export const routes: RouteObject[] = [
         ),
       },
       { path: 'cart', element: <CartPage /> },
-      {
-        path: 'checkout',
-        element: (
-          <RequireAuth>
-            <CheckoutPage />
-          </RequireAuth>
-        ),
-      },
-      {
-        path: 'orders/:orderNumber/pay',
-        element: (
-          <RequireAuth>
-            <PayPage />
-          </RequireAuth>
-        ),
-      },
       {
         path: 'orders',
         element: (

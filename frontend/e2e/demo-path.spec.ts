@@ -22,7 +22,7 @@ const STILL_NEEDED = [
 async function chooseFirst(page: Page, kind: string): Promise<void> {
   await page.getByRole('button', { name: `Choose ${kind}`, exact: true }).click()
   const dialog = page.getByRole('dialog', { name: `Choose ${kind}` })
-  await expect(dialog).toContainText('Showing only parts compatible with the rest of your build.')
+  await expect(dialog).toContainText('Only parts that work with the rest of your build are listed.')
   const option = dialog.getByRole('button', { name: /^(Select|Add) / }).first()
   await option.click()
   await expect(dialog).toBeHidden()
@@ -60,7 +60,10 @@ test('the demo path: browse, configure, validate, check out, pay, fulfil', async
   await page.getByRole('link', { name: 'Check out this build' }).click()
   await page.waitForURL(/\/checkout\?build=\d+$/)
   await expect(page.getByRole('radio').first()).toBeChecked() // the demo customer's saved address
-  await expectAccessible(page, 'checkout')
+  await expectAccessible(page, 'checkout delivery')
+  await page.getByRole('button', { name: 'Continue to review' }).click()
+  await expect(page.getByRole('heading', { name: 'Review and reserve' })).toBeFocused()
+  await expectAccessible(page, 'checkout review')
   await page.getByRole('button', { name: 'Place order and pay' }).click()
 
   // Pay.
@@ -69,8 +72,12 @@ test('the demo path: browse, configure, validate, check out, pay, fulfil', async
   await expect(page.getByRole('timer', { name: 'Time left to pay' })).toBeVisible()
   await expectAccessible(page, 'pay screen')
   await payOnPayScreen(page)
-  await page.waitForURL(`/orders/${orderNumber}`, { timeout: 60_000 })
-  await expect(page.getByText('Payment received')).toBeVisible()
+  await page.waitForURL(`/orders/${orderNumber}/confirmation`, { timeout: 60_000 })
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Your order is confirmed')
+  await expect(page.getByText(/Payment received/)).toBeVisible()
+  await expectAccessible(page, 'confirmation')
+  await page.getByRole('link', { name: 'View order' }).click()
+  await page.waitForURL(`/orders/${orderNumber}`)
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Paid')
   await expectAccessible(page, 'order detail')
 

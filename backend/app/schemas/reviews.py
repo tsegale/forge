@@ -41,6 +41,10 @@ class ReviewResponse(BaseModel):
     updated_at: datetime
 
 
+class MyReview(BaseModel):
+    review: ReviewResponse | None = Field(description="Null when the customer has not reviewed this product.")
+
+
 class RatingDistribution(RatingSummary):
     counts: dict[str, int] = Field(description="Reviews per star rating, keys '1' to '5'.")
 

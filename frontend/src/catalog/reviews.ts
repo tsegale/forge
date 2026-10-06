@@ -6,7 +6,6 @@ import {
   useQueryClient,
 } from '@tanstack/react-query'
 import { api, unwrap, type components } from '@/api/client'
-import { ApiError } from '@/api/errors'
 import { withSession } from '@/auth/session'
 
 export type Review = components['schemas']['ReviewResponse']
@@ -43,16 +42,12 @@ export const reviewsQuery = (slug: string, sort: ReviewSort, verifiedOnly: boole
 export const myReviewQuery = (slug: string, userId: number | undefined) =>
   queryOptions({
     queryKey: [...reviewsKey(slug), 'mine', userId],
-    queryFn: async () => {
-      try {
-        return await withSession(() =>
+    queryFn: async () =>
+      (
+        await withSession(() =>
           unwrap(api.GET('/api/v1/products/{slug}/reviews/mine', { params: { path: { slug } } })),
         )
-      } catch (error) {
-        if (error instanceof ApiError && error.status === 404) return null
-        throw error
-      }
-    },
+      ).review,
     enabled: userId !== undefined,
   })
 

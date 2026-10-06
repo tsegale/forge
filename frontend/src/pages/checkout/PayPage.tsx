@@ -1,7 +1,7 @@
 import { Elements } from '@stripe/react-stripe-js'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { clsx } from 'clsx'
-import { Clock, LoaderCircle } from 'lucide-react'
+import { Clock, LoaderCircle, Lock, MapPin } from 'lucide-react'
 import { memo, useCallback, useMemo, useState } from 'react'
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router'
 import { ApiError } from '@/api/errors'
@@ -11,12 +11,17 @@ import { useSetCart } from '@/cart/api'
 import { Alert } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/Button'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
-import { formatPrice } from '@/lib/money'
+import { Skeleton } from '@/components/ui/Skeleton'
+import { Stepper } from '@/components/ui/Stepper'
+import { usePageTitle } from '@/lib/usePageTitle'
+import { formatAddress } from '@/orders/address'
 import { useExpired } from '@/lib/useExpired'
 import { useNow } from '@/lib/useNow'
 import { cancelOrder, orderQuery, reorder, startPayment, type OrderDetail } from '@/orders/api'
 import { getStripe } from '@/payments/stripe'
 import { TotalsTable } from '@/pages/cart/TotalsTable'
+import { OrderSummary } from './OrderSummary'
+import { CHECKOUT_STEPS } from './steps'
 import { StripePaymentForm } from './StripePaymentForm'
 import { TestPaymentForm } from './TestPaymentForm'
 
@@ -25,9 +30,33 @@ const CONFIRM_POLL_MS = 2000
 const CONFIRM_PATIENCE_MS = 60_000
 const PAID_STATES = new Set(['paid', 'fulfilling', 'shipped', 'delivered', 'refunded'])
 
+/**
+ * Stripe's Appearance API, set to the design tokens (tokens.css) so the card form reads as part of
+ * the page. The iframe cannot load the self-hosted Inter, so it uses the system UI font.
+ */
 const APPEARANCE = {
   theme: 'stripe' as const,
-  variables: { colorPrimary: '#1e4fa8', borderRadius: '6px', fontFamily: 'inherit' },
+  variables: {
+    colorPrimary: '#1e4fa8',
+    colorText: '#18181b',
+    colorTextSecondary: '#52525b',
+    colorTextPlaceholder: '#6b6b74',
+    colorDanger: '#b91c1c',
+    colorBackground: '#ffffff',
+    borderRadius: '4px',
+    spacingUnit: '4px',
+    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+    fontSizeBase: '15px',
+  },
+  rules: {
+    '.Input': { border: '1px solid #8c8c95', boxShadow: 'none' },
+    '.Input:hover': { borderColor: '#6b6b74' },
+    '.Input:focus': { borderColor: '#1e4fa8', boxShadow: '0 0 0 3px rgba(30, 79, 168, 0.2)' },
+    '.Input--invalid': { borderColor: '#b91c1c', boxShadow: '0 0 0 1px #b91c1c' },
+    '.Label': { fontWeight: '500', color: '#18181b' },
+    '.Tab': { border: '1px solid #e4e4e7', boxShadow: 'none' },
+    '.Tab--selected': { borderColor: '#1e4fa8', boxShadow: '0 0 0 1px #1e4fa8' },
+  },
 }
 
 function formatClock(ms: number): string {
@@ -42,6 +71,7 @@ function formatClock(ms: number): string {
 export function PayPage() {
   const { orderNumber = '' } = useParams()
   const [params] = useSearchParams()
+  usePageTitle('Payment')
   // Back from a redirect-based payment method (or 3-D Secure redirect).
   const returned = params.get('redirect_status')
   const [submittedAt, setSubmittedAt] = useState<number | null>(() =>
@@ -80,7 +110,7 @@ export function PayPage() {
   const o = order.data
 
   if (PAID_STATES.has(o.status)) {
-    return <Navigate to={`/orders/${o.order_number}`} replace state={{ justPaid: confirming }} />
+    return <Navigate to={`/orders/${o.order_number}${confirming ? '/confirmation' : ''}`} replace />
   }
   if (o.status === 'cancelled' || (pending && expired && !confirming)) {
     return <Expired order={o} cancelled={o.status === 'cancelled' && !expired} />
@@ -90,94 +120,101 @@ export function PayPage() {
   const simulated = config.data.payment_provider === 'fake'
 
   return (
-    <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_24rem]">
-      <section aria-labelledby="pay-heading" className="space-y-6">
-        <div>
-          <h1 id="pay-heading" className="text-2xl font-semibold">
-            Payment
-          </h1>
-          <p className="mt-1 text-sm text-ink-muted">Order {o.order_number}</p>
-        </div>
+    <div className="flex flex-col gap-6">
+      <div>
+        <h1 id="pay-heading" className="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
+          Payment
+        </h1>
+        <p className="mt-1 text-base text-ink-muted">Order {o.order_number}</p>
+        <Stepper className="mt-5" label="Checkout progress" steps={CHECKOUT_STEPS} current="payment" />
+      </div>
 
-        {confirming ? (
-          <Confirming submittedAt={submittedAt} orderNumber={o.order_number} />
-        ) : (
-          <>
-            <Countdown expiresAt={o.reservation_expires_at} />
-            <div className="rounded-md border border-border bg-surface p-5">
-              {!simulated && !key ? (
-                <Alert tone="warning" title="Online payment is not available">
-                  Card payments are not configured for this store.
-                </Alert>
-              ) : payment.isPending ? (
-                <p className="text-sm text-ink-muted">Preparing secure payment</p>
-              ) : payment.isError || !payment.data.client_secret ? (
-                <div className="space-y-3">
-                  <ErrorMessage
-                    error={payment.error}
-                    title="Payment could not be started. Your parts are still reserved."
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_24rem]">
+        <section aria-labelledby="pay-heading" className="order-2 flex flex-col gap-5 lg:order-1">
+          {confirming ? (
+            <Confirming submittedAt={submittedAt} orderNumber={o.order_number} />
+          ) : (
+            <>
+              <Countdown expiresAt={o.reservation_expires_at} />
+              <div className="rounded-md border border-border bg-surface p-5 sm:p-6">
+                {!simulated && !key ? (
+                  <Alert tone="warning" title="Online payment is not available">
+                    Card payments are not configured for this store.
+                  </Alert>
+                ) : payment.isPending ? (
+                  <div className="flex flex-col gap-3" aria-busy="true">
+                    <p className="text-sm text-ink-muted">Preparing secure payment</p>
+                    <Skeleton className="h-11 w-full" />
+                    <Skeleton className="h-11 w-full" />
+                  </div>
+                ) : payment.isError || !payment.data.client_secret ? (
+                  <div className="flex flex-col gap-3">
+                    <ErrorMessage
+                      error={payment.error}
+                      title="Payment could not be started. Your parts are still reserved."
+                    />
+                    <Button
+                      variant="secondary"
+                      className="self-start"
+                      busy={payment.isFetching}
+                      onClick={() => void payment.refetch()}
+                    >
+                      Try again
+                    </Button>
+                  </div>
+                ) : simulated ? (
+                  <TestPaymentForm
+                    orderNumber={o.order_number}
+                    total={o.totals.total}
+                    onSubmitted={onSubmitted}
                   />
-                  <Button
-                    variant="secondary"
-                    busy={payment.isFetching}
-                    onClick={() => void payment.refetch()}
-                  >
-                    Try again
-                  </Button>
-                </div>
-              ) : simulated ? (
-                <TestPaymentForm
-                  orderNumber={o.order_number}
-                  total={o.totals.total}
-                  onSubmitted={onSubmitted}
-                />
-              ) : (
-                <PaymentPanel
-                  publishableKey={key ?? ''}
-                  clientSecret={payment.data.client_secret}
-                  total={o.totals.total}
-                  orderNumber={o.order_number}
-                  onSubmitted={onSubmitted}
-                />
+                ) : (
+                  <PaymentPanel
+                    publishableKey={key ?? ''}
+                    clientSecret={payment.data.client_secret}
+                    total={o.totals.total}
+                    orderNumber={o.order_number}
+                    onSubmitted={onSubmitted}
+                  />
+                )}
+              </div>
+              {simulated ? null : (
+                <p className="flex items-center gap-2 text-sm text-ink-subtle">
+                  <Lock aria-hidden="true" className="h-4 w-4" />
+                  Payments are processed by Stripe. Card details never reach Forge.
+                </p>
               )}
-            </div>
-            {simulated ? null : (
-              <p className="text-xs text-ink-subtle">
-                Payments are processed by Stripe. Card details never reach Forge.
-              </p>
-            )}
-          </>
-        )}
-      </section>
+            </>
+          )}
+        </section>
 
-      <aside
-        aria-label="Order summary"
-        className="h-fit space-y-4 rounded-md border border-border bg-surface p-5"
-      >
-        <h2 className="text-sm font-semibold">Order summary</h2>
-        <ul className="space-y-2 text-sm">
-          {o.items.map((item) => (
-            <li key={item.product_id} className="flex justify-between gap-3">
-              <span>
-                {item.quantity > 1 ? `${String(item.quantity)} x ` : ''}
-                {item.name}
-              </span>
-              <span className="shrink-0 tabular">{formatPrice(item.line_total)}</span>
-            </li>
-          ))}
-        </ul>
-        <div className="border-t border-border pt-4">
-          <TotalsTable totals={o.totals} />
+        <div className="order-1 lg:order-2">
+          <OrderSummary
+            lines={o.items.map((item) => ({
+              key: item.product_id,
+              name: item.name,
+              kind: item.kind,
+              image: item.image,
+              quantity: item.quantity,
+              lineTotal: item.line_total,
+            }))}
+            total={o.totals.total}
+            totals={<TotalsTable totals={o.totals} />}
+          >
+            {o.shipping_address ? (
+              <div className="flex items-start gap-2 text-sm">
+                <MapPin aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-ink-subtle" />
+                <p>
+                  <span className="font-medium text-ink">
+                    Delivering to {o.shipping_address.recipient_name}
+                  </span>
+                  <span className="block text-ink-muted">{formatAddress(o.shipping_address)}</span>
+                </p>
+              </div>
+            ) : null}
+          </OrderSummary>
         </div>
-        {o.shipping_address ? (
-          <div className="border-t border-border pt-4 text-sm">
-            <p className="font-medium">Shipping to</p>
-            <p className="text-ink-muted">
-              {o.shipping_address.recipient_name}, {o.shipping_address.line1}, {o.shipping_address.city}
-            </p>
-          </div>
-        ) : null}
-      </aside>
+      </div>
     </div>
   )
 }

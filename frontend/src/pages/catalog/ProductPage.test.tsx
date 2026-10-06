@@ -193,9 +193,7 @@ describe('writing a review', () => {
   beforeEach(() => {
     server.use(
       ...signedIn(),
-      http.get('/api/v1/products/:slug/reviews/mine', () =>
-        HttpResponse.json(apiError('not_found', 'You have not reviewed this product.'), { status: 404 }),
-      ),
+      http.get('/api/v1/products/:slug/reviews/mine', () => HttpResponse.json({ review: null })),
       http.post('/api/v1/products/:slug/reviews', async ({ request }) => {
         posted = await request.json()
         return HttpResponse.json(review(3, { author: 'Ada L.' }), { status: 201 })
