@@ -29,6 +29,7 @@ export function cpu(overrides: Partial<ProductSummary> = {}): ProductSummary {
     },
     compatibility_warnings: null,
     compatibility: null,
+    image: null,
     ...overrides,
   }
 }
@@ -75,6 +76,7 @@ export function psu(overrides: Partial<ProductSummary> = {}): ProductSummary {
     },
     compatibility_warnings: null,
     compatibility: null,
+    image: null,
     ...overrides,
   }
 }

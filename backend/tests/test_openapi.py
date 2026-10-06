@@ -7,7 +7,11 @@ from openapi_spec_validator import validate
 
 SPEC_URL = "/api/docs/openapi.json"
 METHODS = {"get", "post", "put", "patch", "delete"}
-PROTECTED = re.compile(r"^/api/v1/(admin/|builds|addresses|checkout|orders|auth/me$|auth/logout-all$)")
+PROTECTED = re.compile(
+    r"^/api/v1/(admin/|builds|addresses|checkout|orders|reviews/|auth/me$|auth/logout-all$|products/\{slug\}/reviews/mine$)"
+)
+# Paths that are public to read but need a session to write.
+PROTECTED_WRITES = {("post", "/api/v1/products/{slug}/reviews")}
 
 
 @pytest.fixture(scope="module")
@@ -58,7 +62,8 @@ def test_protected_operations_declare_bearer_auth(spec):
     assert spec["components"]["securitySchemes"]["bearerAuth"]["scheme"] == "bearer"
     for path, method, operation in _operations(spec):
         secured = {"bearerAuth": []} in operation.get("security", [])
-        assert secured == bool(PROTECTED.match(path)), f"{method} {path}"
+        protected = bool(PROTECTED.match(path)) or (method.lower(), path) in PROTECTED_WRITES
+        assert secured == protected, f"{method} {path}"
 
 
 def test_conditional_request_statuses_are_documented(spec):

@@ -683,6 +683,76 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/products/{slug}/price-history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Prices over the last `days` (7 to 365, default 90) as a step series, with the lowest, highest and the change over the window. Fed by a trigger on every price change. */
+        get: operations["get__api_v1_products_{slug}_price-history"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/products/{slug}/reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A product's reviews with the rating distribution. Newest first by default; sort by rating or show verified purchases only. Keyset-paginated like the product list. */
+        get: operations["get__api_v1_products_{slug}_reviews"];
+        put?: never;
+        /** Review a product. One per customer per product (409 review_exists). The verified-purchase badge is set by the database from the customer's paid orders, not by the request. */
+        post: operations["post__api_v1_products_{slug}_reviews"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/products/{slug}/reviews/mine": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The signed-in customer's review of this product (404 if they have not written one). */
+        get: operations["get__api_v1_products_{slug}_reviews_mine"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reviews/{review_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete your own review. Administrators may delete any review (moderation). */
+        delete: operations["delete__api_v1_reviews_{review_id}"];
+        options?: never;
+        head?: never;
+        /** Edit your own review. */
+        patch: operations["patch__api_v1_reviews_{review_id}"];
+        trace?: never;
+    };
     "/api/v1/search/suggest": {
         parameters: {
             query?: never;
@@ -1770,6 +1840,48 @@ export interface components {
              */
             currency: string;
         };
+        /** PriceHistoryQuery */
+        PriceHistoryQuery: {
+            /**
+             * Days
+             * @description How far back to look.
+             * @default 90
+             */
+            days: number;
+        };
+        /** PriceHistoryResponse */
+        PriceHistoryResponse: {
+            /**
+             * Change Cents
+             * @description Current price minus the price at the start of the window.
+             */
+            change_cents: number;
+            /** Currency */
+            currency: string;
+            /** Current Cents */
+            current_cents: number;
+            /** Days */
+            days: number;
+            /** Highest Cents */
+            highest_cents: number;
+            /** Lowest Cents */
+            lowest_cents: number;
+            /**
+             * Points
+             * @description Each price in effect during the window, oldest first. The first point is the price at the start of the window; the price holds until the next point (a step series).
+             */
+            points: components["schemas"]["PricePoint"][];
+        };
+        /** PricePoint */
+        PricePoint: {
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /** Price Cents */
+            price_cents: number;
+        };
         /** PriceRange */
         PriceRange: {
             /** Max Cents */
@@ -1797,11 +1909,22 @@ export interface components {
             description: string | null;
             /** Id */
             id: number;
+            /**
+             * @description The first photo, if any.
+             * @default null
+             */
+            image: components["schemas"]["ProductImageResponse"] | null;
+            /**
+             * Images
+             * @description Every photo, in display order.
+             */
+            images: components["schemas"]["ProductImageResponse"][];
             /** Kind */
             kind: string;
             /** Name */
             name: string;
             price: components["schemas"]["Price"];
+            rating: components["schemas"]["RatingSummary"];
             /** Sku */
             sku: string;
             /** Slug */
@@ -1992,6 +2115,33 @@ export interface components {
              * @default null
              */
             wattage_min_w: number | null;
+        };
+        /** ProductImageResponse */
+        ProductImageResponse: {
+            /** Alt */
+            alt: string;
+            /**
+             * Card
+             * @description WebP, 640 px wide.
+             */
+            card: string;
+            /**
+             * Full
+             * @description WebP, 1280 px wide (or the original width, if smaller).
+             */
+            full: string;
+            /** Height */
+            height: number;
+            /**
+             * Thumb
+             * @description WebP, 320 px wide.
+             */
+            thumb: string;
+            /**
+             * Width
+             * @description Intrinsic width of the full image, for layout without shift.
+             */
+            width: number;
         };
         /** ProductPage */
         ProductPage: {
@@ -2195,6 +2345,11 @@ export interface components {
             compatibility_warnings: string[] | null;
             /** Id */
             id: number;
+            /**
+             * @description The first photo, if any.
+             * @default null
+             */
+            image: components["schemas"]["ProductImageResponse"] | null;
             /** Kind */
             kind: string;
             /** Name */
@@ -2287,6 +2442,33 @@ export interface components {
              */
             vat_rate_bps: number;
         };
+        /** RatingDistribution */
+        RatingDistribution: {
+            /**
+             * Average
+             * @description Mean rating to one decimal place; null with no reviews.
+             */
+            average: number | null;
+            /** Count */
+            count: number;
+            /**
+             * Counts
+             * @description Reviews per star rating, keys '1' to '5'.
+             */
+            counts: {
+                [key: string]: number;
+            };
+        };
+        /** RatingSummary */
+        RatingSummary: {
+            /**
+             * Average
+             * @description Mean rating to one decimal place; null with no reviews.
+             */
+            average: number | null;
+            /** Count */
+            count: number;
+        };
         /** Readiness */
         Readiness: {
             /** Checks */
@@ -2333,6 +2515,101 @@ export interface components {
              * @description Products from the order that are no longer sold and were not added.
              */
             unavailable_product_ids: number[];
+        };
+        /** ReviewCreate */
+        ReviewCreate: {
+            /** Body */
+            body: string;
+            /** Rating */
+            rating: number;
+            /**
+             * Title
+             * @default null
+             */
+            title: string | null;
+        };
+        /** ReviewPage */
+        ReviewPage: {
+            /** Items */
+            items: components["schemas"]["ReviewResponse"][];
+            /** Next Cursor */
+            next_cursor: string | null;
+            /** @description Across all of the product's reviews, whatever the filter. */
+            summary: components["schemas"]["RatingDistribution"];
+        };
+        /** ReviewQuery */
+        ReviewQuery: {
+            /**
+             * Cursor
+             * @description Opaque; from next_cursor of the previous page.
+             * @default null
+             */
+            cursor: string | null;
+            /**
+             * Limit
+             * @default 10
+             */
+            limit: number;
+            /**
+             * Sort
+             * @default newest
+             * @enum {string}
+             */
+            sort: "newest" | "highest" | "lowest";
+            /**
+             * Verified Only
+             * @default false
+             */
+            verified_only: boolean;
+        };
+        /** ReviewResponse */
+        ReviewResponse: {
+            /**
+             * Author
+             * @description First name and last initial, never the full name or email.
+             */
+            author: string;
+            /** Body */
+            body: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Id */
+            id: number;
+            /**
+             * Is Verified Purchase
+             * @description Set by the database from the author's paid orders.
+             */
+            is_verified_purchase: boolean;
+            /** Rating */
+            rating: number;
+            /** Title */
+            title: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** ReviewUpdate */
+        ReviewUpdate: {
+            /**
+             * Body
+             * @default null
+             */
+            body: string | null;
+            /**
+             * Rating
+             * @default null
+             */
+            rating: number | null;
+            /**
+             * Title
+             * @default null
+             */
+            title: string | null;
         };
         /** SearchSuggestions */
         SearchSuggestions: {
@@ -4971,6 +5248,342 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProductDetail"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    "get__api_v1_products_{slug}_price-history": {
+        parameters: {
+            query?: {
+                /** @description How far back to look. */
+                days?: number;
+            };
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriceHistoryResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    "get__api_v1_products_{slug}_reviews": {
+        parameters: {
+            query?: {
+                sort?: "newest" | "highest" | "lowest";
+                verified_only?: boolean;
+                limit?: number;
+                /** @description Opaque; from next_cursor of the previous page. */
+                cursor?: string | null;
+            };
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewPage"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    "post__api_v1_products_{slug}_reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewCreate"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    "get__api_v1_products_{slug}_reviews_mine": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    "delete__api_v1_reviews_{review_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                review_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    "patch__api_v1_reviews_{review_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                review_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewUpdate"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
             /** @description Not Found */

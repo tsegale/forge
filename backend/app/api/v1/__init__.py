@@ -14,5 +14,6 @@ from . import (  # noqa: E402,F401
     health,
     meta,
     orders,
+    reviews,
     webhooks,
 )

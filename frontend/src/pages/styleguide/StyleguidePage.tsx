@@ -52,6 +52,7 @@ const SAMPLE: Product = {
   },
   compatibility_warnings: null,
   compatibility: null,
+  image: null,
 }
 
 const SAMPLE_GPU: Product = {

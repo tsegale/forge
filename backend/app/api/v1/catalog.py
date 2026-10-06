@@ -7,6 +7,8 @@ from flask import request
 from ...schemas.catalog import (
     BrandList,
     CategoryList,
+    PriceHistoryQuery,
+    PriceHistoryResponse,
     ProductDetail,
     ProductFacets,
     ProductFilters,
@@ -52,6 +54,14 @@ def product_facets():
 def product_detail(slug: str):
     """A single active product with its full specifications and availability."""
     return catalog_service.get_product(slug)
+
+
+@bp.get("/products/<string:slug>/price-history")
+@api.validate(query=PriceHistoryQuery, resp=responses(404, 422, HTTP_200=PriceHistoryResponse), tags=[TAG])
+def price_history(slug: str):
+    """Prices over the last `days` (7 to 365, default 90) as a step series, with the lowest,
+    highest and the change over the window. Fed by a trigger on every price change."""
+    return catalog_service.price_history(slug, request.context.query.days)
 
 
 @bp.get("/products")

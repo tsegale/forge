@@ -6,6 +6,7 @@ fields of each component kind. Money is integer minor units plus an ISO 4217 cur
 
 from __future__ import annotations
 
+from datetime import datetime
 from decimal import Decimal
 from typing import Annotated, Any, Literal
 
@@ -191,6 +192,20 @@ class Availability(BaseModel):
     quantity_available: int
 
 
+class ProductImageResponse(BaseModel):
+    thumb: str = Field(description="WebP, 320 px wide.")
+    card: str = Field(description="WebP, 640 px wide.")
+    full: str = Field(description="WebP, 1280 px wide (or the original width, if smaller).")
+    alt: str
+    width: int = Field(description="Intrinsic width of the full image, for layout without shift.")
+    height: int
+
+
+class RatingSummary(BaseModel):
+    average: float | None = Field(description="Mean rating to one decimal place; null with no reviews.")
+    count: int
+
+
 class ProductSummary(BaseModel):
     id: int
     sku: str
@@ -201,6 +216,7 @@ class ProductSummary(BaseModel):
     price: Price
     availability: Availability
     specs: Specs
+    image: ProductImageResponse | None = Field(default=None, description="The first photo, if any.")
     compatibility_warnings: list[str] | None = Field(
         default=None,
         description="With compatible_with: warning codes this part would add to that build. Null otherwise.",
@@ -225,6 +241,32 @@ class CandidateCompatibility(BaseModel):
 class ProductDetail(ProductSummary):
     description: str | None
     category: CategoryRef
+    images: list[ProductImageResponse] = Field(description="Every photo, in display order.")
+    rating: RatingSummary
+
+
+class PriceHistoryQuery(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    days: int = Field(default=90, ge=7, le=365, description="How far back to look.")
+
+
+class PricePoint(BaseModel):
+    at: datetime
+    price_cents: int
+
+
+class PriceHistoryResponse(BaseModel):
+    currency: str
+    days: int
+    points: list[PricePoint] = Field(
+        description="Each price in effect during the window, oldest first. The first point is the price "
+        "at the start of the window; the price holds until the next point (a step series)."
+    )
+    current_cents: int
+    lowest_cents: int
+    highest_cents: int
+    change_cents: int = Field(description="Current price minus the price at the start of the window.")
 
 
 class CategoryList(BaseModel):

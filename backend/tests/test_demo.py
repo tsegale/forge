@@ -1,13 +1,25 @@
 """flask seed demo: an idempotent reset that gives every demo screen data."""
 
 import json
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from sqlalchemy import func, select
 
 from app.cli import DEFAULT_SEED
-from app.demo import ADMIN, CUSTOMER, DEMO_BUILD, PAST_ORDERS, reset
-from app.models import Build, Inventory, Order, OrderStatusHistory, Payment, Product, StockReservation, User
+from app.demo import ADMIN, CUSTOMER, DEMO_BUILD, PAST_ORDERS, REVIEWS, reset
+from app.models import (
+    Build,
+    Inventory,
+    Order,
+    OrderStatusHistory,
+    Payment,
+    PriceHistory,
+    Product,
+    Review,
+    StockReservation,
+    User,
+)
 from app.models.enums import BuildStatus, OrderStatus, PaymentStatus, ReservationStatus
 
 EXPECTED_STATUSES = sorted(status.value for _, status, _ in PAST_ORDERS)
@@ -89,3 +101,29 @@ def test_production_requires_confirmation(app, demo, monkeypatch):
     monkeypatch.setitem(app.config, "FORGE_ENV_NAME", "production")
     result = app.test_cli_runner().invoke(args=["seed", "demo"])
     assert result.exit_code != 0 and "--yes" in result.output
+
+
+def test_price_history_ends_at_the_current_price_and_some_parts_just_dropped(client, demo):
+    drops = 0
+    for product in demo.scalars(select(Product)):
+        rows = demo.execute(
+            select(PriceHistory.recorded_at, PriceHistory.price_cents)
+            .where(PriceHistory.product_id == product.id)
+            .order_by(PriceHistory.recorded_at)
+        ).all()
+        assert len(rows) >= 3, product.sku
+        assert rows[-1].price_cents == product.price_cents, product.sku
+        recent = rows[-1].recorded_at > datetime.now(UTC) - timedelta(days=14)
+        drops += recent and rows[-2].price_cents > rows[-1].price_cents
+    assert drops >= 10
+
+
+def test_reviews_mix_verified_and_unverified(demo):
+    reviews = demo.scalars(select(Review)).all()
+    assert len(reviews) == len(REVIEWS)
+    customer = demo.scalar(select(User.id).where(User.email == CUSTOMER.email))
+    verified = {r.product_id for r in reviews if r.is_verified_purchase}
+    bought = {r.product_id for r in reviews if r.user_id == customer}
+    refunded = demo.scalar(select(Product.id).where(Product.sku == "FRG-PSU-CR-RM850E"))
+    assert verified and verified <= bought  # only the customer bought anything
+    assert refunded not in verified

@@ -34,6 +34,12 @@ CONSTRAINT_ERRORS: dict[str, MappedError] = {
     "uq_brands_slug": MappedError(409, "brand_exists", "A brand with this name already exists."),
     "uq_categories_slug": MappedError(409, "category_exists", "A category with this slug already exists."),
     "ck_products_price_non_negative": MappedError(422, "invalid_price", "Price cannot be negative."),
+    # reviews
+    "uq_reviews_one_per_user": MappedError(
+        409, "review_exists", "You have already reviewed this product. Edit your review instead."
+    ),
+    "ck_reviews_rating_range": MappedError(422, "invalid_rating", "A rating is a whole number from 1 to 5."),
+    "ck_reviews_body_length": MappedError(422, "review_too_short", "A review needs at least 10 characters."),
     # stock
     "ck_inventory_on_hand_non_negative": MappedError(422, "invalid_stock", "Stock on hand cannot be negative."),
     "ck_inventory_reserved_le_on_hand": MappedError(
@@ -59,8 +65,6 @@ CONSTRAINT_ERRORS: dict[str, MappedError] = {
         409, "invalid_reservation_state", "The stock reservation cannot change that way in its current state."
     ),
     # engagement
-    "uq_reviews_one_per_user": MappedError(409, "review_exists", "You have already reviewed this product."),
-    "ck_reviews_rating_range": MappedError(422, "invalid_rating", "Rating must be between 1 and 5."),
     "uq_price_alerts_user_product": MappedError(
         409, "price_alert_exists", "You already have a price alert for this product."
     ),

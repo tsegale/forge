@@ -108,6 +108,7 @@ class BaseConfig:
     LOGIN_LIMIT_PER_IP = "5 per minute"
     LOGIN_FAILURE_LIMIT_PER_ACCOUNT = "10 per 15 minutes"
     REGISTER_LIMIT_PER_IP = "10 per hour"
+    REVIEW_LIMIT_PER_USER = "10 per hour"
 
     def __init__(self) -> None:
         self.FORGE_ENV_NAME = {
@@ -128,6 +129,8 @@ class BaseConfig:
         # gets its existing successor back instead of triggering family revocation.
         self.REFRESH_REUSE_GRACE = timedelta(seconds=int(os.environ.get("REFRESH_REUSE_GRACE_SECONDS", "10")))
         self.STORE_CURRENCY = os.environ.get("STORE_CURRENCY", "nad")
+        # Where product photos are served from (nginx in production, Flask in development).
+        self.MEDIA_URL = os.environ.get("MEDIA_URL", "/media").rstrip("/")
         self.SHIPPING_FLAT_CENTS = int(os.environ.get("SHIPPING_FLAT_CENTS", "15000"))
         self.FREE_SHIPPING_THRESHOLD_CENTS = int(os.environ.get("FREE_SHIPPING_THRESHOLD_CENTS", "500000"))
         self.RESERVATION_TTL = timedelta(minutes=int(os.environ.get("RESERVATION_TTL_MINUTES", "15")))

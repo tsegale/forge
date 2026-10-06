@@ -2558,6 +2558,88 @@
         "title": "Price",
         "type": "object"
       },
+      "PriceHistoryQuery": {
+        "additionalProperties": false,
+        "properties": {
+          "days": {
+            "default": 90,
+            "description": "How far back to look.",
+            "maximum": 365,
+            "minimum": 7,
+            "title": "Days",
+            "type": "integer"
+          }
+        },
+        "title": "PriceHistoryQuery",
+        "type": "object"
+      },
+      "PriceHistoryResponse": {
+        "properties": {
+          "change_cents": {
+            "description": "Current price minus the price at the start of the window.",
+            "title": "Change Cents",
+            "type": "integer"
+          },
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "current_cents": {
+            "title": "Current Cents",
+            "type": "integer"
+          },
+          "days": {
+            "title": "Days",
+            "type": "integer"
+          },
+          "highest_cents": {
+            "title": "Highest Cents",
+            "type": "integer"
+          },
+          "lowest_cents": {
+            "title": "Lowest Cents",
+            "type": "integer"
+          },
+          "points": {
+            "description": "Each price in effect during the window, oldest first. The first point is the price at the start of the window; the price holds until the next point (a step series).",
+            "items": {
+              "$ref": "#/components/schemas/PricePoint"
+            },
+            "title": "Points",
+            "type": "array"
+          }
+        },
+        "required": [
+          "currency",
+          "days",
+          "points",
+          "current_cents",
+          "lowest_cents",
+          "highest_cents",
+          "change_cents"
+        ],
+        "title": "PriceHistoryResponse",
+        "type": "object"
+      },
+      "PricePoint": {
+        "properties": {
+          "at": {
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "price_cents": {
+            "title": "Price Cents",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "at",
+          "price_cents"
+        ],
+        "title": "PricePoint",
+        "type": "object"
+      },
       "PriceRange": {
         "properties": {
           "max_cents": {
@@ -2630,6 +2712,26 @@
             "title": "Id",
             "type": "integer"
           },
+          "image": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProductImageResponse"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The first photo, if any."
+          },
+          "images": {
+            "description": "Every photo, in display order.",
+            "items": {
+              "$ref": "#/components/schemas/ProductImageResponse"
+            },
+            "title": "Images",
+            "type": "array"
+          },
           "kind": {
             "title": "Kind",
             "type": "string"
@@ -2640,6 +2742,9 @@
           },
           "price": {
             "$ref": "#/components/schemas/Price"
+          },
+          "rating": {
+            "$ref": "#/components/schemas/RatingSummary"
           },
           "sku": {
             "title": "Sku",
@@ -2707,7 +2812,9 @@
           "availability",
           "specs",
           "description",
-          "category"
+          "category",
+          "images",
+          "rating"
         ],
         "title": "ProductDetail",
         "type": "object"
@@ -3132,6 +3239,48 @@
           }
         },
         "title": "ProductFilters",
+        "type": "object"
+      },
+      "ProductImageResponse": {
+        "properties": {
+          "alt": {
+            "title": "Alt",
+            "type": "string"
+          },
+          "card": {
+            "description": "WebP, 640 px wide.",
+            "title": "Card",
+            "type": "string"
+          },
+          "full": {
+            "description": "WebP, 1280 px wide (or the original width, if smaller).",
+            "title": "Full",
+            "type": "string"
+          },
+          "height": {
+            "title": "Height",
+            "type": "integer"
+          },
+          "thumb": {
+            "description": "WebP, 320 px wide.",
+            "title": "Thumb",
+            "type": "string"
+          },
+          "width": {
+            "description": "Intrinsic width of the full image, for layout without shift.",
+            "title": "Width",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "thumb",
+          "card",
+          "full",
+          "alt",
+          "width",
+          "height"
+        ],
+        "title": "ProductImageResponse",
         "type": "object"
       },
       "ProductPage": {
@@ -3609,6 +3758,18 @@
             "title": "Id",
             "type": "integer"
           },
+          "image": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProductImageResponse"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The first photo, if any."
+          },
           "kind": {
             "title": "Kind",
             "type": "string"
@@ -3856,6 +4017,67 @@
         "title": "PublicConfig",
         "type": "object"
       },
+      "RatingDistribution": {
+        "properties": {
+          "average": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Mean rating to one decimal place; null with no reviews.",
+            "title": "Average"
+          },
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "description": "Reviews per star rating, keys '1' to '5'.",
+            "title": "Counts",
+            "type": "object"
+          }
+        },
+        "required": [
+          "average",
+          "count",
+          "counts"
+        ],
+        "title": "RatingDistribution",
+        "type": "object"
+      },
+      "RatingSummary": {
+        "properties": {
+          "average": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Mean rating to one decimal place; null with no reviews.",
+            "title": "Average"
+          },
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "average",
+          "count"
+        ],
+        "title": "RatingSummary",
+        "type": "object"
+      },
       "Readiness": {
         "properties": {
           "checks": {
@@ -3974,6 +4196,226 @@
           "unavailable_product_ids"
         ],
         "title": "ReorderResponse",
+        "type": "object"
+      },
+      "ReviewCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "body": {
+            "maxLength": 5000,
+            "minLength": 10,
+            "title": "Body",
+            "type": "string"
+          },
+          "rating": {
+            "maximum": 5,
+            "minimum": 1,
+            "title": "Rating",
+            "type": "integer"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Title"
+          }
+        },
+        "required": [
+          "rating",
+          "body"
+        ],
+        "title": "ReviewCreate",
+        "type": "object"
+      },
+      "ReviewPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/RatingDistribution",
+            "description": "Across all of the product's reviews, whatever the filter."
+          }
+        },
+        "required": [
+          "summary",
+          "items",
+          "next_cursor"
+        ],
+        "title": "ReviewPage",
+        "type": "object"
+      },
+      "ReviewQuery": {
+        "additionalProperties": false,
+        "properties": {
+          "cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Opaque; from next_cursor of the previous page.",
+            "title": "Cursor"
+          },
+          "limit": {
+            "default": 10,
+            "maximum": 50,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "sort": {
+            "default": "newest",
+            "enum": [
+              "newest",
+              "highest",
+              "lowest"
+            ],
+            "title": "Sort",
+            "type": "string"
+          },
+          "verified_only": {
+            "default": false,
+            "title": "Verified Only",
+            "type": "boolean"
+          }
+        },
+        "title": "ReviewQuery",
+        "type": "object"
+      },
+      "ReviewResponse": {
+        "properties": {
+          "author": {
+            "description": "First name and last initial, never the full name or email.",
+            "title": "Author",
+            "type": "string"
+          },
+          "body": {
+            "title": "Body",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "is_verified_purchase": {
+            "description": "Set by the database from the author's paid orders.",
+            "title": "Is Verified Purchase",
+            "type": "boolean"
+          },
+          "rating": {
+            "title": "Rating",
+            "type": "integer"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "rating",
+          "title",
+          "body",
+          "author",
+          "is_verified_purchase",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ReviewResponse",
+        "type": "object"
+      },
+      "ReviewUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "body": {
+            "anyOf": [
+              {
+                "maxLength": 5000,
+                "minLength": 10,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Body"
+          },
+          "rating": {
+            "anyOf": [
+              {
+                "maximum": 5,
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Rating"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Title"
+          }
+        },
+        "title": "ReviewUpdate",
         "type": "object"
       },
       "SearchSuggestions": {
@@ -8732,6 +9174,518 @@
         ]
       }
     },
+    "/api/v1/products/{slug}/price-history": {
+      "get": {
+        "description": "",
+        "operationId": "get__api_v1_products_{slug}_price-history",
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "How far back to look.",
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "default": 90,
+              "description": "How far back to look.",
+              "maximum": 365,
+              "minimum": 7,
+              "title": "Days",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PriceHistoryResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "summary": "Prices over the last `days` (7 to 365, default 90) as a step series, with the lowest, highest and the change over the window. Fed by a trigger on every price change.",
+        "tags": [
+          "Catalog"
+        ]
+      }
+    },
+    "/api/v1/products/{slug}/reviews": {
+      "get": {
+        "description": "",
+        "operationId": "get__api_v1_products_{slug}_reviews",
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "",
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "newest",
+              "enum": [
+                "newest",
+                "highest",
+                "lowest"
+              ],
+              "title": "Sort",
+              "type": "string"
+            }
+          },
+          {
+            "description": "",
+            "in": "query",
+            "name": "verified_only",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Verified Only",
+              "type": "boolean"
+            }
+          },
+          {
+            "description": "",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 10,
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Opaque; from next_cursor of the previous page.",
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Opaque; from next_cursor of the previous page.",
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewPage"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "summary": "A product's reviews with the rating distribution. Newest first by default; sort by rating or show verified purchases only. Keyset-paginated like the product list.",
+        "tags": [
+          "Reviews"
+        ]
+      },
+      "post": {
+        "description": "",
+        "operationId": "post__api_v1_products_{slug}_reviews",
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewResponse"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Review a product. One per customer per product (409 review_exists). The verified-purchase badge is set by the database from the customer's paid orders, not by the request.",
+        "tags": [
+          "Reviews"
+        ]
+      }
+    },
+    "/api/v1/products/{slug}/reviews/mine": {
+      "get": {
+        "description": "",
+        "operationId": "get__api_v1_products_{slug}_reviews_mine",
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "The signed-in customer's review of this product (404 if they have not written one).",
+        "tags": [
+          "Reviews"
+        ]
+      }
+    },
+    "/api/v1/reviews/{review_id}": {
+      "delete": {
+        "description": "",
+        "operationId": "delete__api_v1_reviews_{review_id}",
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "review_id",
+            "required": true,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Delete your own review. Administrators may delete any review (moderation).",
+        "tags": [
+          "Reviews"
+        ]
+      },
+      "patch": {
+        "description": "",
+        "operationId": "patch__api_v1_reviews_{review_id}",
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "review_id",
+            "required": true,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Edit your own review.",
+        "tags": [
+          "Reviews"
+        ]
+      }
+    },
     "/api/v1/search/suggest": {
       "get": {
         "description": "",
@@ -8871,6 +9825,9 @@
     },
     {
       "name": "Orders"
+    },
+    {
+      "name": "Reviews"
     },
     {
       "name": "Webhooks"

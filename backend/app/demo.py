@@ -10,11 +10,12 @@ DEMO ONLY. The credentials below are published in the README.
 
 from __future__ import annotations
 
+import random
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from sqlalchemy import delete, select, update
+from sqlalchemy import delete, func, select, update
 
 from .cli import DEFAULT_SEED, load_catalog
 from .extensions import db
@@ -28,7 +29,9 @@ from .models import (
     OrderItem,
     Payment,
     PaymentEvent,
+    PriceHistory,
     Product,
+    Review,
     StockReservation,
     User,
 )
@@ -77,6 +80,114 @@ PAST_ORDERS: list[tuple[list[tuple[str, int]], OrderStatus, int]] = [
     ([("FRG-RAM-CR-VEN-32-6000", 1), ("FRG-COOL-TR-PA120SE", 1)], OrderStatus.PAID, 1),
     ([("FRG-PSU-CR-RM850E", 1)], OrderStatus.REFUNDED, 9),
 ]
+# Shoppers who review parts. Only the demo customer has paid orders, so only their reviews of what
+# they bought carry the verified badge (decided by the database trigger, not set here).
+REVIEWERS = [
+    DemoAccount("demo-reviewer-1@example.com", "forge-demo-reviewer-2026", "Tomas", "Kandjii", UserRole.CUSTOMER),
+    DemoAccount("demo-reviewer-2@example.com", "forge-demo-reviewer-2026", "Selma", "Nghipondoka", UserRole.CUSTOMER),
+    DemoAccount("demo-reviewer-3@example.com", "forge-demo-reviewer-2026", "Johan", "van Wyk", UserRole.CUSTOMER),
+]
+
+# (reviewer: None for the demo customer, else an index into REVIEWERS), SKU, rating, title, body, days ago
+REVIEWS: list[tuple[int | None, str, int, str, str, int]] = [
+    (
+        None,
+        "FRG-CPU-R5-7600X",
+        5,
+        "Great value for an AM5 start",
+        "Plenty of performance for 1440p gaming, and it leaves a clear upgrade path on the same socket.",
+        18,
+    ),
+    (
+        None,
+        "FRG-SSD-SAM-990PRO-2TB",
+        5,
+        "Fast and quiet",
+        "Installs and game loads are noticeably quicker than my old SATA drive. Bought two, both flawless.",
+        2,
+    ),
+    (
+        None,
+        "FRG-GPU-NV-5070-FE",
+        4,
+        "Compact and well built",
+        "Runs everything I play at high settings. The fans are audible under full load, but the card is small.",
+        5,
+    ),
+    (
+        None,
+        "FRG-COOL-TR-PA120SE",
+        5,
+        "Best cooler for the money",
+        "Keeps temperatures in check and stays quiet. Check the memory height clearance before you buy.",
+        1,
+    ),
+    (
+        0,
+        "FRG-CPU-R7-7800X3D",
+        5,
+        "The gaming chip to get",
+        "Smooth frame times in every game I tried. It runs warm under all-core loads, so pair it with a good cooler.",
+        40,
+    ),
+    (
+        1,
+        "FRG-CPU-R7-7800X3D",
+        4,
+        "Excellent, but pricey",
+        "Very fast in games, less so for video exports than chips with more cores. Worth it if gaming comes first.",
+        25,
+    ),
+    (
+        2,
+        "FRG-CPU-R7-7800X3D",
+        5,
+        "A big step up from AM4",
+        "A large jump over my previous processor. Remember to enable EXPO for the memory after the first boot.",
+        12,
+    ),
+    (
+        0,
+        "FRG-MB-MSI-B650-TOMAHAWK",
+        5,
+        "Solid board, sensible layout",
+        "Clear BIOS, plenty of fan headers and a generous set of rear USB ports. Easy to build into.",
+        33,
+    ),
+    (
+        1,
+        "FRG-GPU-MSI-4070S-V2X",
+        4,
+        "Quiet at 1440p",
+        "Very quiet while gaming, and the length fit my mid tower with room to spare.",
+        20,
+    ),
+    (
+        2,
+        "FRG-RAM-CR-VEN-32-6000",
+        4,
+        "Runs at its rated speed",
+        "Ran at 6000 MT/s with EXPO enabled. The first boot took a while for memory training, which is normal.",
+        9,
+    ),
+    (
+        1,
+        "FRG-CASE-FD-NORTH",
+        5,
+        "Looks great on a desk",
+        "The wood front panel is beautiful and airflow is good. Space behind the motherboard tray is a little tight.",
+        15,
+    ),
+    (
+        0,
+        "FRG-PSU-CR-RM850E",
+        3,
+        "Fine, with faint coil whine",
+        "Stable, with a quiet fan, but mine has faint coil whine under load. The cables are easy to route.",
+        7,
+    ),
+]
+
 FULFILMENT_PATH = [OrderStatus.FULFILLING, OrderStatus.SHIPPED, OrderStatus.DELIVERED]
 
 DEMO_BUILD = [
@@ -218,6 +329,61 @@ def _demo_build(customer: User) -> Build:
     return build
 
 
+def _price_history(now: datetime) -> int:
+    """Replace every product's price history with six months of plausible, deterministic changes
+    ending at its current price. About a third of products get a recent drop (for "price drops").
+    Rows are inserted with past timestamps; the trigger only logs changes made from now on."""
+    products = db.session.scalars(select(Product).order_by(Product.sku)).all()
+    db.session.execute(delete(PriceHistory))
+    for months_ago in range(7):
+        db.session.execute(select(func.ensure_price_history_partition((now - timedelta(days=31 * months_ago)).date())))
+    for product in products:
+        rng = random.Random(product.sku)  # same history on every reset
+        current = product.price_cents
+        drop = rng.random() < 0.35
+        last_change = rng.randint(3, 12) if drop else rng.randint(20, 70)
+        steps = sorted(rng.sample(range(last_change + 8, 180), rng.randint(1, 3)), reverse=True)
+        rows = [(180, _price_near(current, rng.uniform(1.02, 1.16)))]
+        rows += [(days, _price_near(current, rng.uniform(0.98, 1.14))) for days in steps]
+        if drop:  # the price just before the latest change was clearly higher
+            rows.append((last_change + 1, _price_near(current, rng.uniform(1.06, 1.14))))
+        rows.append((last_change, current))
+        for days, cents in rows:
+            db.session.add(
+                PriceHistory(product_id=product.id, price_cents=cents, recorded_at=now - timedelta(days=days))
+            )
+    db.session.flush()
+    return len(products)
+
+
+def _price_near(cents: int, factor: float) -> int:
+    """A shelf price near ``cents * factor``, ending in 99.00 like the seed prices."""
+    return max(round(cents * factor / 10_000) * 10_000 - 100, 900)
+
+
+def _reviews(customer: User, now: datetime) -> int:
+    reviewers = [_upsert_account(account) for account in REVIEWERS]
+    authors = [customer, *reviewers]
+    db.session.execute(delete(Review).where(Review.user_id.in_([u.id for u in authors])))
+    for who, sku, rating, title, body, days in REVIEWS:
+        user = customer if who is None else reviewers[who]
+        product_id = db.session.scalar(select(Product.id).where(Product.sku == sku))
+        when = now - timedelta(days=days, hours=who or 0)
+        db.session.add(
+            Review(
+                product_id=product_id,
+                user_id=user.id,
+                rating=rating,
+                title=title,
+                body=body,
+                created_at=when,
+                updated_at=when,
+            )
+        )
+    db.session.flush()
+    return len(REVIEWS)
+
+
 def reset(seed_path: Path = DEFAULT_SEED) -> dict[str, int]:
     """Reset to the demo state. Idempotent: running it twice leaves the same data."""
     _clear_transactions()
@@ -229,5 +395,8 @@ def reset(seed_path: Path = DEFAULT_SEED) -> dict[str, int]:
         _past_order(customer, admin, lines, final, days, n) for n, (lines, final, days) in enumerate(PAST_ORDERS, 1)
     ]
     _demo_build(customer)
+    now = datetime.now(UTC)
+    _price_history(now)
+    reviews = _reviews(customer, now)  # after the past orders, so the trigger can verify purchases
     db.session.commit()
-    return {"orders": len(orders), "accounts": 2}
+    return {"orders": len(orders), "accounts": 2 + len(REVIEWERS), "reviews": reviews}

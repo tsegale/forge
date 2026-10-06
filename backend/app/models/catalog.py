@@ -150,6 +150,10 @@ class Product(TimestampMixin, db.Model):
         primaryjoin="Product.category_id == Category.id", foreign_keys=[category_id]
     )
     inventory: Mapped[Inventory] = relationship(back_populates="product", uselist=False)
+    # selectin: a page of products loads all their photos in one extra query, never one per product.
+    images: Mapped[list[ProductImage]] = relationship(
+        back_populates="product", order_by="ProductImage.position", cascade="all, delete-orphan", lazy="selectin"
+    )
 
     __table_args__ = (
         ForeignKeyConstraint(
@@ -425,6 +429,34 @@ class Inventory(db.Model):
     )
     # ORM-level optimistic concurrency for admin edits; checkout uses SELECT ... FOR UPDATE.
     __mapper_args__ = {"version_id_col": version}
+
+
+class ProductImage(db.Model):
+    """A product photo. The original is converted to three WebP variants, stored under the media
+    root as ``products/<storage_key>-{thumb,card,full}.webp``. width and height are the full
+    variant's, so the page can reserve the right space before it loads."""
+
+    __tablename__ = "product_images"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    product_id: Mapped[int] = mapped_column(ForeignKey("products.id", ondelete="CASCADE"), nullable=False)
+    position: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+    storage_key: Mapped[str] = mapped_column(String(120), nullable=False, unique=True)
+    alt_text: Mapped[str] = mapped_column(String(200), nullable=False)
+    width: Mapped[int] = mapped_column(Integer, nullable=False)
+    height: Mapped[int] = mapped_column(Integer, nullable=False)
+    source_url: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"), nullable=False)
+
+    product: Mapped[Product] = relationship(back_populates="images")
+
+    __table_args__ = (
+        UniqueConstraint("product_id", "position", name="uq_product_images_product_position"),
+        CheckConstraint("position >= 0", name="position_non_negative"),
+        CheckConstraint("width > 0 AND height > 0", name="dimensions_positive"),
+        # A file name, never a path: the key is joined onto the media root when serving.
+        CheckConstraint("storage_key ~ '^[A-Za-z0-9][A-Za-z0-9._-]*$'", name="storage_key_safe"),
+    )
 
 
 class PriceHistory(db.Model):
