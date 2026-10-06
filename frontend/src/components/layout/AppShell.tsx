@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from 'react-router'
 import { Logo } from '@/components/ui/Logo'
+import { Toaster } from '@/components/ui/Toast'
 import { AccountMenu } from './AccountMenu'
 import { CartLink } from './CartLink'
 
@@ -46,6 +47,7 @@ export function AppShell() {
       <main id="main" className="mx-auto w-full max-w-7xl flex-1 px-6 py-8">
         <Outlet />
       </main>
+      <Toaster />
       <footer className="border-t border-border bg-surface">
         <div className="mx-auto max-w-7xl px-6 py-4 text-xs text-ink-subtle">
           Forge. Prices in Namibian dollars, VAT included.

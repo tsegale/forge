@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { colorTokens, contrast } from '@/lib/contrast'
 import tokens from './tokens.css?raw'
 
 /**
@@ -7,21 +8,12 @@ import tokens from './tokens.css?raw'
  * control boundaries and focus indicators need 3:1 (1.4.11 non-text contrast).
  */
 
+const COLORS = colorTokens(tokens)
+
 function color(name: string): string {
-  const match = new RegExp(`--color-${name}:\\s*(#[0-9a-fA-F]{6})`).exec(tokens)
-  if (!match?.[1]) throw new Error(`No --color-${name} in tokens.css`)
-  return match[1]
-}
-
-function luminance(hex: string): number {
-  const channels = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
-  const [r = 0, g = 0, b = 0] = channels.map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4))
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b
-}
-
-function contrast(a: string, b: string): number {
-  const [light, dark] = [luminance(a), luminance(b)].sort((x, y) => y - x) as [number, number]
-  return (light + 0.05) / (dark + 0.05)
+  const hex = COLORS[name]
+  if (!hex) throw new Error(`No --color-${name} in tokens.css`)
+  return hex
 }
 
 const BACKGROUNDS = ['surface', 'canvas', 'surface-muted']

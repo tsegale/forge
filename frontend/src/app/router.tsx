@@ -17,6 +17,7 @@ import { ConfiguratorPage } from '@/pages/configurator/ConfiguratorPage'
 import { NotFound } from '@/pages/NotFound'
 import { OrderPage } from '@/pages/orders/OrderPage'
 import { OrdersPage } from '@/pages/orders/OrdersPage'
+import { StyleguidePage } from '@/pages/styleguide/StyleguidePage'
 
 export const routes: RouteObject[] = [
   {
@@ -80,6 +81,7 @@ export const routes: RouteObject[] = [
           { path: 'inventory', element: <InventoryPage /> },
         ],
       },
+      { path: 'styleguide', element: <StyleguidePage /> },
       { path: 'login', element: <LoginPage /> },
       { path: 'register', element: <RegisterPage /> },
       { path: '*', element: <NotFound /> },
