@@ -86,6 +86,9 @@ class BaseConfig:
     REFRESH_COOKIE_NAME = "forge_refresh"
     REFRESH_COOKIE_PATH = "/api/v1/auth"
     REFRESH_COOKIE_SECURE = True
+    # A readable companion to the HttpOnly refresh cookie: it holds no secret, only "a session may
+    # exist", so the browser app skips the refresh call (and its 401) for visitors who never signed in.
+    SESSION_HINT_COOKIE_NAME = "forge_session"
     CART_COOKIE_NAME = "forge_cart"
     CART_COOKIE_PATH = "/api/v1"
     CART_COOKIE_MAX_AGE = timedelta(days=30)

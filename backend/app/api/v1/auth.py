@@ -50,6 +50,15 @@ def _set_refresh_cookie(session: IssuedSession) -> None:
             httponly=True,
             samesite="Strict",
         )
+        response.set_cookie(
+            cfg["SESSION_HINT_COOKIE_NAME"],
+            "1",
+            expires=session.refresh_expires_at,
+            path="/",
+            secure=cfg["REFRESH_COOKIE_SECURE"],
+            httponly=False,  # read by the app; holds no secret
+            samesite="Strict",
+        )
         # Token responses must never be cached (RFC 6749, section 5.1).
         response.headers["Cache-Control"] = "no-store"
         return response
@@ -65,6 +74,9 @@ def _clear_refresh_cookie() -> None:
             secure=cfg["REFRESH_COOKIE_SECURE"],
             httponly=True,
             samesite="Strict",
+        )
+        response.delete_cookie(
+            cfg["SESSION_HINT_COOKIE_NAME"], path="/", secure=cfg["REFRESH_COOKIE_SECURE"], samesite="Strict"
         )
         return response
 

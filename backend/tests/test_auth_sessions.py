@@ -316,3 +316,32 @@ def test_refresh_token_travels_only_in_the_cookie(api, logged_in, make_user, pat
     assert set(response.get_json()) == {"access_token", "token_type", "expires_in"}
     cookie = _cookie_value(response)
     assert cookie and cookie not in response.get_data(as_text=True)
+
+
+HINT = "forge_session"
+
+
+def _set_cookies(response) -> dict[str, str]:
+    out = {}
+    for header in response.headers.getlist("Set-Cookie"):
+        name, rest = header.split("=", 1)
+        out[name] = rest
+    return out
+
+
+def test_sign_in_sets_a_readable_session_hint_without_any_secret(api, logged_in, make_user):
+    user = make_user()
+    response = api(LOGIN, json={"email": user.email, "password": DEFAULT_PASSWORD})
+    hint = _set_cookies(response)[HINT]
+    assert hint.startswith("1;")
+    assert "HttpOnly" not in hint and "SameSite=Strict" in hint and "Path=/;" in hint
+    refresh = _set_cookies(response)[COOKIE]
+    assert "HttpOnly" in refresh  # the token itself stays out of reach of page scripts
+
+
+def test_refresh_renews_the_hint_and_logout_or_a_failed_refresh_clears_it(api, logged_in):
+    _, token = logged_in()
+    assert _set_cookies(api(REFRESH, token))[HINT].startswith("1;")
+    assert "Expires=Thu, 01 Jan 1970" in _set_cookies(api(REFRESH, "not-a-token"))[HINT]
+    _, token = logged_in()
+    assert "Expires=Thu, 01 Jan 1970" in _set_cookies(api(LOGOUT, token))[HINT]
