@@ -41,6 +41,23 @@ export interface paths {
         patch: operations["patch__api_v1_addresses_{address_id}"];
         trace?: never;
     };
+    "/api/v1/admin/audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One trail over order status changes, stock events, price changes and payment events (all written by the database itself), newest first, with who did it. */
+        get: operations["get__api_v1_admin_audit"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/inventory/{product_id}": {
         parameters: {
             query?: never;
@@ -57,6 +74,23 @@ export interface paths {
         head?: never;
         /** Set stock on hand. Requires If-Match with the current ETag (optimistic concurrency): 412 if the stock changed since it was read, 428 if If-Match is missing, 409 if the new level would fall below stock already reserved by checkouts. */
         patch: operations["patch__api_v1_admin_inventory_{product_id}"];
+        trace?: never;
+    };
+    "/api/v1/admin/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Sales over the last `days` (revenue, orders, units, refunds, a zero-filled daily series in the store's time zone), orders by status, low stock and best sellers. */
+        get: operations["get__api_v1_admin_metrics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/admin/orders": {
@@ -159,6 +193,23 @@ export interface paths {
         head?: never;
         /** Change a product's price or availability. Price changes are recorded in price_history by a trigger. */
         patch: operations["patch__api_v1_admin_products_{product_id}"];
+        trace?: never;
+    };
+    "/api/v1/admin/webhooks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The payment provider's events as applied (the idempotency ledger), newest first. */
+        get: operations["get__api_v1_admin_webhooks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/alerts": {
@@ -1269,6 +1320,62 @@ export interface components {
              */
             to: "fulfilling" | "shipped" | "delivered";
         };
+        /** AuditEntry */
+        AuditEntry: {
+            /**
+             * Actor
+             * @description Who did it (an administrator); null for the system or the customer.
+             */
+            actor: string | null;
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /** Details */
+            details: {
+                [key: string]: unknown;
+            };
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "orders" | "stock" | "prices" | "payments";
+            /**
+             * Subject
+             * @description The order number, or the product's SKU.
+             */
+            subject: string;
+            /** Summary */
+            summary: string;
+        };
+        /** AuditLog */
+        AuditLog: {
+            /** Items */
+            items: components["schemas"]["AuditEntry"][];
+            /** Next Before */
+            next_before: string | null;
+        };
+        /** AuditQuery */
+        AuditQuery: {
+            /**
+             * Before
+             * @description Only entries before this time (from next_before).
+             * @default null
+             */
+            before: string | null;
+            /**
+             * Kind
+             * @description One source only; all of them by default.
+             * @default null
+             */
+            kind: ("orders" | "stock" | "prices" | "payments") | null;
+            /**
+             * Limit
+             * @default 50
+             */
+            limit: number;
+        };
         /** Availability */
         Availability: {
             /** In Stock */
@@ -1713,6 +1820,18 @@ export interface components {
             /** Threads */
             threads: number;
         };
+        /** DailySales */
+        DailySales: {
+            /**
+             * Day
+             * Format: date
+             * @description Calendar day in the store's time zone.
+             */
+            day: string;
+            /** Orders */
+            orders: number;
+            revenue: components["schemas"]["Price"];
+        };
         /** ErrorBody */
         ErrorBody: {
             /**
@@ -1871,6 +1990,20 @@ export interface components {
              */
             status: "ok";
         };
+        /** LogQuery */
+        LogQuery: {
+            /**
+             * Before
+             * @description Only entries before this time (from next_before).
+             * @default null
+             */
+            before: string | null;
+            /**
+             * Limit
+             * @default 50
+             */
+            limit: number;
+        };
         /** LoginRequest */
         LoginRequest: {
             /**
@@ -1880,6 +2013,17 @@ export interface components {
             email: string;
             /** Password */
             password: string;
+        };
+        /** LowStock */
+        LowStock: {
+            /** Available */
+            available: number;
+            /** Name */
+            name: string;
+            /** Product Id */
+            product_id: number;
+            /** Sku */
+            sku: string;
         };
         /** MemorySpecs */
         MemorySpecs: {
@@ -1907,6 +2051,53 @@ export interface components {
          * @enum {string}
          */
         MemoryType: "ddr4" | "ddr5";
+        /** Metrics */
+        Metrics: {
+            average_order: components["schemas"]["Price"] | null;
+            /**
+             * Awaiting Payment
+             * @description Orders holding stock until they are paid or expire.
+             */
+            awaiting_payment: number;
+            /**
+             * By Status
+             * @description Orders placed in the window, per current status.
+             */
+            by_status: components["schemas"]["StatusCount"][];
+            /**
+             * Daily
+             * @description One entry per day of the window, oldest first, zeros included.
+             */
+            daily: components["schemas"]["DailySales"][];
+            /** Days */
+            days: number;
+            /**
+             * Low Stock
+             * @description Active products with three or fewer available.
+             */
+            low_stock: components["schemas"]["LowStock"][];
+            /** Orders */
+            orders: number;
+            /** @description Orders placed in the window and since refunded. */
+            refunded: components["schemas"]["Price"];
+            /** @description Paid orders placed in the window (paid through delivered), VAT included. */
+            revenue: components["schemas"]["Price"];
+            /**
+             * Top Products
+             * @description Best sellers in the window by revenue.
+             */
+            top_products: components["schemas"]["TopProduct"][];
+            /** Units */
+            units: number;
+        };
+        /** MetricsQuery */
+        MetricsQuery: {
+            /**
+             * Days
+             * @default 30
+             */
+            days: number;
+        };
         /** MotherboardSpecs */
         MotherboardSpecs: {
             /** Chipset */
@@ -3012,6 +3203,13 @@ export interface components {
             from_status: components["schemas"]["OrderStatus"] | null;
             to_status: components["schemas"]["OrderStatus"];
         };
+        /** StatusCount */
+        StatusCount: {
+            /** Count */
+            count: number;
+            /** Status */
+            status: string;
+        };
         /**
          * StockUpdate
          * @description Only stock on hand is editable. Reserved stock belongs to checkout and changes only through it.
@@ -3089,6 +3287,18 @@ export interface components {
              */
             token_type: "Bearer";
         };
+        /** TopProduct */
+        TopProduct: {
+            /** Name */
+            name: string;
+            /** Product Id */
+            product_id: number;
+            revenue: components["schemas"]["Price"];
+            /** Sku */
+            sku: string;
+            /** Units */
+            units: number;
+        };
         /**
          * Totals
          * @description VAT-inclusive pricing: total = subtotal + tax + shipping, exactly.
@@ -3131,6 +3341,32 @@ export interface components {
             duplicate: boolean;
             /** Received */
             received: boolean;
+        };
+        /** WebhookEntry */
+        WebhookEntry: {
+            /** Event Id */
+            event_id: string;
+            /** Event Type */
+            event_type: string;
+            /**
+             * Order Number
+             * @description From the event's metadata, when it names an order.
+             */
+            order_number: string | null;
+            /**
+             * Processed At
+             * Format: date-time
+             */
+            processed_at: string;
+            /** Provider */
+            provider: string;
+        };
+        /** WebhookLog */
+        WebhookLog: {
+            /** Items */
+            items: components["schemas"]["WebhookEntry"][];
+            /** Next Before */
+            next_before: string | null;
         };
     };
     responses: never;
@@ -3388,6 +3624,59 @@ export interface operations {
             };
         };
     };
+    get__api_v1_admin_audit: {
+        parameters: {
+            query?: {
+                limit?: number;
+                /** @description Only entries before this time (from next_before). */
+                before?: string | null;
+                /** @description One source only; all of them by default. */
+                kind?: ("orders" | "stock" | "prices" | "payments") | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditLog"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     "get__api_v1_admin_inventory_{product_id}": {
         parameters: {
             query?: never;
@@ -3526,6 +3815,55 @@ export interface operations {
             };
             /** @description Precondition Required */
             428: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get__api_v1_admin_metrics: {
+        parameters: {
+            query?: {
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Metrics"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3893,6 +4231,57 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get__api_v1_admin_webhooks: {
+        parameters: {
+            query?: {
+                limit?: number;
+                /** @description Only entries before this time (from next_before). */
+                before?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookLog"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

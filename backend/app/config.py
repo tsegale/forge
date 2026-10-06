@@ -138,6 +138,8 @@ class BaseConfig:
         # gets its existing successor back instead of triggering family revocation.
         self.REFRESH_REUSE_GRACE = timedelta(seconds=int(os.environ.get("REFRESH_REUSE_GRACE_SECONDS", "10")))
         self.STORE_CURRENCY = os.environ.get("STORE_CURRENCY", "nad")
+        # Day boundaries for sales reports.
+        self.STORE_TIMEZONE = os.environ.get("STORE_TIMEZONE", "Africa/Windhoek")
         # Where product photos are served from (nginx in production, Flask in development).
         self.MEDIA_URL = os.environ.get("MEDIA_URL", "/media").rstrip("/")
         self.SHIPPING_FLAT_CENTS = int(os.environ.get("SHIPPING_FLAT_CENTS", "15000"))

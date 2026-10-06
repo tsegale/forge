@@ -19,9 +19,10 @@ from ...schemas.admin import (
     ProductUpdate,
     StockUpdate,
 )
+from ...schemas.admin_insights import AuditLog, AuditQuery, LogQuery, Metrics, MetricsQuery, WebhookLog
 from ...schemas.orders import AdminOrderDetail, AdminOrderPage, AdminStatusChange, OrderListQuery, RefundRequest
 from ...security.guards import current_user, require_role
-from ...services import admin_orders
+from ...services import admin_insights, admin_orders
 from ...services.audit import set_actor
 from ...services.catalog_query import ilike_contains
 from ..spec import api, responses
@@ -193,3 +194,33 @@ def admin_refund_order(order_number: str):
     its current state (checked before any money moves); 502 if Stripe did not complete it."""
     order = admin_orders.refund(current_user(), order_number, request.context.json.reason)
     return admin_orders.detail(order)
+
+
+@bp.get("/admin/metrics")
+@require_role(UserRole.ADMIN)
+@api.validate(query=MetricsQuery, resp=responses(401, 403, 422, HTTP_200=Metrics), tags=[TAG], security=SECURITY)
+def metrics():
+    """Sales over the last `days` (revenue, orders, units, refunds, a zero-filled daily series in
+    the store's time zone), orders by status, low stock and best sellers."""
+    return admin_insights.metrics(request.context.query.days)
+
+
+@bp.get("/admin/webhooks")
+@require_role(UserRole.ADMIN)
+@api.validate(query=LogQuery, resp=responses(401, 403, 422, HTTP_200=WebhookLog), tags=[TAG], security=SECURITY)
+def webhook_log():
+    """The payment provider's events as applied (the idempotency ledger), newest first."""
+    q: LogQuery = request.context.query
+    items, next_before = admin_insights.webhooks(q.limit, q.before)
+    return WebhookLog(items=items, next_before=next_before)
+
+
+@bp.get("/admin/audit")
+@require_role(UserRole.ADMIN)
+@api.validate(query=AuditQuery, resp=responses(401, 403, 422, HTTP_200=AuditLog), tags=[TAG], security=SECURITY)
+def audit_log():
+    """One trail over order status changes, stock events, price changes and payment events
+    (all written by the database itself), newest first, with who did it."""
+    q: AuditQuery = request.context.query
+    items, next_before = admin_insights.audit(q.kind, q.limit, q.before)
+    return AuditLog(items=items, next_before=next_before)

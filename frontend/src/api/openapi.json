@@ -868,6 +868,137 @@
         "title": "AdminStatusChange",
         "type": "object"
       },
+      "AuditEntry": {
+        "properties": {
+          "actor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Who did it (an administrator); null for the system or the customer.",
+            "title": "Actor"
+          },
+          "at": {
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "details": {
+            "additionalProperties": true,
+            "title": "Details",
+            "type": "object"
+          },
+          "kind": {
+            "enum": [
+              "orders",
+              "stock",
+              "prices",
+              "payments"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "subject": {
+            "description": "The order number, or the product's SKU.",
+            "title": "Subject",
+            "type": "string"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "at",
+          "subject",
+          "summary",
+          "actor",
+          "details"
+        ],
+        "title": "AuditEntry",
+        "type": "object"
+      },
+      "AuditLog": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AuditEntry"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_before": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Before"
+          }
+        },
+        "required": [
+          "items",
+          "next_before"
+        ],
+        "title": "AuditLog",
+        "type": "object"
+      },
+      "AuditQuery": {
+        "additionalProperties": false,
+        "properties": {
+          "before": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Only entries before this time (from next_before).",
+            "title": "Before"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "orders",
+                  "stock",
+                  "prices",
+                  "payments"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "One source only; all of them by default.",
+            "title": "Kind"
+          },
+          "limit": {
+            "default": 50,
+            "maximum": 200,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "AuditQuery",
+        "type": "object"
+      },
       "Availability": {
         "properties": {
           "in_stock": {
@@ -1961,6 +2092,30 @@
         "title": "CpuSpecs",
         "type": "object"
       },
+      "DailySales": {
+        "properties": {
+          "day": {
+            "description": "Calendar day in the store's time zone.",
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          },
+          "orders": {
+            "title": "Orders",
+            "type": "integer"
+          },
+          "revenue": {
+            "$ref": "#/components/schemas/Price"
+          }
+        },
+        "required": [
+          "day",
+          "revenue",
+          "orders"
+        ],
+        "title": "DailySales",
+        "type": "object"
+      },
       "ErrorBody": {
         "properties": {
           "code": {
@@ -2281,6 +2436,34 @@
         "title": "Liveness",
         "type": "object"
       },
+      "LogQuery": {
+        "additionalProperties": false,
+        "properties": {
+          "before": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Only entries before this time (from next_before).",
+            "title": "Before"
+          },
+          "limit": {
+            "default": 50,
+            "maximum": 200,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "LogQuery",
+        "type": "object"
+      },
       "LoginRequest": {
         "additionalProperties": false,
         "properties": {
@@ -2302,6 +2485,34 @@
           "password"
         ],
         "title": "LoginRequest",
+        "type": "object"
+      },
+      "LowStock": {
+        "properties": {
+          "available": {
+            "title": "Available",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "product_id": {
+            "title": "Product Id",
+            "type": "integer"
+          },
+          "sku": {
+            "title": "Sku",
+            "type": "string"
+          }
+        },
+        "required": [
+          "product_id",
+          "sku",
+          "name",
+          "available"
+        ],
+        "title": "LowStock",
         "type": "object"
       },
       "MemorySpecs": {
@@ -2359,6 +2570,106 @@
         ],
         "title": "MemoryType",
         "type": "string"
+      },
+      "Metrics": {
+        "properties": {
+          "average_order": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Price"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "awaiting_payment": {
+            "description": "Orders holding stock until they are paid or expire.",
+            "title": "Awaiting Payment",
+            "type": "integer"
+          },
+          "by_status": {
+            "description": "Orders placed in the window, per current status.",
+            "items": {
+              "$ref": "#/components/schemas/StatusCount"
+            },
+            "title": "By Status",
+            "type": "array"
+          },
+          "daily": {
+            "description": "One entry per day of the window, oldest first, zeros included.",
+            "items": {
+              "$ref": "#/components/schemas/DailySales"
+            },
+            "title": "Daily",
+            "type": "array"
+          },
+          "days": {
+            "title": "Days",
+            "type": "integer"
+          },
+          "low_stock": {
+            "description": "Active products with three or fewer available.",
+            "items": {
+              "$ref": "#/components/schemas/LowStock"
+            },
+            "title": "Low Stock",
+            "type": "array"
+          },
+          "orders": {
+            "title": "Orders",
+            "type": "integer"
+          },
+          "refunded": {
+            "$ref": "#/components/schemas/Price",
+            "description": "Orders placed in the window and since refunded."
+          },
+          "revenue": {
+            "$ref": "#/components/schemas/Price",
+            "description": "Paid orders placed in the window (paid through delivered), VAT included."
+          },
+          "top_products": {
+            "description": "Best sellers in the window by revenue.",
+            "items": {
+              "$ref": "#/components/schemas/TopProduct"
+            },
+            "title": "Top Products",
+            "type": "array"
+          },
+          "units": {
+            "title": "Units",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "days",
+          "revenue",
+          "orders",
+          "average_order",
+          "units",
+          "refunded",
+          "awaiting_payment",
+          "daily",
+          "by_status",
+          "low_stock",
+          "top_products"
+        ],
+        "title": "Metrics",
+        "type": "object"
+      },
+      "MetricsQuery": {
+        "additionalProperties": false,
+        "properties": {
+          "days": {
+            "default": 30,
+            "maximum": 90,
+            "minimum": 1,
+            "title": "Days",
+            "type": "integer"
+          }
+        },
+        "title": "MetricsQuery",
+        "type": "object"
       },
       "MotherboardSpecs": {
         "properties": {
@@ -5042,6 +5353,24 @@
         "title": "StatusChange",
         "type": "object"
       },
+      "StatusCount": {
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "count"
+        ],
+        "title": "StatusCount",
+        "type": "object"
+      },
       "StockUpdate": {
         "additionalProperties": false,
         "description": "Only stock on hand is editable. Reserved stock belongs to checkout and changes only through it.",
@@ -5193,6 +5522,38 @@
         "title": "TokenResponse",
         "type": "object"
       },
+      "TopProduct": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "product_id": {
+            "title": "Product Id",
+            "type": "integer"
+          },
+          "revenue": {
+            "$ref": "#/components/schemas/Price"
+          },
+          "sku": {
+            "title": "Sku",
+            "type": "string"
+          },
+          "units": {
+            "title": "Units",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "product_id",
+          "sku",
+          "name",
+          "units",
+          "revenue"
+        ],
+        "title": "TopProduct",
+        "type": "object"
+      },
       "Totals": {
         "description": "VAT-inclusive pricing: total = subtotal + tax + shipping, exactly.",
         "properties": {
@@ -5284,6 +5645,77 @@
           "duplicate"
         ],
         "title": "WebhookAck",
+        "type": "object"
+      },
+      "WebhookEntry": {
+        "properties": {
+          "event_id": {
+            "title": "Event Id",
+            "type": "string"
+          },
+          "event_type": {
+            "title": "Event Type",
+            "type": "string"
+          },
+          "order_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "From the event's metadata, when it names an order.",
+            "title": "Order Number"
+          },
+          "processed_at": {
+            "format": "date-time",
+            "title": "Processed At",
+            "type": "string"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          }
+        },
+        "required": [
+          "provider",
+          "event_id",
+          "event_type",
+          "processed_at",
+          "order_number"
+        ],
+        "title": "WebhookEntry",
+        "type": "object"
+      },
+      "WebhookLog": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/WebhookEntry"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_before": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Before"
+          }
+        },
+        "required": [
+          "items",
+          "next_before"
+        ],
+        "title": "WebhookLog",
         "type": "object"
       }
     },
@@ -5632,6 +6064,123 @@
         ]
       }
     },
+    "/api/v1/admin/audit": {
+      "get": {
+        "description": "",
+        "operationId": "get__api_v1_admin_audit",
+        "parameters": [
+          {
+            "description": "",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Only entries before this time (from next_before).",
+            "in": "query",
+            "name": "before",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Only entries before this time (from next_before).",
+              "title": "Before"
+            }
+          },
+          {
+            "description": "One source only; all of them by default.",
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "orders",
+                    "stock",
+                    "prices",
+                    "payments"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "One source only; all of them by default.",
+              "title": "Kind"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditLog"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "One trail over order status changes, stock events, price changes and payment events (all written by the database itself), newest first, with who did it.",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
     "/api/v1/admin/inventory/{product_id}": {
       "get": {
         "description": "",
@@ -5823,6 +6372,78 @@
           }
         ],
         "summary": "Set stock on hand. Requires If-Match with the current ETag (optimistic concurrency): 412 if the stock changed since it was read, 428 if If-Match is missing, 409 if the new level would fall below stock already reserved by checkouts.",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/metrics": {
+      "get": {
+        "description": "",
+        "operationId": "get__api_v1_admin_metrics",
+        "parameters": [
+          {
+            "description": "",
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "maximum": 90,
+              "minimum": 1,
+              "title": "Days",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Metrics"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Sales over the last `days` (revenue, orders, units, refunds, a zero-filled daily series in the store's time zone), orders by status, low stock and best sellers.",
         "tags": [
           "Admin"
         ]
@@ -6451,6 +7072,98 @@
           }
         ],
         "summary": "Change a product's price or availability. Price changes are recorded in price_history by a trigger.",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/webhooks": {
+      "get": {
+        "description": "",
+        "operationId": "get__api_v1_admin_webhooks",
+        "parameters": [
+          {
+            "description": "",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Only entries before this time (from next_before).",
+            "in": "query",
+            "name": "before",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Only entries before this time (from next_before).",
+              "title": "Before"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookLog"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "The payment provider's events as applied (the idempotency ledger), newest first.",
         "tags": [
           "Admin"
         ]
