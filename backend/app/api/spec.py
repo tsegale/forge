@@ -15,6 +15,7 @@ from spectree import Response, SecurityScheme, SecuritySchemeData, SpecTree
 from spectree.models import SecureType
 
 from ..errors import APIError, ValidationFailed, validation_details
+from .docs import PAGE_TEMPLATES
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +50,7 @@ api = SpecTree(
     title="Forge API",
     version="1.0.0",
     description="PC hardware marketplace with a database-enforced build compatibility engine.",
-    path="api/v1/docs",
+    path="api/docs",
     mode="strict",
     annotations=False,
     before=_before,
@@ -59,6 +60,7 @@ api = SpecTree(
     # Plain model names in the published document (spectree appends a hash by default).
     naming_strategy=lambda model: model.__name__,
     nested_naming_strategy=lambda parent, child: child,
+    page_templates=PAGE_TEMPLATES,  # pinned, integrity-checked assets (see docs.py)
     security_schemes=[
         SecurityScheme(
             name="bearerAuth",
@@ -75,8 +77,12 @@ def responses(*error_statuses: int, **success: type[BaseModel] | None) -> Respon
 
 
 def register_docs(app: Any) -> None:
-    """Serve the spec at /api/v1/docs/openapi.json with Swagger UI and Redoc beside it.
+    """Serve the spec at /api/docs/openapi.json with Swagger UI (/api/docs) and Redoc beside it.
 
     Routes are discovered from ``current_app``, so the spec always describes the serving app;
     the generated document is cached per process, which matches one app per process."""
     api.register(app)
+
+    from .docs import init_app
+
+    init_app(app)

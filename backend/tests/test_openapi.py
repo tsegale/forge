@@ -5,7 +5,7 @@ import re
 import pytest
 from openapi_spec_validator import validate
 
-SPEC_URL = "/api/v1/docs/openapi.json"
+SPEC_URL = "/api/docs/openapi.json"
 METHODS = {"get", "post", "put", "patch", "delete"}
 PROTECTED = re.compile(r"^/api/v1/(admin/|builds|addresses|checkout|orders|auth/me$|auth/logout-all$)")
 
@@ -33,7 +33,7 @@ def test_document_is_valid_openapi(spec):
 def test_every_api_route_is_documented(app, spec):
     documented = {(path, method) for path, method, _ in _operations(spec)}
     for rule in app.url_map.iter_rules():
-        if not rule.rule.startswith("/api/v1/") or rule.rule.startswith("/api/v1/docs"):
+        if not rule.rule.startswith("/api/v1/"):
             continue
         path = re.sub(r"<(?:[^:>]+:)?([^>]+)>", r"{\1}", rule.rule)
         for method in rule.methods & {m.upper() for m in METHODS}:
@@ -71,7 +71,31 @@ def test_listing_documents_every_filter(spec):
     assert {"q", "kind", "sort", "cursor", "limit", "socket", "vram_min_gb", "fits_gpu_length_mm"} <= params
 
 
-def test_interactive_docs_are_served(client):
-    response = client.get("/api/v1/docs/swagger/")
-    assert response.status_code == 200
-    assert SPEC_URL in response.get_data(as_text=True)
+def test_api_docs_open_swagger_ui(client):
+    for path in ("/api/docs", "/api/docs/"):
+        response = client.get(path)
+        assert response.status_code == 302 and response.headers["Location"].endswith("/api/docs/swagger/")
+
+
+@pytest.mark.parametrize("page", ["/api/docs/swagger/", "/api/docs/redoc/"])
+def test_docs_pages_load_pinned_assets_under_their_own_policy(client, page):
+    response = client.get(page)
+    html = response.get_data(as_text=True)
+    assert response.status_code == 200 and SPEC_URL in html
+    # Every third-party asset is version-pinned and integrity-checked; nothing runs inline.
+    external = re.findall(r'(?:src|href)="(https://[^"]+)"', html)
+    assert external and all("@" in url and url.startswith("https://cdn.jsdelivr.net/npm/") for url in external)
+    assert html.count('integrity="sha384-') == len(external)
+    assert not re.search(r"<script>(?!\s*</script>)", html)
+    policy = response.headers["Content-Security-Policy"]
+    assert (
+        "script-src 'self' https://cdn.jsdelivr.net" in policy
+        and "'unsafe-inline'" not in policy.split("script-src")[1].split(";")[0]
+    )
+
+
+def test_swagger_start_up_script_is_served_and_the_api_keeps_no_docs_policy(client):
+    script = client.get("/api/docs/swagger-init.js")
+    assert script.status_code == 200 and script.mimetype == "text/javascript"
+    assert "SwaggerUIBundle" in script.get_data(as_text=True)
+    assert "Content-Security-Policy" not in client.get("/api/v1/health/live").headers
