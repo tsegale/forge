@@ -39,7 +39,7 @@ curl http://localhost:8080/api/v1/health/ready
 ```
 
 The app is then at http://localhost:8080 and the API documentation at
-http://localhost:8080/api/v1/docs/swagger/.
+http://localhost:8080/api/docs.
 
 `migrate` runs as a one-shot service before the API starts, so schema changes are applied
 exactly once per deploy instead of racing inside every API replica. PostgreSQL and Redis sit
@@ -87,7 +87,7 @@ It refuses to run under the production configuration without `--yes`.
 | --- | --- |
 | The app | http://localhost:8080 |
 | API through Nginx | http://localhost:8080/api/v1 |
-| API documentation | http://localhost:8080/api/v1/docs/swagger/ |
+| API documentation | http://localhost:8080/api/docs |
 | Emails sent by the worker (Mailpit) | http://127.0.0.1:8025 |
 
 Pay with Stripe's test card `4242 4242 4242 4242` (any future expiry, any CVC). The webhook marks
@@ -169,8 +169,14 @@ refuses, and it is not part of the public API.
 Versioned under `/api/v1`. The OpenAPI 3.1 document is generated from the same Pydantic models
 that validate requests, so it cannot drift from the code:
 
-- Spec: `/api/v1/docs/openapi.json`
-- Swagger UI: `/api/v1/docs/swagger/`, Redoc: `/api/v1/docs/redoc/`
+- Swagger UI: `/api/docs` (try requests with "Authorize" and an access token)
+- Redoc reference: `/api/docs/redoc/`
+- OpenAPI document: `/api/docs/openapi.json`
+
+The documentation pages load Swagger UI and Redoc from jsDelivr at pinned versions with
+Subresource Integrity, and the API sends them their own Content Security Policy (that CDN only, no
+inline script); the rest of the app keeps its stricter policy. A Playwright test fails if either
+page hits a policy violation.
 
 ### Errors
 
@@ -475,6 +481,7 @@ boundary; the real Payment Element is covered end to end.
 | `demo-path.spec.ts` | The demo path above, with axe (WCAG 2.1 A and AA) on every screen |
 | `checkout-expiry.spec.ts` | An expired hold: payment withdrawn, fresh checkout with the same parts |
 | `payment.stripe.spec.ts` | Real Stripe test mode: a declined card, then a good one (runs with `E2E_STRIPE=1`) |
+| `api-docs.spec.ts` | Swagger UI and Redoc render under their own policy, with no policy or integrity violations |
 
 CI runs on every push and pull request:
 
