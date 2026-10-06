@@ -102,11 +102,11 @@ export function ProductCard({
         {title}
         <p className="mt-1.5 line-clamp-2 font-tech text-xs text-ink-muted">{specs.join(' / ')}</p>
         {note ? <div className="mt-2">{note}</div> : null}
-        <div className="mt-auto flex items-end justify-between gap-2 pt-3">
+        <div className="mt-auto flex flex-wrap items-end justify-between gap-x-2 gap-y-1 pt-3">
           <Price price={product.price} was={product.was_price} />
           <StockIndicator availability={product.availability} />
         </div>
-        {actions ? <div className="relative z-10 mt-3 flex gap-2">{actions}</div> : null}
+        {actions ? <div className="relative z-10 mt-3 flex flex-wrap gap-2">{actions}</div> : null}
       </div>
     </article>
   )

@@ -427,7 +427,7 @@ export function CatalogPage() {
                 aria-hidden="true"
                 className={cn(
                   layout === 'grid'
-                    ? 'grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3'
+                    ? 'grid grid-cols-1 gap-3 min-[480px]:grid-cols-2 sm:gap-4 md:grid-cols-3'
                     : 'flex flex-col gap-3',
                 )}
               >
@@ -470,13 +470,13 @@ export function CatalogPage() {
                   className={cn(
                     'transition-opacity',
                     layout === 'grid'
-                      ? 'grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3'
+                      ? 'grid grid-cols-1 gap-3 min-[480px]:grid-cols-2 sm:gap-4 md:grid-cols-3'
                       : 'flex flex-col gap-3',
                     products.isPlaceholderData && 'opacity-60',
                   )}
                 >
                   {items.map((product, index) => (
-                    <li key={product.id} className="grid">
+                    <li key={product.id} className="grid min-w-0">
                       <ProductCard
                         product={product}
                         layout={layout}

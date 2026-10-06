@@ -250,14 +250,21 @@ export function ConfiguratorPage() {
           <BuildName name={draft.name} />
         </div>
         {required.length ? (
-          <ProgressBar
-            className="mt-5"
-            value={requiredDone}
-            max={required.length}
-            label="Required parts chosen"
-            valueText={`${String(requiredDone)} of ${String(required.length)} required parts`}
-            tone={requiredDone === required.length ? 'success' : 'accent'}
-          />
+          <div className="mt-5">
+            <p aria-hidden="true" className="mb-1.5 flex justify-between text-sm text-ink-muted">
+              <span>Required parts</span>
+              <span className="tabular">
+                {requiredDone} of {required.length}
+              </span>
+            </p>
+            <ProgressBar
+              value={requiredDone}
+              max={required.length}
+              label="Required parts chosen"
+              valueText={`${String(requiredDone)} of ${String(required.length)} required parts`}
+              tone={requiredDone === required.length ? 'success' : 'accent'}
+            />
+          </div>
         ) : null}
       </div>
 

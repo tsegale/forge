@@ -66,7 +66,7 @@ export function CompatibleParts({ productId, kind }: { productId: number; kind: 
             <ul className="mt-3 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
               {result?.data
                 ? result.data.items.map((product) => (
-                    <li key={product.id} className="grid">
+                    <li key={product.id} className="grid min-w-0">
                       <ProductCard product={product} />
                     </li>
                   ))
