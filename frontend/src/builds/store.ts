@@ -9,9 +9,6 @@ import { emptyDraft, type Draft } from './draft'
 
 const STORAGE_KEY = 'forge.build-draft.v1'
 
-const listeners = new Set<() => void>()
-let current: Draft = load()
-
 const isId = (value: unknown) => value === null || typeof value === 'number'
 
 function isDraft(value: unknown): value is Draft {
@@ -35,6 +32,10 @@ function load(): Draft {
     return emptyDraft() // unreadable or corrupt storage: start fresh
   }
 }
+
+const listeners = new Set<() => void>()
+// After the helpers above: load() uses them, and a const read before its declaration throws.
+let current: Draft = load()
 
 function emit(): void {
   for (const listener of listeners) listener()
