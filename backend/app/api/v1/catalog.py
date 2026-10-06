@@ -4,9 +4,18 @@ from __future__ import annotations
 
 from flask import request
 
-from ...schemas.catalog import BrandList, CategoryList, ProductDetail, ProductPage, ProductQuery
+from ...schemas.catalog import (
+    BrandList,
+    CategoryList,
+    ProductDetail,
+    ProductPage,
+    ProductQuery,
+    SearchSuggestions,
+    SuggestQuery,
+)
 from ...services import catalog as catalog_service
 from ...services import catalog_query
+from ...services import search as search_service
 from ..spec import api, responses
 from . import bp
 
@@ -42,3 +51,12 @@ def products():
     Spec filters (socket, cores_min, vram_min_gb, ...) require `kind`. Follow `next_cursor`
     for further pages; a cursor is only valid for the query that produced it."""
     return catalog_query.list_products(request.context.query)
+
+
+@bp.get("/search/suggest")
+@api.validate(query=SuggestQuery, resp=responses(422, HTTP_200=SearchSuggestions), tags=[TAG])
+def search_suggest():
+    """Search as you type: the best matches per component kind (by name or SKU fragment), and a
+    spelling correction built from catalog words when nothing matches."""
+    query: SuggestQuery = request.context.query
+    return search_service.suggest(query.q, query.per_kind)

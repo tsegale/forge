@@ -666,6 +666,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/search/suggest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search as you type: the best matches per component kind (by name or SKU fragment), and a spelling correction built from catalog words when nothing matches. */
+        get: operations["get__api_v1_search_suggest"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/webhooks/stripe": {
         parameters: {
             query?: never;
@@ -2057,6 +2074,26 @@ export interface components {
              */
             unavailable_product_ids: number[];
         };
+        /** SearchSuggestions */
+        SearchSuggestions: {
+            /**
+             * Did You Mean
+             * @description A corrected query built from catalog words when nothing matches, e.g. 'ryzen' for 'rizen'.
+             */
+            did_you_mean: string | null;
+            /**
+             * Groups
+             * @description Best matches per kind, most relevant kind first.
+             */
+            groups: components["schemas"]["SuggestionGroup"][];
+            /** Query */
+            query: string;
+            /**
+             * Total
+             * @description All matching products, across kinds.
+             */
+            total: number;
+        };
         /** ShippingAddress */
         ShippingAddress: {
             /** City */
@@ -2130,6 +2167,35 @@ export interface components {
             kind: "storage";
             /** Pcie Gen */
             pcie_gen: number | null;
+        };
+        /**
+         * SuggestQuery
+         * @description Query string for GET /search/suggest.
+         */
+        SuggestQuery: {
+            /**
+             * Per Kind
+             * @description Most products to return for each kind.
+             * @default 4
+             */
+            per_kind: number;
+            /**
+             * Q
+             * @description What the shopper has typed so far.
+             */
+            q: string;
+        };
+        /** SuggestionGroup */
+        SuggestionGroup: {
+            /** Items */
+            items: components["schemas"]["ProductSummary"][];
+            /** Kind */
+            kind: string;
+            /**
+             * Total
+             * @description Matches of this kind; the group shows the best `per_kind` of them.
+             */
+            total: number;
         };
         /** TokenResponse */
         TokenResponse: {
@@ -4572,6 +4638,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get__api_v1_search_suggest: {
+        parameters: {
+            query: {
+                /** @description What the shopper has typed so far. */
+                q: string;
+                /** @description Most products to return for each kind. */
+                per_kind?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchSuggestions"];
                 };
             };
             /** @description Unprocessable Content */

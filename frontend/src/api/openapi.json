@@ -3432,6 +3432,47 @@
         "title": "ReorderResponse",
         "type": "object"
       },
+      "SearchSuggestions": {
+        "properties": {
+          "did_you_mean": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "A corrected query built from catalog words when nothing matches, e.g. 'ryzen' for 'rizen'.",
+            "title": "Did You Mean"
+          },
+          "groups": {
+            "description": "Best matches per kind, most relevant kind first.",
+            "items": {
+              "$ref": "#/components/schemas/SuggestionGroup"
+            },
+            "title": "Groups",
+            "type": "array"
+          },
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "total": {
+            "description": "All matching products, across kinds.",
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "query",
+          "total",
+          "groups",
+          "did_you_mean"
+        ],
+        "title": "SearchSuggestions",
+        "type": "object"
+      },
       "ShippingAddress": {
         "properties": {
           "city": {
@@ -3628,6 +3669,59 @@
           "pcie_gen"
         ],
         "title": "StorageSpecs",
+        "type": "object"
+      },
+      "SuggestQuery": {
+        "additionalProperties": false,
+        "description": "Query string for GET /search/suggest.",
+        "properties": {
+          "per_kind": {
+            "default": 4,
+            "description": "Most products to return for each kind.",
+            "maximum": 8,
+            "minimum": 1,
+            "title": "Per Kind",
+            "type": "integer"
+          },
+          "q": {
+            "description": "What the shopper has typed so far.",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Q",
+            "type": "string"
+          }
+        },
+        "required": [
+          "q"
+        ],
+        "title": "SuggestQuery",
+        "type": "object"
+      },
+      "SuggestionGroup": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ProductSummary"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "total": {
+            "description": "Matches of this kind; the group shows the best `per_kind` of them.",
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "kind",
+          "total",
+          "items"
+        ],
+        "title": "SuggestionGroup",
         "type": "object"
       },
       "TokenResponse": {
@@ -7536,6 +7630,67 @@
           }
         },
         "summary": "A single active product with its full specifications and availability.",
+        "tags": [
+          "Catalog"
+        ]
+      }
+    },
+    "/api/v1/search/suggest": {
+      "get": {
+        "description": "",
+        "operationId": "get__api_v1_search_suggest",
+        "parameters": [
+          {
+            "description": "What the shopper has typed so far.",
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "description": "What the shopper has typed so far.",
+              "maxLength": 100,
+              "minLength": 1,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Most products to return for each kind.",
+            "in": "query",
+            "name": "per_kind",
+            "required": false,
+            "schema": {
+              "default": 4,
+              "description": "Most products to return for each kind.",
+              "maximum": 8,
+              "minimum": 1,
+              "title": "Per Kind",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchSuggestions"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "summary": "Search as you type: the best matches per component kind (by name or SKU fragment), and a spelling correction built from catalog words when nothing matches.",
         "tags": [
           "Catalog"
         ]

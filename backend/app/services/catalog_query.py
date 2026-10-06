@@ -120,13 +120,19 @@ RELEVANCE_SCALE = 6
 SUBSTRING_BONUS = 0.5
 
 
-def _relevance_sort(q: str) -> SortKey:
+def relevance_score(q: str) -> ColumnElement[Any]:
+    """How well a product matches ``q``: full-text rank, plus word similarity, plus a bonus when
+    the name or SKU contains the query outright. Shared by the product list and suggestions."""
     tsquery = func.websearch_to_tsquery("english", q)
-    score = (
+    return (
         func.ts_rank_cd(Product.search_vector, tsquery)
         + func.word_similarity(q, Product.name)
         + case((_substring(q), SUBSTRING_BONUS), else_=0.0)
     )
+
+
+def _relevance_sort(q: str) -> SortKey:
+    score = relevance_score(q)
     return SortKey(func.round(cast(score, Numeric), RELEVANCE_SCALE), descending=True, encode=str, decode=Decimal)
 
 
@@ -152,7 +158,7 @@ def _substring(q: str) -> ColumnElement[bool]:
     return or_(ilike_contains(Product.name, q), ilike_contains(Product.sku, q))
 
 
-def _search(q: str) -> ColumnElement[bool]:
+def search_predicate(q: str) -> ColumnElement[bool]:
     """Full-text for words and stems, trigram ILIKE for fragments inside a token ("x3d" in
     "7800X3D"), trigram word similarity for typos ("ryzn"). Both trigram paths use the GIN index."""
     return or_(
@@ -288,7 +294,7 @@ def build_query(params: ProductQuery, base: BuildContext | None = None) -> Selec
     if params.kind is not None:
         stmt = stmt.where(Product.kind_code == params.kind.value)
     if params.q:
-        stmt = stmt.where(_search(params.q))
+        stmt = stmt.where(search_predicate(params.q))
     if params.category:
         stmt = stmt.where(Product.category_id.in_(_category_subtree(params.category)))
     if params.brand:

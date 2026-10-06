@@ -297,3 +297,27 @@ class ProductQuery(BaseModel):
 class ProductPage(BaseModel):
     items: list[ProductSummary]
     next_cursor: str | None = Field(description="Pass as `cursor` to fetch the next page; null on the last page.")
+
+
+class SuggestQuery(BaseModel):
+    """Query string for GET /search/suggest."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    q: str = Field(min_length=1, max_length=100, description="What the shopper has typed so far.")
+    per_kind: int = Field(default=4, ge=1, le=8, description="Most products to return for each kind.")
+
+
+class SuggestionGroup(BaseModel):
+    kind: str
+    total: int = Field(description="Matches of this kind; the group shows the best `per_kind` of them.")
+    items: list[ProductSummary]
+
+
+class SearchSuggestions(BaseModel):
+    query: str
+    total: int = Field(description="All matching products, across kinds.")
+    groups: list[SuggestionGroup] = Field(description="Best matches per kind, most relevant kind first.")
+    did_you_mean: str | None = Field(
+        description="A corrected query built from catalog words when nothing matches, e.g. 'ryzen' for 'rizen'."
+    )
