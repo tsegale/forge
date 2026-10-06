@@ -89,7 +89,7 @@ export function SiteFooter({ inspector }: { inspector?: ReactNode }) {
           </div>
           <Column title="Shop">
             {CATEGORY_LINKS.slice(0, 6).map((category) => (
-              <FooterLink key={category.kind} to={`/?kind=${category.kind}`}>
+              <FooterLink key={category.kind} to={`/shop/${category.kind}`}>
                 {KIND_LABELS[category.kind]}
               </FooterLink>
             ))}

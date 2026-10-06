@@ -33,7 +33,7 @@ export function ProductPage() {
             Catalog
           </Link>{' '}
           /{' '}
-          <Link to={`/?kind=${p.kind}`} className="hover:text-accent">
+          <Link to={`/shop/${p.kind}`} className="hover:text-accent">
             {KIND_LABELS[p.kind] ?? p.kind}
           </Link>
         </nav>

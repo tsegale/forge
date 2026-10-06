@@ -488,7 +488,7 @@ export function StyleguidePage() {
           <Breadcrumbs
             items={[
               { label: 'Catalog', to: '/' },
-              { label: 'Processors', to: '/?kind=cpu' },
+              { label: 'Processors', to: '/shop/cpu' },
               { label: 'AMD Ryzen 7 7800X3D' },
             ]}
           />

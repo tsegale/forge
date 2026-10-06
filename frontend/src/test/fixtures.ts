@@ -33,6 +33,20 @@ export function cpu(overrides: Partial<ProductSummary> = {}): ProductSummary {
   }
 }
 
+type Facets = components['schemas']['ProductFacets']
+
+export function facets(overrides: Partial<Facets> = {}): Facets {
+  return {
+    total: 1,
+    incompatible: null,
+    in_stock: 1,
+    kinds: [{ kind: 'cpu', count: 1 }],
+    brands: [{ slug: 'amd', name: 'AMD', count: 1 }],
+    price: { min_cents: 799_900, max_cents: 799_900 },
+    ...overrides,
+  }
+}
+
 export const kinds = {
   items: [
     { code: 'cpu', label: 'CPU', max_per_build: 1, required_in_build: true, sort_order: 10 },

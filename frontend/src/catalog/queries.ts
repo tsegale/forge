@@ -1,4 +1,4 @@
-import { infiniteQueryOptions, queryOptions } from '@tanstack/react-query'
+import { infiniteQueryOptions, keepPreviousData, queryOptions } from '@tanstack/react-query'
 import { api, unwrap } from '@/api/client'
 import type { ProductQuery } from './filters'
 
@@ -15,7 +15,21 @@ export const productsQuery = (query: Partial<ProductQuery>) =>
       ),
     initialPageParam: null as string | null,
     getNextPageParam: (page) => page.next_cursor ?? null,
+    // Keep the current results on screen while a changed filter loads: no flash, no layout shift.
+    placeholderData: keepPreviousData,
   })
+
+/** Counts for the filter sidebar, from the same filters as the listing (no sort or paging). */
+export const facetsQuery = (query: Partial<ProductQuery>) => {
+  const filters = { ...query }
+  delete filters.sort
+  delete filters.include_incompatible
+  return queryOptions({
+    queryKey: ['products', 'facets', filters],
+    queryFn: () => unwrap(api.GET('/api/v1/products/facets', { params: { query: filters } })),
+    placeholderData: keepPreviousData,
+  })
+}
 
 export const productQuery = (slug: string) =>
   queryOptions({

@@ -33,8 +33,11 @@ test('the demo path: browse, configure, validate, check out, pay, fulfil', async
 
   // Browse and search.
   await expectAccessible(page, 'catalog')
-  await page.getByRole('searchbox', { name: 'Search products' }).fill(CPU.search)
-  const results = page.getByRole('region', { name: 'Products' })
+  const search = page.getByRole('combobox', { name: 'Search products' }).filter({ visible: true })
+  await search.fill(CPU.search)
+  await search.press('Enter')
+  await page.waitForURL(/\/search\?q=/)
+  const results = page.getByRole('region', { name: 'Results' })
   await results.getByRole('link', { name: CPU.name }).click()
   await page.waitForURL(`/products/${CPU.slug}`)
   await expect(page.getByRole('heading', { level: 1, name: CPU.name })).toBeVisible()

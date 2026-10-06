@@ -1,10 +1,11 @@
-import { cn } from '@/lib/cn'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import type { components } from '@/api/schema'
 import { keySpecs } from '@/catalog/specs'
+import { Highlight } from '@/components/ui/Highlight'
 import { Price } from '@/components/ui/Price'
 import { StockIndicator } from '@/components/ui/StockIndicator'
+import { cn } from '@/lib/cn'
 import { ProductImage, type ImageVariantSet } from './ProductImage'
 
 type Product = components['schemas']['ProductSummary'] & {
@@ -24,14 +25,17 @@ export function ProductCard({
   note,
   dimmed = false,
   priority = false,
+  highlight,
 }: {
   product: Product
   layout?: 'grid' | 'list'
   actions?: ReactNode
   note?: ReactNode
-  /** Greyed out, e.g. incompatible with the current build but revealed on request. */
+  /** Set apart (dashed, muted photo), e.g. incompatible with the build but shown on request. Text keeps full contrast. */
   dimmed?: boolean
   priority?: boolean
+  /** Search text to emphasise in the name. */
+  highlight?: string | undefined
 }) {
   const specs = keySpecs(product.specs)
   const href = `/products/${product.slug}`
@@ -41,7 +45,7 @@ export function ProductCard({
         to={href}
         className="rounded-sm after:absolute after:inset-0 hover:text-accent focus-visible:outline-none"
       >
-        {product.name}
+        {highlight ? <Highlight text={product.name} query={highlight} /> : product.name}
       </Link>
     </h3>
   )
@@ -52,7 +56,7 @@ export function ProductCard({
         className={cn(
           'group relative grid grid-cols-[6rem_1fr] gap-4 rounded-md border border-border bg-surface p-3 transition-shadow hover:shadow-md sm:grid-cols-[7.5rem_1fr_auto]',
           'has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-offset-2 has-[a:focus-visible]:outline-accent',
-          dimmed && 'opacity-60',
+          dimmed && 'border-dashed bg-surface-muted shadow-none hover:shadow-none',
         )}
       >
         <ProductImage
@@ -61,6 +65,7 @@ export function ProductCard({
           name={product.name}
           variant="thumb"
           priority={priority}
+          className={cn(dimmed && 'opacity-50 grayscale')}
         />
         <div className="min-w-0">
           <p className="text-xs text-ink-subtle">{product.brand.name}</p>
@@ -82,10 +87,16 @@ export function ProductCard({
       className={cn(
         'group relative flex flex-col rounded-md border border-border bg-surface p-3 transition-shadow hover:shadow-md',
         'has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-offset-2 has-[a:focus-visible]:outline-accent',
-        dimmed && 'opacity-60',
+        dimmed && 'border-dashed bg-surface-muted shadow-none hover:shadow-none',
       )}
     >
-      <ProductImage image={product.image} kind={product.kind} name={product.name} priority={priority} />
+      <ProductImage
+        image={product.image}
+        kind={product.kind}
+        name={product.name}
+        priority={priority}
+        className={cn(dimmed && 'opacity-50 grayscale')}
+      />
       <div className="mt-3 flex min-h-0 flex-1 flex-col">
         <p className="text-xs text-ink-subtle">{product.brand.name}</p>
         {title}

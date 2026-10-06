@@ -35,7 +35,7 @@ export function MegaMenu() {
                   <li key={category.kind}>
                     <NavigationMenu.Link asChild>
                       <Link
-                        to={`/?kind=${category.kind}`}
+                        to={`/shop/${category.kind}`}
                         className="group/cat flex items-start gap-2.5 rounded-sm"
                       >
                         <span className="rounded-sm bg-accent-soft p-1.5 text-accent">
@@ -97,7 +97,7 @@ export function MegaMenu() {
         ).map(([kind, label]) => (
           <NavigationMenu.Item key={kind} className="hidden xl:block">
             <NavigationMenu.Link asChild>
-              <Link to={`/?kind=${kind}`} className={TRIGGER}>
+              <Link to={`/shop/${kind}`} className={TRIGGER}>
                 {label}
               </Link>
             </NavigationMenu.Link>

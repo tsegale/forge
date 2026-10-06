@@ -130,23 +130,47 @@ export const SORTS = [
 ] as const
 
 const FILTER_KEYS = new Set(Object.values(SPEC_FILTERS).flatMap((defs) => defs.map((d) => d.key)))
+const FILTER_DEFS = new Map(
+  Object.values(SPEC_FILTERS)
+    .flat()
+    .map((d) => [d.key as string, d]),
+)
 
-/** Read the catalog query from the URL, keeping only known parameters (the API rejects others). */
-export function queryFromSearch(params: URLSearchParams): Partial<ProductQuery> {
+/** URL keys for the build-compatibility switches (the build itself comes from the draft). */
+export const COMPAT_PARAM = 'fits_build'
+export const INCOMPATIBLE_PARAM = 'show_incompatible'
+
+/**
+ * Read the catalog filters from the URL, keeping only known parameters (the API rejects others).
+ * `kind` comes from the path on category pages and from the query string on search.
+ */
+export function queryFromSearch(params: URLSearchParams, pathKind?: string): Partial<ProductQuery> {
   const query: Record<string, string | boolean | number | string[]> = {}
   for (const [key, value] of params) {
     if (!value) continue
     if (key === 'q' || key === 'kind' || key === 'sort') query[key] = value
     else if (key === 'in_stock') query[key] = value === 'true'
     else if (key === 'brand') query[key] = value.split(',')
-    else if (FILTER_KEYS.has(key as FilterKey)) {
-      const def = Object.values(SPEC_FILTERS)
-        .flat()
-        .find((d) => d.key === key)
+    else if (key === 'min_price' || key === 'max_price') {
+      const cents = Number(value)
+      if (Number.isSafeInteger(cents) && cents >= 0) query[key] = cents
+    } else if (FILTER_KEYS.has(key as FilterKey)) {
+      const def = FILTER_DEFS.get(key)
       query[key] = def?.type === 'number' ? Number(value) : def?.type === 'boolean' ? value === 'true' : value
     }
   }
+  if (pathKind) query.kind = pathKind
+  if (typeof query.kind === 'string' && !isProductKind(query.kind)) Reflect.deleteProperty(query, 'kind')
   // Spec filters only apply within a kind; drop them otherwise rather than send a 422.
-  if (!query.kind) for (const key of FILTER_KEYS) Reflect.deleteProperty(query, key)
+  const defs = typeof query.kind === 'string' ? (SPEC_FILTERS[query.kind] ?? []) : []
+  for (const key of FILTER_KEYS) if (!defs.some((d) => d.key === key)) Reflect.deleteProperty(query, key)
+  if (query.sort === 'relevance' && !query.q) Reflect.deleteProperty(query, 'sort')
   return query
+}
+
+/** How a spec filter value reads in a chip: "Socket: AM5", "Video memory, at least: 12 GB". */
+export function filterValueLabel(def: FilterDef, value: string): string {
+  if (def.type === 'select') return def.options.find((o) => o.value === value)?.label ?? value
+  if (def.type === 'boolean') return value === 'true' ? 'Yes' : 'No'
+  return `${value} ${def.unit}`
 }

@@ -46,7 +46,7 @@ export function MobileMenu() {
           <ul className="mt-1">
             {CATEGORY_LINKS.map((category) => (
               <li key={category.kind}>
-                <Link to={`/?kind=${category.kind}`} className={ROW}>
+                <Link to={`/shop/${category.kind}`} className={ROW}>
                   <KindIcon kind={category.kind} className="h-4 w-4 text-ink-subtle" />
                   {KIND_LABELS[category.kind]}
                 </Link>
