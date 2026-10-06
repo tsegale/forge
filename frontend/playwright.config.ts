@@ -2,7 +2,8 @@ import { defineConfig, devices } from '@playwright/test'
 
 /**
  * End-to-end tests against a running stack (E2E_BASE_URL): the Vite dev server in development,
- * Nginx in the compose stack. Specs that need real Stripe test mode run only with E2E_STRIPE=1.
+ * `vite preview` of the production build in CI (scripts/ci/start-e2e-stack.sh), or Nginx in the
+ * compose stack. Specs that need real Stripe test mode run only with E2E_STRIPE=1.
  */
 export default defineConfig({
   testDir: './e2e',

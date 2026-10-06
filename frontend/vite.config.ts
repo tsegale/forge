@@ -4,8 +4,9 @@ import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
-// In development, /api is proxied to the stack (Nginx on :8080 by default) so the app and the API
-// share an origin, exactly as in production, and the SameSite=Strict refresh cookie works.
+// In development, /api is proxied to the API on :8080 by default (`flask run`, or the compose
+// stack's Nginx), so the app and the API share an origin, exactly as in production, and the
+// SameSite=Strict refresh cookie works.
 const apiTarget = process.env.FORGE_API_ORIGIN ?? 'http://127.0.0.1:8080'
 
 export default defineConfig({

@@ -28,7 +28,8 @@ const authHeader: Middleware = {
   },
 }
 
-// Same origin as the page (Nginx serves both), so cookies flow and no CORS is involved.
+// Same origin as the page (Nginx serves both in production, the Vite proxy in development), so
+// cookies flow and no CORS is involved.
 export const api = createClient<paths>({
   baseUrl: globalThis.location.origin,
   credentials: 'same-origin',

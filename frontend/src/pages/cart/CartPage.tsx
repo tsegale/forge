@@ -13,7 +13,10 @@ import { TotalsTable } from './TotalsTable'
 
 const MAX_LINE_QUANTITY = 99
 
-/** Shown after "start a fresh checkout" when some of the old order's parts are no longer sold. */
+/**
+ * Shown when an order's parts are put back in the cart ("start a fresh checkout" or "buy again")
+ * and some of them are no longer sold.
+ */
 export interface CartNotice {
   unavailable: number
 }
