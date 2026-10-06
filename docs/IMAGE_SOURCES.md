@@ -13,8 +13,11 @@ store. They are not committed to this repository (see the README, "Product image
   - Images 2 and up appear in the product gallery in that order (side, back, ports, in box).
 - Formats: `.jpg`, `.jpeg`, `.png` or `.webp`, at least 1200 px on the long side if available.
   Up to 6 images per product.
-- Import with `flask seed images` (it skips files already imported). WebP variants are
-  generated in the background.
+- Import with `flask seed images` (from `backend/`, or `docker compose run --rm api flask seed
+  images` for the stack, which mounts this folder read-only). It corrects rotation, flattens
+  transparency onto white, trims the empty margin, and writes WebP at 320, 640 and 1280 px wide
+  (never enlarged) under `backend/media/products/`. Re-running is safe; a replaced photo gets a
+  new URL, and files whose SKU is unknown are listed and skipped.
 
 ## Priority
 

@@ -2,6 +2,7 @@
 
 import os
 from datetime import timedelta
+from pathlib import Path
 
 from celery.schedules import crontab
 
@@ -142,6 +143,14 @@ class BaseConfig:
         self.STORE_TIMEZONE = os.environ.get("STORE_TIMEZONE", "Africa/Windhoek")
         # Where product photos are served from (nginx in production, Flask in development).
         self.MEDIA_URL = os.environ.get("MEDIA_URL", "/media").rstrip("/")
+        backend_dir = Path(__file__).resolve().parent.parent
+        # Generated WebP files (a volume shared with nginx in production) and the photos they come from.
+        self.MEDIA_ROOT = os.environ.get("MEDIA_ROOT", str(backend_dir / "media"))
+        self.IMAGE_SOURCE_DIR = os.environ.get("IMAGE_SOURCE_DIR", str(backend_dir / "seed" / "images"))
+        # Flask serves /media itself outside production; nginx does in production.
+        self.SERVE_MEDIA = (
+            os.environ.get("SERVE_MEDIA", "false" if isinstance(self, ProductionConfig) else "true") == "true"
+        )
         self.SHIPPING_FLAT_CENTS = int(os.environ.get("SHIPPING_FLAT_CENTS", "15000"))
         self.FREE_SHIPPING_THRESHOLD_CENTS = int(os.environ.get("FREE_SHIPPING_THRESHOLD_CENTS", "500000"))
         self.RESERVATION_TTL = timedelta(minutes=int(os.environ.get("RESERVATION_TTL_MINUTES", "15")))

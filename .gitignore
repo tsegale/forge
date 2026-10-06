@@ -13,3 +13,7 @@ dist/
 .idea/
 .vscode/
 e2e-logs/
+
+# Product photos: sources are downloaded per docs/IMAGE_SOURCES.md; media/ is generated from them.
+backend/seed/images/
+backend/media/

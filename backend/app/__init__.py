@@ -37,6 +37,22 @@ def create_app(config_name: str | None = None) -> Flask:
     with app.app_context():
         observability.init_app(app, db.engine)
 
+    if app.config["SERVE_MEDIA"]:
+        import mimetypes
+
+        from flask import send_from_directory
+
+        # Not every platform's MIME table knows WebP (Windows reads it from the registry), and with
+        # nosniff a wrong type means a broken image.
+        mimetypes.add_type("image/webp", ".webp")
+
+        @app.get("/media/<path:filename>")
+        def media(filename: str):
+            """Product photos in development; nginx serves them in production."""
+            response = send_from_directory(app.config["MEDIA_ROOT"], filename, max_age=86_400)
+            response.headers["X-Content-Type-Options"] = "nosniff"
+            return response
+
     from .api.v1 import bp as api_v1
 
     app.register_blueprint(api_v1, url_prefix="/api/v1")

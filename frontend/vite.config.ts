@@ -14,12 +14,18 @@ export default defineConfig({
   resolve: { alias: { '@': path.resolve(import.meta.dirname, 'src') } },
   server: {
     port: 5173,
-    proxy: { '/api': { target: apiTarget, changeOrigin: false } },
+    proxy: {
+      '/api': { target: apiTarget, changeOrigin: false },
+      '/media': { target: apiTarget, changeOrigin: false },
+    },
   },
   // `vite preview` serves the production build the same way (used by the end-to-end tests in CI).
   preview: {
     port: 4173,
-    proxy: { '/api': { target: apiTarget, changeOrigin: false } },
+    proxy: {
+      '/api': { target: apiTarget, changeOrigin: false },
+      '/media': { target: apiTarget, changeOrigin: false },
+    },
   },
   test: {
     environment: 'jsdom',
