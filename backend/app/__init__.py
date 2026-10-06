@@ -32,6 +32,11 @@ def create_app(config_name: str | None = None) -> Flask:
 
     register_error_handlers(app)
 
+    from . import observability
+
+    with app.app_context():
+        observability.init_app(app, db.engine)
+
     from .api.v1 import bp as api_v1
 
     app.register_blueprint(api_v1, url_prefix="/api/v1")

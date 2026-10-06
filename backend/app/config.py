@@ -125,6 +125,11 @@ class BaseConfig:
         self.SQLALCHEMY_DATABASE_URI = _require("DATABASE_URL")
         self.SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True, "pool_size": 10, "max_overflow": 20}
         self.REDIS_URL = os.environ.get("REDIS_URL", "redis://redis:6379/0")
+        production = isinstance(self, ProductionConfig)
+        self.LOG_FORMAT = os.environ.get("LOG_FORMAT", "json" if production else "text")
+        self.LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
+        # Server-Timing on API responses (app and database time, statement count).
+        self.SERVER_TIMING = os.environ.get("SERVER_TIMING", "true").lower() == "true"
         # Number of reverse proxies in front of the app whose X-Forwarded-* headers are trusted.
         self.TRUSTED_PROXY_COUNT = int(os.environ.get("TRUSTED_PROXY_COUNT", "0"))
         # A rotated refresh token presented again within this window (two tabs, a retried request)
@@ -136,7 +141,6 @@ class BaseConfig:
         self.SHIPPING_FLAT_CENTS = int(os.environ.get("SHIPPING_FLAT_CENTS", "15000"))
         self.FREE_SHIPPING_THRESHOLD_CENTS = int(os.environ.get("FREE_SHIPPING_THRESHOLD_CENTS", "500000"))
         self.RESERVATION_TTL = timedelta(minutes=int(os.environ.get("RESERVATION_TTL_MINUTES", "15")))
-        production = isinstance(self, ProductionConfig)
         self.MAIL_BACKEND = os.environ.get("MAIL_BACKEND", "smtp")
         self.MAIL_SERVER = _require("MAIL_SERVER") if production else os.environ.get("MAIL_SERVER", "127.0.0.1")
         self.MAIL_PORT = int(os.environ.get("MAIL_PORT", "587" if production else "1025"))
