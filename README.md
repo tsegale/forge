@@ -549,4 +549,4 @@ scripts/ci/          starts the end-to-end stack in CI
 - [x] Phase 3: build compatibility engine and compatible-parts filtering
 - [x] Phase 4: cart, two-phase checkout with reservations, Stripe webhooks, Celery workers
 - [x] Phase 5: React frontend (catalog, configurator, cart and checkout, payments, orders, admin), end-to-end tests
-- [ ] Phase 6: production-stack run, documentation, release
+- [x] Phase 6: production-stack run, documentation, release (v1.0.0)
