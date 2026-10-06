@@ -54,7 +54,7 @@ def test_payment_sends_one_confirmation(client, session, order):
     assert mail.subject == f"Order {order.order_number} confirmed"
     assert format_money(order.total_cents, "NAD") in mail.text and format_money(order.total_cents, "NAD") in mail.html
     assert "Windhoek" in mail.text and "VAT (15%)" in mail.text
-    assert "—" not in mail.text + mail.html  # house style: no em dashes
+    assert chr(0x2014) not in mail.text + mail.html  # house style: no em dashes
     session.refresh(order)
     assert order.confirmation_sent_at is not None
 

@@ -3,8 +3,8 @@ OpenAPI document at /api/docs/openapi.json.
 
 The pages load Swagger UI and Redoc from jsDelivr at exact versions with Subresource Integrity,
 so a changed file is refused by the browser. They carry their own Content Security Policy (the
-app's policy allows no third-party scripts at all): only that CDN, no inline script, and the
-Swagger UI start-up code is served from here as a file.
+app's policy allows no third-party scripts but Stripe's): only that CDN, no inline script, and
+the Swagger UI start-up code is served from here as a file.
 """
 
 from __future__ import annotations

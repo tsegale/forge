@@ -1,3 +1,6 @@
+"""Health endpoints: liveness for the process, readiness for its dependencies."""
+
+
 def test_liveness(app):
     response = app.test_client().get("/api/v1/health/live")
     assert response.status_code == 200
