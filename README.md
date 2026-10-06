@@ -2,11 +2,12 @@
 
 A PC hardware marketplace with a database-enforced build compatibility engine.
 Customers assemble a PC build part by part; Forge validates socket, memory, form factor,
-clearance and power compatibility, then checks out the whole build with a two-phase
-stock reservation and Stripe payments.
+clearance and power compatibility as they go, then checks out the whole build with a two-phase
+stock reservation and Stripe payments. Administrators fulfil, refund and restock from the same
+app.
 
 Built for CMP3872 Database Programming (University of Namibia, 2026) with Flask,
-SQLAlchemy 2.x and PostgreSQL 16.
+SQLAlchemy 2.x and PostgreSQL 16 behind a React and TypeScript frontend.
 
 ![Entity relationship diagram](docs/erd.png)
 
@@ -18,10 +19,14 @@ SQLAlchemy 2.x and PostgreSQL 16.
 | ORM | SQLAlchemy 2.x (typed `Mapped[]` models, joined-table inheritance) |
 | Database | PostgreSQL 16 (partitioning, triggers, generated columns, full-text search) |
 | Migrations | Alembic via Flask-Migrate, reversible, drift-checked in CI |
-| Cache and queues | Redis |
-| Serving | Gunicorn behind Nginx |
-| Packaging | Docker multi-stage image, Docker Compose |
-| CI | GitHub Actions: lint, tests against real PostgreSQL, migration drift check |
+| Cache, rate limits, queues | Redis; Celery worker and beat |
+| Payments | Stripe (PaymentIntents, Payment Element, signed webhooks), test mode |
+| Frontend | React 19, TypeScript (strict), Vite, React Router 7, TanStack Query, Tailwind CSS 4, Radix |
+| API client | Generated from the OpenAPI document (openapi-typescript, openapi-fetch) |
+| Serving | Gunicorn behind Nginx, which also serves the built frontend on the same origin |
+| Packaging | Docker multi-stage images, Docker Compose |
+| Testing | pytest on real PostgreSQL; Vitest, Testing Library and MSW; Playwright with axe |
+| CI | GitHub Actions: backend, frontend and end-to-end jobs (see [Testing](#testing)) |
 
 ## Quick start
 
@@ -33,11 +38,18 @@ docker compose run --rm api flask users create-admin --email you@example.com --f
 curl http://localhost:8080/api/v1/health/ready
 ```
 
-API documentation is then at http://localhost:8080/api/v1/docs/swagger/.
+The app is then at http://localhost:8080 and the API documentation at
+http://localhost:8080/api/v1/docs/swagger/.
 
 `migrate` runs as a one-shot service before the API starts, so schema changes are applied
 exactly once per deploy instead of racing inside every API replica. PostgreSQL and Redis sit
 on an internal network and are not reachable from outside the stack.
+
+Nginx serves the built frontend and proxies `/api` to Gunicorn, so the app and the API share
+one origin: no CORS, and the refresh cookie can be `SameSite=Strict`. Hashed assets are cached
+for a year, `index.html` never, and every response carries a strict Content Security Policy
+(this origin plus Stripe.js and its frames), `X-Frame-Options: DENY`, `nosniff` and a referrer
+policy, defined once in `nginx/security-headers.conf`.
 
 ### Demo stack (production images, test-mode payments, caught email)
 
@@ -73,14 +85,34 @@ It refuses to run under the production configuration without `--yes`.
 
 | What | Where |
 | --- | --- |
+| The app | http://localhost:8080 |
 | API through Nginx | http://localhost:8080/api/v1 |
 | API documentation | http://localhost:8080/api/v1/docs/swagger/ |
 | Emails sent by the worker (Mailpit) | http://127.0.0.1:8025 |
 
 Pay with Stripe's test card `4242 4242 4242 4242` (any future expiry, any CVC). The webhook marks
 the order paid, the stock moves from reserved to sold, and the confirmation email appears in
-Mailpit. If you change `STRIPE_WEBHOOK_SECRET`, run `docker compose up -d` again so the services
-pick it up. If PostgreSQL's port 5432 is taken locally, also `export FORGE_DB_PORT=5433`.
+Mailpit. `4000 0000 0000 0002` is declined, to show the retry. If you change
+`STRIPE_WEBHOOK_SECRET`, run `docker compose up -d` again so the services pick it up. If
+PostgreSQL's port 5432 is taken locally, also `export FORGE_DB_PORT=5433`.
+
+#### The demo path
+
+The same path runs in CI as a Playwright test, with axe accessibility checks on every screen.
+
+1. **Browse and search** as the demo customer: search `x3d` and open the Ryzen 7 7800X3D.
+2. **Configure**: "Add to build", then choose each remaining part. Every picker lists only parts
+   compatible with the rest of the build, the panel updates conflicts, warnings, missing parts
+   and the power estimate live, and a guest's build is saved to the account at sign-in.
+3. **Validate**, then **check out this build** to the saved address. Stock is reserved for 15
+   minutes, with a countdown on the pay screen.
+4. **Pay**: a declined card leaves the form in place for another try; a good card shows
+   "Confirming" until Stripe's webhook marks the order paid. If the hold runs out, "Start a fresh
+   checkout" releases the order and puts the same parts back.
+5. **Order history**: the order, its status timeline, and "Buy again".
+6. **Fulfil as the admin**: the orders table offers only the next legal step (start fulfilment,
+   mark shipped, mark delivered) and refunds where the state machine allows them. Inventory
+   editing shows "stock changed, reload" if someone else changed the stock first.
 
 ## Local development
 
@@ -108,6 +140,29 @@ pytest
 Use `127.0.0.1`, not `localhost`. The ports are bound to IPv4 loopback only, and on Windows a
 `localhost` connection tries `::1` first and stalls until that attempt times out.
 `forge_test` is dropped and rebuilt by every test run, so never point `DATABASE_URL` at it.
+
+Run the API with `flask run --host 127.0.0.1 --port 8080`, then the frontend:
+
+```bash
+cd frontend
+npm ci
+npm run dev        # http://127.0.0.1:5173; proxies /api to FORGE_API_ORIGIN (default http://127.0.0.1:8080)
+npm test           # unit and component tests
+npm run typecheck && npm run lint && npm run format:check
+```
+
+`flask run` loads a `.env` file from the repository root if there is one (python-dotenv), so
+Stripe keys there apply to the development server too.
+
+### Payments without Stripe keys
+
+Without `STRIPE_SECRET_KEY` (or with `PAYMENT_GATEWAY=fake`) the API uses an in-process fake
+gateway, and the pay screen shows a clearly marked test panel instead of Stripe's card form.
+"Pay" and "Simulate a declined card" call `POST /api/test/payments/{order_number}`, which builds
+the event Stripe would send, signs it with the webhook secret and runs it through the normal
+webhook processing, signature check included, so the order is paid by exactly the code a real
+payment uses. That route exists only with the fake gateway, which the production configuration
+refuses, and it is not part of the public API.
 
 ## API
 
@@ -247,9 +302,20 @@ exact half-up rounding, and the net amounts are derived from it, so `total = sub
 shipping` always holds. Shipping is a flat VAT-inclusive fee, free above a threshold (both
 configurable).
 
-Customers see their orders under `/orders` and can cancel an unpaid one. Admins move paid orders
-through fulfilling, shipped and delivered, and refund through Stripe; a refund is checked against the
-order state machine before any money moves. Every status change records the acting user.
+Customers see their orders under `/orders` and can cancel an unpaid one.
+`POST /orders/{order_number}/reorder` puts an order's parts back in the cart (skipping any no longer
+sold, and saying which): checkout empties the cart, so this is how a customer checks out again after
+an unpaid order's hold expires, and it doubles as "buy again".
+
+Admins move paid orders through fulfilling, shipped and delivered, and refund through Stripe; a
+refund is checked against the order state machine before any money moves. Every status change
+records the acting user. The admin order list and detail include `next_steps` and `refundable`,
+read from the same `order_status_transitions` table the trigger enforces, so a client offers only
+legal actions without encoding the rules itself.
+
+`GET /config` gives clients the store settings they need (currency, VAT rate, shipping rule,
+reservation hold, payment provider and Stripe publishable key), and `GET /component-kinds` the
+component kinds with their per-build limits.
 
 ### Background jobs
 
@@ -325,7 +391,41 @@ python scripts/export_dbml.py > ../docs/schema.dbml   # paste into dbdiagram.io
 cd scripts && python render_erd.py ../../docs         # requires Graphviz
 ```
 
-## API contract for the frontend
+## Frontend
+
+A single-page React app in `frontend/`, served by Nginx from the same origin as the API.
+
+| Screen | What it does |
+| --- | --- |
+| Catalog and product | Search, kind filters with per-kind spec filters, cursor paging, stock, add to cart or build |
+| Configurator | One row per component kind; pickers filtered to compatible parts; live conflicts, warnings, missing parts and power meter; save and validate |
+| Cart and checkout | Quantities, stock warnings, VAT and shipping totals; saved or one-off address; short lines named on 409 |
+| Pay | Stripe Payment Element, reservation countdown, decline retry, "confirming" until the webhook lands, fresh checkout after expiry |
+| Orders | History with status filter and "buy again"; detail with status timeline and cancel |
+| Admin | Orders with legal next steps and refunds (with reason); inventory with stock, price and availability editing |
+
+Design decisions worth knowing:
+
+- **Session.** The access token is kept in memory only, never in browser storage; the refresh token
+  is the API's HttpOnly cookie. Refreshes are single-flight within a tab and, through the Web Locks
+  API, across tabs, so tabs never race to rotate the same token; a BroadcastChannel shares new
+  tokens and sign-outs between tabs.
+- **Cache.** TanStack Query holds server state. User-specific queries are keyed by the session
+  and wait until it is restored, so a reload never shows a guest's cart to a signed-in user, and
+  the whole cache is cleared at sign-in and sign-out. 4xx answers are not retried, except 429,
+  which is retried after `Retry-After`.
+- **Build draft.** The configurator's draft lives in local storage so a guest can build without an
+  account. A draft linked to a saved build records its owner and is cleared at sign-out, or as
+  soon as the app finds it belongs to anyone other than the signed-in user.
+- **Payment form.** Stripe's iframe takes the card details, so they never reach Forge. The pay
+  screen never re-renders on its clock; only the countdown does, so the Stripe element is not
+  disturbed while the customer types.
+- **Money.** Amounts are integer cents end to end; typed prices are parsed with string arithmetic,
+  never floats.
+- **Accessibility.** Light theme, inline SVG icons, labelled controls, focus-trapped dialogs, and
+  colour tokens that meet WCAG AA contrast; axe checks every demo-path screen in CI.
+
+### Typed API client
 
 The frontend's TypeScript types are generated from the backend's OpenAPI document, so a change to
 an endpoint that the frontend does not account for fails the type check. After changing the API:
@@ -356,10 +456,34 @@ installing, so an incompatible set fails the build instead of being installed si
 
 ## Testing
 
-Tests run against a real PostgreSQL database, never SQLite, because triggers, partitions
-and composite constraints are part of what is under test. The session fixture rebuilds the
-schema, runs every migration up, down to base and up again (proving each `downgrade()`
-works), then seeds the catalog. Each test runs in a transaction that is rolled back.
+**Backend** (`cd backend && pytest`, about 530 tests). Tests run against a real PostgreSQL
+database, never SQLite, because triggers, partitions and composite constraints are part of what is
+under test. The session fixture rebuilds the schema, runs every migration up, down to base and up
+again (proving each `downgrade()` works), then seeds the catalog. Each test runs in a transaction
+that is rolled back; concurrency tests (checkout races, sweeper against webhook) use real commits.
+Payments use the fake gateway, but webhooks always go through real signature verification.
+
+**Frontend** (`cd frontend && npm test`, about 100 tests). Vitest with Testing Library renders the
+real route tree; MSW answers the API at the network level, and fixtures are typed against the
+generated schema so they cannot drift from it. Stripe's components are mocked at the module
+boundary; the real Payment Element is covered end to end.
+
+**End to end** (`cd frontend && npx playwright test`, against a running stack at `E2E_BASE_URL`):
+
+| Spec | Covers |
+| --- | --- |
+| `demo-path.spec.ts` | The demo path above, with axe (WCAG 2.1 A and AA) on every screen |
+| `checkout-expiry.spec.ts` | An expired hold: payment withdrawn, fresh checkout with the same parts |
+| `payment.stripe.spec.ts` | Real Stripe test mode: a declined card, then a good one (runs with `E2E_STRIPE=1`) |
+
+CI runs on every push and pull request:
+
+| Job | Steps |
+| --- | --- |
+| `backend` | `pip check`, ruff, pytest with coverage, `flask db check` (no model or migration drift), committed OpenAPI document is current |
+| `frontend` | Generated API types are current, type check, ESLint (strict type-checked), Prettier, unit tests, production build |
+| `e2e` | Migrates and seeds a fresh database, serves the production build, runs Playwright with simulated payments |
+| `e2e-stripe` | Manual (`workflow_dispatch`): the same suite against Stripe test mode, with webhooks forwarded by the Stripe CLI. Needs the `STRIPE_SECRET_KEY` and `STRIPE_PUBLISHABLE_KEY` repository secrets (test-mode keys only; the job refuses live ones) |
 
 ## Project structure
 
@@ -372,21 +496,44 @@ backend/
     schemas/         Pydantic request and response models
     security/        password hashing, JWTs, route guards
     compat/          compatibility engine: rules, power budget, report (pure, no database access)
-    payments/        payment gateway interface, Stripe and in-process implementations
+    payments/        payment gateway interface, Stripe and in-process implementations, simulator
     services/        business logic (auth, catalog, builds, cart, checkout, webhooks, sweeper, ...)
     tasks.py         Celery tasks; celery_app.py is the worker entry point
     errors.py        error envelope; db_errors.py maps constraint names to HTTP errors
-    cli.py           flask seed catalog, flask users create-admin
+    cli.py           flask seed catalog, flask seed demo, flask users create-admin
+    demo.py          the demo data reset behind flask seed demo
   migrations/        Alembic: 0001 schema, 0002 reference data and database logic,
                      0003 pg_trgm search and refresh token families,
                      0004 compatibility inputs and build guards,
                      0005 checkout and payment integrity
   seed/catalog.json  62 real components with manufacturer specs
-  scripts/           ERD and DBML generators
+  scripts/           ERD, DBML and OpenAPI exporters
   tests/
+frontend/
+  src/
+    app/             router, query client and store configuration
+    api/             generated OpenAPI types and the typed client
+    auth/            in-memory session, cross-tab refresh, route guard
+    builds/ cart/ orders/ admin/ catalog/ payments/   data access per area
+    pages/           screens, one folder per area
+    components/      layout and shared UI (buttons, fields, dialogs, alerts)
+    lib/             money, time and navigation helpers
+    test/            MSW server, typed fixtures, render helpers
+  e2e/               Playwright specs
 docs/                ERD and schema exports
-nginx/               reverse proxy config
+nginx/               Nginx image (builds the frontend), site config, security headers
+scripts/ci/          starts the end-to-end stack in CI
+.github/             workflow and the shared end-to-end setup action
 ```
+
+## Known limitations
+
+- One currency (NAD) and one VAT rate; shipping is a flat fee with a free threshold.
+- Email is sent only for order confirmation; shipping and delivery are visible in the order
+  timeline but not emailed.
+- Refunds are full refunds; partial refunds and returns are not modelled.
+- During a Redis outage, rate limits fall back to per-worker in-memory counters (see
+  [Authentication](#authentication)).
 
 ## Roadmap
 
@@ -394,5 +541,5 @@ nginx/               reverse proxy config
 - [x] Phase 2: authentication (JWT access and refresh rotation, RBAC, rate limiting), catalog API, OpenAPI docs
 - [x] Phase 3: build compatibility engine and compatible-parts filtering
 - [x] Phase 4: cart, two-phase checkout with reservations, Stripe webhooks, Celery workers
-- [ ] Phase 5: React frontend
-- [ ] Phase 6: hardening, documentation, demo
+- [x] Phase 5: React frontend (catalog, configurator, cart and checkout, payments, orders, admin), end-to-end tests
+- [ ] Phase 6: production-stack run, documentation, release
