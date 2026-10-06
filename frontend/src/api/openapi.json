@@ -5360,8 +5360,7 @@
             "type": "integer"
           },
           "status": {
-            "title": "Status",
-            "type": "string"
+            "$ref": "#/components/schemas/OrderStatus"
           }
         },
         "required": [

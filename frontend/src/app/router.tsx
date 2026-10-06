@@ -10,7 +10,10 @@ import { ProfilePage } from '@/pages/account/ProfilePage'
 import { AdminLayout } from '@/pages/admin/AdminLayout'
 import { AdminOrderPage } from '@/pages/admin/AdminOrderPage'
 import { AdminOrdersPage } from '@/pages/admin/AdminOrdersPage'
+import { AuditPage } from '@/pages/admin/AuditPage'
+import { DashboardPage } from '@/pages/admin/DashboardPage'
 import { InventoryPage } from '@/pages/admin/InventoryPage'
+import { WebhooksPage } from '@/pages/admin/WebhooksPage'
 import { ForgotPasswordPage } from '@/pages/auth/ForgotPasswordPage'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { RegisterPage } from '@/pages/auth/RegisterPage'
@@ -90,10 +93,13 @@ export const routes: RouteObject[] = [
               </RequireAuth>
             ),
             children: [
-              { index: true, element: <Navigate to="orders" replace /> },
+              { index: true, element: <Navigate to="dashboard" replace /> },
+              { path: 'dashboard', element: <DashboardPage /> },
               { path: 'orders', element: <AdminOrdersPage /> },
               { path: 'orders/:orderNumber', element: <AdminOrderPage /> },
               { path: 'inventory', element: <InventoryPage /> },
+              { path: 'audit', element: <AuditPage /> },
+              { path: 'webhooks', element: <WebhooksPage /> },
             ],
           },
           { path: 'styleguide', element: <StyleguidePage /> },

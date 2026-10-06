@@ -73,7 +73,7 @@ export function AccountMenu() {
             <Bell aria-hidden="true" /> Price alerts
           </Item>
           {user.role === 'admin' ? (
-            <Item onSelect={() => void navigate('/admin/orders')}>
+            <Item onSelect={() => void navigate('/admin')}>
               <ShieldCheck aria-hidden="true" /> Administration
             </Item>
           ) : null}

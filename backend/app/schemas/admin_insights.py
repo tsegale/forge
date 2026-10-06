@@ -7,6 +7,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..models.enums import OrderStatus
 from .catalog import Price
 
 
@@ -23,7 +24,7 @@ class DailySales(BaseModel):
 
 
 class StatusCount(BaseModel):
-    status: str
+    status: OrderStatus
     count: int
 
 

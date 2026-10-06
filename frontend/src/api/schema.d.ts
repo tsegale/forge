@@ -3207,8 +3207,7 @@ export interface components {
         StatusCount: {
             /** Count */
             count: number;
-            /** Status */
-            status: string;
+            status: components["schemas"]["OrderStatus"];
         };
         /**
          * StockUpdate

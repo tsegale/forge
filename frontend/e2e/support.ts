@@ -21,7 +21,7 @@ export async function signIn(page: Page, next = '/', account = customer): Promis
   await page.goto(`/login?next=${encodeURIComponent(next)}`)
   const form = page.getByRole('main')
   await form.getByLabel('Email').fill(account.email)
-  await form.getByLabel('Password').fill(account.password)
+  await form.getByLabel('Password', { exact: true }).fill(account.password)
   await form.getByRole('button', { name: 'Sign in' }).click()
   await page.waitForURL((url) => url.pathname === new URL(next, url).pathname)
 }

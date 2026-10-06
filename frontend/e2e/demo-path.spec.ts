@@ -29,6 +29,7 @@ async function chooseFirst(page: Page, kind: string): Promise<void> {
 }
 
 test('the demo path: browse, configure, validate, check out, pay, fulfil', async ({ page }) => {
+  test.setTimeout(180_000) // the whole store end to end, with axe on every screen
   await signIn(page)
 
   // Browse and search.
@@ -56,7 +57,8 @@ test('the demo path: browse, configure, validate, check out, pay, fulfil', async
 
   // Validate, then check the build out.
   await page.getByRole('button', { name: 'Validate' }).click()
-  await expect(page.getByRole('status').filter({ hasText: 'Validated' })).toBeVisible()
+  // Saving the parts and validating is several requests; slow machines need longer than the default.
+  await expect(page.getByRole('status').filter({ hasText: 'Validated' })).toBeVisible({ timeout: 15_000 })
   await page.getByRole('link', { name: 'Check out this build' }).click()
   await page.waitForURL(/\/checkout\?build=\d+$/)
   await expect(page.getByRole('radio').first()).toBeChecked() // the demo customer's saved address
@@ -113,4 +115,15 @@ test('the demo path: browse, configure, validate, check out, pay, fulfil', async
   await expect(page.getByRole('heading', { name: 'Inventory' })).toBeVisible()
   await expect(page.getByRole('table')).toBeVisible()
   await expectAccessible(page, 'admin inventory')
+
+  // The dashboard counts the order; the audit log shows who moved it.
+  const admin_nav = page.getByRole('navigation', { name: 'Administration' })
+  await admin_nav.getByRole('link', { name: 'Dashboard' }).click()
+  await expect(page.getByRole('img', { name: /Revenue per day/ })).toBeVisible()
+  await expectAccessible(page, 'admin dashboard')
+  await admin_nav.getByRole('link', { name: 'Audit log' }).click()
+  await expect(
+    page.getByRole('row', { name: new RegExp(`${orderNumber}.*Shipped to delivered`, 'i') }),
+  ).toBeVisible()
+  await expectAccessible(page, 'admin audit log')
 })

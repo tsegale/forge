@@ -74,7 +74,7 @@ export function MobileMenu() {
                 </li>
                 {user.role === 'admin' ? (
                   <li>
-                    <Link to="/admin/orders" className={ROW}>
+                    <Link to="/admin" className={ROW}>
                       Administration
                     </Link>
                   </li>

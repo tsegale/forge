@@ -119,7 +119,7 @@ def metrics(days: int) -> Metrics:
         refunded=_price(refunded),
         awaiting_payment=awaiting,
         daily=[DailySales(day=day, revenue=_price(r), orders=n) for day, r, n in daily],
-        by_status=[StatusCount(status=status.value, count=n) for status, n in by_status],
+        by_status=[StatusCount(status=status, count=n) for status, n in by_status],
         low_stock=[LowStock(product_id=pid, sku=sku, name=name, available=a) for pid, sku, name, a in low],
         top_products=[
             TopProduct(product_id=pid, sku=sku, name=name, units=u, revenue=_price(r)) for pid, sku, name, u, r in top
