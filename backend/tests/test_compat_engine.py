@@ -4,7 +4,7 @@ from app.compat import evaluate
 from app.compat.findings import Severity, conflict, warning
 from app.compat.rules.base import Rule
 from app.models.enums import KindCode
-from tests.compat_factories import REQUIRED, cooler, cpu, ctx, full_build, gpu
+from tests.compat_factories import REQUIRED, case, cooler, cpu, ctx, full_build, gpu
 
 
 def _report(*products, rules=None):
@@ -72,6 +72,16 @@ def test_candidate_replaces_single_slot_parts_and_adds_to_multi_slot_ones():
     assert swapped.cpu.socket_code == "LGA1700" and len(swapped.of_kind(KindCode.CPU)) == 1
     added = base.with_candidate(gpu())
     assert len(added.gpus) == 2
+
+
+def test_another_unit_of_a_chosen_part_raises_its_quantity_instead_of_adding_a_second_part():
+    card = gpu(length_mm=400)
+    base = ctx(case(max_gpu_length_mm=320), card)
+    doubled = base.with_candidate(card)
+    assert [(p.product.id, p.quantity) for p in doubled.gpus] == [(card.id, 2)]
+    # Per-part rules see the card once, so its finding is not repeated.
+    report = evaluate(doubled, [])
+    assert [f.code for f in report.conflicts] == ["GPU_TOO_LONG"]
 
 
 def test_candidate_cooler_replaces_existing_cooler():
