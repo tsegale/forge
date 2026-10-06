@@ -8,7 +8,7 @@ import { formatPrice } from '@/lib/money'
 
 const STATUS: Record<string, { label: string; className: string }> = {
   draft: { label: 'Draft', className: 'bg-canvas text-ink-muted' },
-  validated: { label: 'Validated', className: 'bg-success-soft text-success' },
+  validated: { label: 'Validated', className: 'bg-success-soft text-success-ink' },
   ordered: { label: 'Ordered', className: 'bg-accent-soft text-accent' },
 }
 
@@ -47,7 +47,7 @@ export function BuildsPage() {
           </p>
         ) : null}
         {builds.data?.items.length ? (
-          <table className="w-full overflow-hidden rounded-[var(--radius-card)] border border-border bg-surface text-sm">
+          <table className="w-full overflow-hidden rounded-md border border-border bg-surface text-sm">
             <thead className="bg-canvas text-left text-ink-muted">
               <tr>
                 <th scope="col" className="px-4 py-2 font-medium">
@@ -77,7 +77,9 @@ export function BuildsPage() {
                   <tr key={build.id} className="border-t border-border">
                     <td className="px-4 py-3 font-medium">{build.name}</td>
                     <td className="px-4 py-3">
-                      <span className={`rounded px-2 py-0.5 text-xs font-medium ${status?.className ?? ''}`}>
+                      <span
+                        className={`rounded-sm px-2 py-0.5 text-xs font-medium ${status?.className ?? ''}`}
+                      >
                         {status?.label ?? build.status}
                       </span>
                     </td>

@@ -92,10 +92,7 @@ export function OrderPage() {
       <ErrorMessage error={buyAgain.error} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_20rem]">
-        <section
-          aria-labelledby="items-heading"
-          className="rounded-[var(--radius-card)] border border-border bg-surface p-5"
-        >
+        <section aria-labelledby="items-heading" className="rounded-md border border-border bg-surface p-5">
           <h2 id="items-heading" className="text-sm font-semibold">
             Parts
           </h2>
@@ -124,7 +121,7 @@ export function OrderPage() {
         <div className="space-y-6">
           <section
             aria-labelledby="progress-heading"
-            className="rounded-[var(--radius-card)] border border-border bg-surface p-5"
+            className="rounded-md border border-border bg-surface p-5"
           >
             <h2 id="progress-heading" className="mb-4 text-sm font-semibold">
               Progress
@@ -133,7 +130,7 @@ export function OrderPage() {
           </section>
           <section
             aria-labelledby="delivery-heading"
-            className="space-y-3 rounded-[var(--radius-card)] border border-border bg-surface p-5 text-sm"
+            className="space-y-3 rounded-md border border-border bg-surface p-5 text-sm"
           >
             <h2 id="delivery-heading" className="font-semibold">
               Delivery and payment

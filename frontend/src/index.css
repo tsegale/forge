@@ -1,35 +1,5 @@
 @import 'tailwindcss';
-
-/*
- * Forge design tokens. Light theme, no gradients. One restrained accent (deep blue) for primary
- * actions and focus; status colours carry meaning only: success (compatible, paid), warning
- * (needs attention), danger (conflict, failure). Neutral slate for everything else.
- */
-@theme {
-  --font-sans: ui-sans-serif, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --font-mono: ui-monospace, 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
-
-  --color-surface: #ffffff;
-  --color-canvas: #f6f7f9;
-  --color-border: #dfe3e8;
-  --color-border-strong: #c5ccd5;
-  --color-ink: #17202a;
-  --color-ink-muted: #56606d;
-  --color-ink-subtle: #5f6976; /* 4.78:1 or better on every background token (WCAG AA) */
-
-  --color-accent: #1e4fa8;
-  --color-accent-hover: #183f87;
-  --color-accent-soft: #e8eef9;
-
-  --color-success: #17784a;
-  --color-success-soft: #e7f5ee;
-  --color-warning: #8a5a00;
-  --color-warning-soft: #fdf3dc;
-  --color-danger: #b42318;
-  --color-danger-soft: #fdecea;
-
-  --radius-card: 0.5rem;
-}
+@import './styles/tokens.css';
 
 @layer base {
   html {
@@ -37,15 +7,56 @@
     background-color: var(--color-canvas);
     color: var(--color-ink);
     font-family: var(--font-sans);
+    font-size: 100%;
+    /* Inter: tabular-friendly figures and the disambiguated 1/l/I in technical text. */
+    font-feature-settings: 'cv11', 'ss03';
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 
+  body {
+    font-size: var(--text-base);
+    line-height: var(--text-base--line-height);
+  }
+
+  /* One focus style everywhere, visible on every surface (7.67:1 against white). */
   :focus-visible {
     outline: 2px solid var(--color-accent);
     outline-offset: 2px;
+  }
+
+  ::selection {
+    background-color: var(--color-accent-soft);
+    color: var(--color-ink);
+  }
+
+  /* Native form controls pick up the accent (checkbox and radio marks, range thumbs). */
+  input,
+  select,
+  textarea {
+    accent-color: var(--color-accent);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 
 @utility tabular {
   font-variant-numeric: tabular-nums;
+}
+
+/* Technical values: SKUs, specs, request ids. */
+@utility font-tech {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
 }

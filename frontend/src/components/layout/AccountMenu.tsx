@@ -3,7 +3,7 @@ import { ChevronDown, CircleUser } from 'lucide-react'
 import { Link, useNavigate } from 'react-router'
 import { useAuth } from '@/auth/context'
 
-const ITEM = 'cursor-pointer rounded px-3 py-2 text-sm text-ink outline-none data-[highlighted]:bg-canvas'
+const ITEM = 'cursor-pointer rounded-sm px-3 py-2 text-sm text-ink outline-none data-[highlighted]:bg-canvas'
 
 export function AccountMenu() {
   const { status, user, logout } = useAuth()

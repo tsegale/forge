@@ -12,9 +12,9 @@ const TONES: Record<Tone, { box: string; Icon: typeof Info }> = {
 }
 const ICON_COLOR: Record<Tone, string> = {
   info: 'text-accent',
-  success: 'text-success',
-  warning: 'text-warning',
-  danger: 'text-danger',
+  success: 'text-success-ink',
+  warning: 'text-warning-ink',
+  danger: 'text-danger-ink',
 }
 
 export function Alert({

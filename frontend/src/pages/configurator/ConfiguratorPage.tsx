@@ -184,7 +184,7 @@ export function ConfiguratorPage() {
 
       <aside
         aria-label="Build summary"
-        className="h-fit space-y-6 rounded-[var(--radius-card)] border border-border bg-surface p-5 lg:sticky lg:top-6"
+        className="h-fit space-y-6 rounded-md border border-border bg-surface p-5 lg:sticky lg:top-6"
       >
         <CompatibilityPanel report={report} checking={compat.isFetching} kindLabel={kindLabel} />
         {compat.isError ? <ErrorMessage error={compat.error} /> : null}

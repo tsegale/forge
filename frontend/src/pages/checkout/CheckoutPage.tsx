@@ -211,7 +211,7 @@ export function CheckoutPage() {
             </label>
           </div>
           {selected === NEW ? (
-            <div className="space-y-4 rounded-[var(--radius-card)] border border-border bg-surface p-5">
+            <div className="space-y-4 rounded-md border border-border bg-surface p-5">
               <AddressForm values={address} onChange={setAddress} errors={fieldErrors} />
               <label className="flex items-center gap-2 text-sm">
                 <input
@@ -230,7 +230,7 @@ export function CheckoutPage() {
 
       <aside
         aria-label="Order summary"
-        className="h-fit space-y-4 rounded-[var(--radius-card)] border border-border bg-surface p-5"
+        className="h-fit space-y-4 rounded-md border border-border bg-surface p-5"
       >
         <h2 className="text-sm font-semibold">Order summary</h2>
         <ul className="space-y-2 text-sm">
@@ -246,7 +246,7 @@ export function CheckoutPage() {
                   <span className="shrink-0 tabular">{formatPrice(line.lineTotal)}</span>
                 </div>
                 {shortLine ? (
-                  <p className="text-xs text-danger">
+                  <p className="text-xs text-danger-ink">
                     Only {shortLine.available} available, you asked for {shortLine.requested}.
                   </p>
                 ) : null}

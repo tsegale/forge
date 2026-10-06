@@ -72,7 +72,7 @@ export function CartPage() {
             </Alert>
           </div>
         ) : null}
-        <ul className="mt-6 divide-y divide-border rounded-[var(--radius-card)] border border-border bg-surface">
+        <ul className="mt-6 divide-y divide-border rounded-md border border-border bg-surface">
           {items.map((line) => (
             <li key={line.id} className="flex flex-wrap items-center gap-4 p-4">
               <span className="rounded-md bg-accent-soft p-2 text-accent">
@@ -85,7 +85,7 @@ export function CartPage() {
                 </Link>
                 <p className="text-xs text-ink-muted tabular">{formatPrice(line.product.price)} each</p>
                 {line.in_stock ? null : (
-                  <p className="text-xs text-danger">
+                  <p className="text-xs text-danger-ink">
                     Only {line.product.availability.quantity_available} available. Lower the quantity to check
                     out.
                   </p>
@@ -146,7 +146,7 @@ export function CartPage() {
 
       <aside
         aria-label="Order summary"
-        className="h-fit space-y-4 rounded-[var(--radius-card)] border border-border bg-surface p-5"
+        className="h-fit space-y-4 rounded-md border border-border bg-surface p-5"
       >
         <h2 className="text-sm font-semibold">Summary</h2>
         <TotalsTable totals={totals} />

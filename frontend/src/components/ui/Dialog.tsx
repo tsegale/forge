@@ -23,7 +23,7 @@ export function Dialog({
       <RadixDialog.Portal>
         <RadixDialog.Overlay className="fixed inset-0 z-40 bg-ink/40" />
         <RadixDialog.Content
-          className={`fixed top-1/2 left-1/2 z-50 flex max-h-[85vh] w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col rounded-[var(--radius-card)] border border-border bg-surface shadow-lg ${
+          className={`fixed top-1/2 left-1/2 z-50 flex max-h-[85vh] w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col rounded-md border border-border bg-surface shadow-lg ${
             wide ? 'max-w-3xl' : 'max-w-md'
           }`}
           {...(description ? {} : { 'aria-describedby': undefined })}

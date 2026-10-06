@@ -38,7 +38,7 @@ export function KindSlot({
   return (
     <li
       className={clsx(
-        'rounded-[var(--radius-card)] border bg-surface p-4',
+        'rounded-md border bg-surface p-4',
         missing ? 'border-dashed border-border-strong' : 'border-border',
       )}
     >
@@ -82,11 +82,11 @@ export function KindSlot({
                     {product.name}
                   </Link>
                   {withdrawn ? (
-                    <p className="text-xs text-danger">No longer sold. Remove it or choose another.</p>
+                    <p className="text-xs text-danger-ink">No longer sold. Remove it or choose another.</p>
                   ) : !product.availability.in_stock ? (
-                    <p className="text-xs text-danger">Out of stock</p>
+                    <p className="text-xs text-danger-ink">Out of stock</p>
                   ) : conflict ? (
-                    <p className="text-xs text-danger">Conflicts with another part</p>
+                    <p className="text-xs text-danger-ink">Conflicts with another part</p>
                   ) : null}
                 </div>
                 {!single && editable ? (

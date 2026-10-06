@@ -38,7 +38,7 @@ export function ProductPage() {
           </Link>
         </nav>
         <div className="mt-3 flex items-start gap-4">
-          <span className="rounded-lg bg-accent-soft p-3 text-accent">
+          <span className="rounded-md bg-accent-soft p-3 text-accent">
             <KindIcon kind={p.kind} className="h-8 w-8" />
           </span>
           <div>
@@ -49,7 +49,7 @@ export function ProductPage() {
         </div>
         {p.description ? <p className="mt-6 text-ink-muted">{p.description}</p> : null}
         <h2 className="mt-8 text-lg font-semibold">Specifications</h2>
-        <table className="mt-3 w-full overflow-hidden rounded-[var(--radius-card)] border border-border bg-surface text-sm">
+        <table className="mt-3 w-full overflow-hidden rounded-md border border-border bg-surface text-sm">
           <tbody>
             {specRows(p.specs).map((row) => (
               <tr key={row.label} className="border-b border-border last:border-0">
@@ -62,7 +62,7 @@ export function ProductPage() {
           </tbody>
         </table>
       </div>
-      <aside className="h-fit rounded-[var(--radius-card)] border border-border bg-surface p-5">
+      <aside className="h-fit rounded-md border border-border bg-surface p-5">
         <p className="text-2xl font-semibold tabular">{formatPrice(p.price)}</p>
         <p className="text-xs text-ink-subtle">VAT included</p>
         <div className="mt-3">

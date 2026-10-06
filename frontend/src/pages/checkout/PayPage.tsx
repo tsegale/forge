@@ -104,7 +104,7 @@ export function PayPage() {
         ) : (
           <>
             <Countdown expiresAt={o.reservation_expires_at} />
-            <div className="rounded-[var(--radius-card)] border border-border bg-surface p-5">
+            <div className="rounded-md border border-border bg-surface p-5">
               {!simulated && !key ? (
                 <Alert tone="warning" title="Online payment is not available">
                   Card payments are not configured for this store.
@@ -152,7 +152,7 @@ export function PayPage() {
 
       <aside
         aria-label="Order summary"
-        className="h-fit space-y-4 rounded-[var(--radius-card)] border border-border bg-surface p-5"
+        className="h-fit space-y-4 rounded-md border border-border bg-surface p-5"
       >
         <h2 className="text-sm font-semibold">Order summary</h2>
         <ul className="space-y-2 text-sm">
@@ -223,7 +223,10 @@ function Countdown({ expiresAt }: { expiresAt: string | null }) {
         urgent ? 'border-warning/30 bg-warning-soft' : 'border-border bg-surface',
       )}
     >
-      <Clock aria-hidden="true" className={clsx('h-4 w-4', urgent ? 'text-warning' : 'text-ink-subtle')} />
+      <Clock
+        aria-hidden="true"
+        className={clsx('h-4 w-4', urgent ? 'text-warning-ink' : 'text-ink-subtle')}
+      />
       <p>
         Your parts are reserved for{' '}
         <span className="font-semibold tabular" role="timer" aria-label="Time left to pay">
@@ -238,7 +241,7 @@ function Countdown({ expiresAt }: { expiresAt: string | null }) {
 function Confirming({ submittedAt, orderNumber }: { submittedAt: number; orderNumber: string }) {
   const slow = useNow(5000) - submittedAt > CONFIRM_PATIENCE_MS
   return (
-    <div className="rounded-[var(--radius-card)] border border-border bg-surface p-6" aria-live="polite">
+    <div className="rounded-md border border-border bg-surface p-6" aria-live="polite">
       <p className="flex items-center gap-2 font-medium">
         <LoaderCircle aria-hidden="true" className="h-5 w-5 animate-spin text-accent" />
         Confirming your payment

@@ -140,7 +140,10 @@ function PickerList({
                 {product.compatibility_warnings?.length ? (
                   <ul className="mt-1 flex flex-wrap gap-1">
                     {product.compatibility_warnings.map((code) => (
-                      <li key={code} className="rounded bg-warning-soft px-1.5 py-0.5 text-xs text-warning">
+                      <li
+                        key={code}
+                        className="rounded-sm bg-warning-soft px-1.5 py-0.5 text-xs text-warning-ink"
+                      >
                         {findingLabel(code)}
                       </li>
                     ))}

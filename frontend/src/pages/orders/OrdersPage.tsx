@@ -62,7 +62,7 @@ export function OrdersPage() {
           </div>
         ) : null}
         {rows.length ? (
-          <table className="w-full overflow-hidden rounded-[var(--radius-card)] border border-border bg-surface text-sm">
+          <table className="w-full overflow-hidden rounded-md border border-border bg-surface text-sm">
             <thead className="bg-canvas text-left text-ink-muted">
               <tr>
                 <th scope="col" className="px-4 py-2 font-medium">

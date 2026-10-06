@@ -27,7 +27,7 @@ export function Field({ label, error, hint, className, ...props }: FieldProps) {
         {...props}
       />
       {error ? (
-        <p id={`${id}-error`} className="text-sm text-danger">
+        <p id={`${id}-error`} className="text-sm text-danger-ink">
           {error}
         </p>
       ) : hint ? (

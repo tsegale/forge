@@ -8,7 +8,7 @@ function Status({ report }: { report: CompatibilityReport }) {
   if (report.conflicts.length) {
     const count = report.conflicts.length
     return (
-      <p className="flex items-center gap-2 font-medium text-danger">
+      <p className="flex items-center gap-2 font-medium text-danger-ink">
         <CircleAlert aria-hidden="true" className="h-5 w-5" />
         {count === 1 ? '1 conflict' : `${count} conflicts`}
       </p>
@@ -23,7 +23,7 @@ function Status({ report }: { report: CompatibilityReport }) {
     )
   }
   return (
-    <p className="flex items-center gap-2 font-medium text-success">
+    <p className="flex items-center gap-2 font-medium text-success-ink">
       <CircleCheck aria-hidden="true" className="h-5 w-5" />
       Compatible and complete
     </p>

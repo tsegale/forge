@@ -1,0 +1,92 @@
+/*
+ * Forge design tokens: the single source for colour, type, spacing, radius and elevation.
+ * Tailwind generates utilities from these (bg-surface, text-ink-muted, rounded-md, shadow-sm ...).
+ * Every text and control colour pairing used by the components is checked against WCAG 2.1 AA in
+ * src/styles/tokens.test.ts, so a change that breaks contrast fails the build.
+ *
+ * Rules: light theme only, no gradients, one accent (Forge blue) for primary actions, links and
+ * focus. Status colours carry meaning only. The base status colours are for icons, borders and
+ * fills; their -ink variants are for text, which needs more contrast on the tinted backgrounds.
+ */
+@theme {
+  /* Type: Inter for the interface, JetBrains Mono for SKUs, specs and technical values.
+     Both are self-hosted (@fontsource), so the Content Security Policy stays 'self'. */
+  --font-sans:
+    'Inter Variable', ui-sans-serif, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, 'SFMono-Regular', Consolas, monospace;
+
+  /* Type scale: size / line height. Dense retail body text is 14 px; long-form copy uses md. */
+  --text-xs: 0.75rem; /* 12 */
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.8125rem; /* 13 */
+  --text-sm--line-height: 1.25rem;
+  --text-base: 0.875rem; /* 14 */
+  --text-base--line-height: 1.375rem;
+  --text-md: 1rem; /* 16 */
+  --text-md--line-height: 1.5rem;
+  --text-lg: 1.125rem; /* 18 */
+  --text-lg--line-height: 1.75rem;
+  --text-xl: 1.25rem; /* 20 */
+  --text-xl--line-height: 1.75rem;
+  --text-2xl: 1.5rem; /* 24 */
+  --text-2xl--line-height: 2rem;
+  --text-3xl: 1.875rem; /* 30 */
+  --text-3xl--line-height: 2.375rem;
+  --text-4xl: 2.25rem; /* 36 */
+  --text-4xl--line-height: 2.75rem;
+
+  /* Neutrals (zinc). */
+  --color-canvas: #fafafa;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f4f4f5; /* hover rows, inset panels */
+  --color-border: #e4e4e7; /* decorative dividers and card edges */
+  --color-border-strong: #d4d4d8;
+  --color-control: #8c8c95; /* input and checkbox borders: 3:1 against surface and canvas */
+  --color-ink: #18181b;
+  --color-ink-muted: #52525b;
+  --color-ink-subtle: #6b6b74; /* 4.5:1 or better on every background token */
+
+  /* Accent: Forge blue. 7.67:1 as white-on-blue and as blue-on-white. */
+  --color-accent: #1e4fa8;
+  --color-accent-hover: #183f87;
+  --color-accent-active: #133370;
+  --color-accent-soft: #eef2fa;
+
+  /* Status. */
+  --color-success: #16a34a;
+  --color-success-ink: #15803d;
+  --color-success-soft: #f0fdf4;
+  --color-warning: #d97706;
+  --color-warning-ink: #b45309;
+  --color-warning-soft: #fffbeb;
+  --color-danger: #dc2626; /* conflict */
+  --color-danger-ink: #b91c1c;
+  --color-danger-hover: #b91c1c;
+  --color-danger-soft: #fef2f2;
+
+  /* Radius: only two values. */
+  --radius-*: initial;
+  --radius-sm: 4px; /* inputs, badges, pills, small buttons */
+  --radius-md: 6px; /* cards, buttons, dialogs, drawers */
+  --radius-full: 9999px; /* avatars, dots, the count badge */
+
+  /* Elevation: quiet, for layers that sit above the page. */
+  --shadow-*: initial;
+  --shadow-sm: 0 1px 2px rgb(24 24 27 / 0.06);
+  --shadow-md: 0 4px 12px rgb(24 24 27 / 0.08), 0 1px 2px rgb(24 24 27 / 0.04);
+  --shadow-lg: 0 16px 40px rgb(24 24 27 / 0.14), 0 2px 6px rgb(24 24 27 / 0.06);
+
+  /* Motion: short and functional; reduced to zero under prefers-reduced-motion. */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-skeleton: skeleton 1.4s ease-in-out infinite;
+
+  @keyframes skeleton {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.55;
+    }
+  }
+}
