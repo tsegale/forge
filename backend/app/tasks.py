@@ -11,6 +11,7 @@ from flask import Flask, has_app_context
 from .services.maintenance import ensure_price_history_partitions
 from .services.notifications import send_order_confirmation as send_confirmation
 from .services.password_reset import send_changed, send_reset
+from .services.price_alerts import sweep as sweep_price_alerts
 from .services.sweeper import sweep
 
 
@@ -63,6 +64,11 @@ def send_password_reset(user_id: int, token: str) -> bool:
 @shared_task(name="forge.send_password_changed", **_MAIL_RETRY)
 def send_password_changed(user_id: int) -> bool:
     return send_changed(user_id)
+
+
+@shared_task(name="forge.check_price_alerts", **_MAIL_RETRY)
+def check_price_alerts(product_id: int | None = None) -> int:
+    return sweep_price_alerts(product_id)
 
 
 @shared_task(name="forge.maintain_price_history_partitions")

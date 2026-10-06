@@ -64,3 +64,17 @@ class PasswordResetConfirm(BaseModel):
 
     token: str = Field(min_length=20, max_length=200, description="From the emailed link's #token= fragment.")
     password: Password
+
+
+class ProfileUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    first_name: Name | None = None
+    last_name: Name | None = None
+
+
+class PasswordChange(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    current_password: str = Field(min_length=1, max_length=128)
+    new_password: Password

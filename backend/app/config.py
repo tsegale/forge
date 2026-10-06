@@ -55,6 +55,8 @@ def _payment_settings(production: bool) -> dict[str, str]:
 # Periodic jobs for Celery beat, by task name (defined in app/tasks.py).
 BEAT_SCHEDULE: dict[str, dict] = {
     "sweep-expired-reservations": {"task": "forge.sweep_expired_reservations", "schedule": 60.0},
+    # A safety net: price changes made through the admin API also check their product's alerts at once.
+    "check-price-alerts": {"task": "forge.check_price_alerts", "schedule": 900.0},
     # On the 25th, so next month's partition exists days before the month begins.
     "price-history-partitions": {
         "task": "forge.maintain_price_history_partitions",

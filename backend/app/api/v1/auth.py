@@ -14,9 +14,11 @@ from ...errors import Unauthorized
 from ...extensions import limiter
 from ...schemas.auth import (
     LoginRequest,
+    PasswordChange,
     PasswordResetAccepted,
     PasswordResetConfirm,
     PasswordResetRequest,
+    ProfileUpdate,
     RegisterRequest,
     TokenResponse,
     UserResponse,
@@ -152,6 +154,33 @@ def login():
 def me():
     """The authenticated user's profile."""
     return UserResponse.model_validate(current_user())
+
+
+@bp.patch("/auth/me")
+@require_auth
+@api.validate(
+    json=ProfileUpdate, resp=responses(401, 422, HTTP_200=UserResponse), tags=[TAG], security={"bearerAuth": []}
+)
+def update_me():
+    """Change the account's name. Email changes are not offered (the address is the login)."""
+    body: ProfileUpdate = request.context.json
+    return UserResponse.model_validate(auth_service.update_profile(current_user(), body.first_name, body.last_name))
+
+
+@bp.post("/auth/me/password")
+@require_auth
+@limiter.limit(_limit("LOGIN_FAILURE_LIMIT_PER_ACCOUNT"), key_func=lambda: f"user:{current_user().id}")
+@api.validate(
+    json=PasswordChange, resp=responses(400, 401, 422, 429, HTTP_204=None), tags=[TAG], security={"bearerAuth": []}
+)
+def change_password():
+    """Change the password, given the current one. Every other session is signed out; this one stays."""
+    body: PasswordChange = request.context.json
+    auth_service.change_password(current_user(), body.current_password, body.new_password, _refresh_cookie())
+    from ...tasks import send_password_changed
+
+    send_password_changed.delay(current_user().id)
+    return "", 204
 
 
 @bp.post("/auth/refresh")

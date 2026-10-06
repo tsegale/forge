@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 from flask import current_app
 from sqlalchemy import select, update
 
-from ..errors import Forbidden, Unauthorized
+from ..errors import BadRequest, Forbidden, Unauthorized
 from ..extensions import db
 from ..models import RefreshToken, User
 from ..schemas.auth import RegisterRequest
@@ -158,4 +158,33 @@ def end_session(refresh_token: str) -> None:
 
 def end_all_sessions(user: User) -> None:
     _revoke(RefreshToken.user_id == user.id)
+    db.session.commit()
+
+
+def update_profile(user: User, first_name: str | None, last_name: str | None) -> User:
+    if first_name is not None:
+        user.first_name = first_name
+    if last_name is not None:
+        user.last_name = last_name
+    db.session.commit()
+    return user
+
+
+def change_password(user: User, current: str, new: str, keep_refresh_token: str | None) -> None:
+    """Set a new password after checking the current one, and sign out every other session.
+    The session making the change (the refresh token family in its cookie) stays signed in."""
+    if not verify_password(user.password_hash, current):
+        raise BadRequest("The current password is not correct.", code="wrong_password")
+    keep_family = None
+    if keep_refresh_token:
+        try:
+            claims = decode_refresh(keep_refresh_token)
+            keep_family = claims.family_id if claims.user_id == user.id else None
+        except Unauthorized:
+            keep_family = None
+    user.password_hash = hash_password(new)
+    if keep_family is None:
+        _revoke(RefreshToken.user_id == user.id)
+    else:
+        _revoke(RefreshToken.user_id == user.id, RefreshToken.family_id != keep_family)
     db.session.commit()

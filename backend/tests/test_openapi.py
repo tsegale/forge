@@ -8,7 +8,7 @@ from openapi_spec_validator import validate
 SPEC_URL = "/api/docs/openapi.json"
 METHODS = {"get", "post", "put", "patch", "delete"}
 PROTECTED = re.compile(
-    r"^/api/v1/(admin/|builds|addresses|checkout|orders|reviews/|auth/me$|auth/logout-all$|products/\{slug\}/reviews/mine$)"
+    r"^/api/v1/(admin/|builds|addresses|checkout|orders|reviews/|alerts|auth/me$|auth/me/password$|auth/logout-all$|products/\{slug\}/reviews/mine$)"
 )
 # Paths that are public to read but need a session to write.
 PROTECTED_WRITES = {("post", "/api/v1/products/{slug}/reviews")}

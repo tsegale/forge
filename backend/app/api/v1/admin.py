@@ -85,6 +85,10 @@ def update_product(product_id: int):
     for field in body.model_fields_set:
         setattr(product, field, getattr(body, field))
     db.session.commit()
+    if "price_cents" in body.model_fields_set:
+        from ...tasks import check_price_alerts  # the task module imports the services
+
+        check_price_alerts.delay(product_id)
     return AdminProductResponse.model_validate(product)
 
 
