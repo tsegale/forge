@@ -113,7 +113,7 @@ function CompatibilityNote({ product }: { product: Product }) {
       <p className="font-medium">{verdict.compatible ? 'Fits, with a note' : 'Does not fit your build'}</p>
       <ul className="mt-0.5 flex flex-col gap-1">
         {findings.map((finding) => (
-          <li key={finding.code} className="flex gap-1.5">
+          <li key={`${finding.code}-${finding.product_ids.join('-')}`} className="flex gap-1.5">
             <Icon aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 shrink-0" />
             <span>{finding.message}</span>
           </li>

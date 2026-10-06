@@ -244,7 +244,7 @@ function PickerList({
                   {conflicts.length ? (
                     <ul className="mt-3 flex flex-col gap-2">
                       {conflicts.map((finding) => (
-                        <li key={finding.code}>
+                        <li key={`${finding.code}-${finding.product_ids.join('-')}`}>
                           <FindingItem finding={finding} />
                         </li>
                       ))}

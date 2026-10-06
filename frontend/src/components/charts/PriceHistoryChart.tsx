@@ -68,7 +68,7 @@ export function PriceHistoryChart({
     `highest ${formatCents(high)}.`
 
   return (
-    <figure>
+    <figure className="max-w-3xl">
       <svg
         role="img"
         aria-labelledby={`${id}-t`}

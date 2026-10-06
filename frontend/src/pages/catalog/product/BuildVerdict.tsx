@@ -106,7 +106,7 @@ export function BuildVerdict({
           {[...conflicts, ...warnings].length ? (
             <ul className="mt-2 flex flex-col gap-1.5 text-sm text-ink">
               {[...conflicts, ...warnings].map((finding) => (
-                <li key={finding.code}>{finding.message}</li>
+                <li key={`${finding.code}-${finding.product_ids.join('-')}`}>{finding.message}</li>
               ))}
             </ul>
           ) : (
