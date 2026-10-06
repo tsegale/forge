@@ -2,6 +2,11 @@ import { createBrowserRouter, Navigate, type RouteObject } from 'react-router'
 import { RequireAuth } from '@/auth/RequireAuth'
 import { AppShell } from '@/components/layout/AppShell'
 import { CheckoutShell } from '@/components/layout/CheckoutShell'
+import { AccountLayout } from '@/pages/account/AccountLayout'
+import { AccountOverview } from '@/pages/account/AccountOverview'
+import { AddressesPage } from '@/pages/account/AddressesPage'
+import { AlertsPage } from '@/pages/account/AlertsPage'
+import { ProfilePage } from '@/pages/account/ProfilePage'
 import { AdminLayout } from '@/pages/admin/AdminLayout'
 import { AdminOrderPage } from '@/pages/admin/AdminOrderPage'
 import { AdminOrdersPage } from '@/pages/admin/AdminOrdersPage'
@@ -58,30 +63,23 @@ export const routes: RouteObject[] = [
           { path: 'search', element: <CatalogPage /> },
           { path: 'products/:slug', element: <ProductPage /> },
           { path: 'configurator', element: <ConfiguratorPage /> },
-          {
-            path: 'builds',
-            element: (
-              <RequireAuth>
-                <BuildsPage />
-              </RequireAuth>
-            ),
-          },
           { path: 'cart', element: <CartPage /> },
           {
-            path: 'orders',
+            // The account: one layout and one sign-in gate for every page about the customer's own data.
             element: (
               <RequireAuth>
-                <OrdersPage />
+                <AccountLayout />
               </RequireAuth>
             ),
-          },
-          {
-            path: 'orders/:orderNumber',
-            element: (
-              <RequireAuth>
-                <OrderPage />
-              </RequireAuth>
-            ),
+            children: [
+              { path: 'account', element: <AccountOverview /> },
+              { path: 'account/addresses', element: <AddressesPage /> },
+              { path: 'account/alerts', element: <AlertsPage /> },
+              { path: 'account/profile', element: <ProfilePage /> },
+              { path: 'orders', element: <OrdersPage /> },
+              { path: 'orders/:orderNumber', element: <OrderPage /> },
+              { path: 'builds', element: <BuildsPage /> },
+            ],
           },
           {
             path: 'admin',

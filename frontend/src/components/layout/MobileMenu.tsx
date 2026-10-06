@@ -58,6 +58,11 @@ export function MobileMenu() {
             {user ? (
               <>
                 <li>
+                  <Link to="/account" className={ROW}>
+                    Your account
+                  </Link>
+                </li>
+                <li>
                   <Link to="/orders" className={ROW}>
                     Orders
                   </Link>

@@ -113,6 +113,13 @@ export async function logout(): Promise<void> {
   }
 }
 
+/** End every session of the account, on every device; this tab and its siblings sign out too. */
+export async function logoutEverywhere(): Promise<void> {
+  await withSession(() => unwrap(api.POST('/api/v1/auth/logout-all')))
+  endSession()
+  channel?.postMessage({ type: 'logout' } satisfies Broadcast)
+}
+
 /** The API sets this readable, secret-free cookie beside the HttpOnly refresh cookie. */
 const SESSION_HINT = 'forge_session'
 

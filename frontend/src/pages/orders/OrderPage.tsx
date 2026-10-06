@@ -1,11 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
+import { Breadcrumbs } from '@/components/ui/Breadcrumbs'
 import { Button } from '@/components/ui/Button'
 import { Dialog } from '@/components/ui/Dialog'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import { OrderStatusBadge } from '@/components/ui/OrderStatusBadge'
+import { Skeleton } from '@/components/ui/Skeleton'
 import { formatPrice } from '@/lib/money'
+import { usePageTitle } from '@/lib/usePageTitle'
 import { cancelOrder, orderQuery } from '@/orders/api'
 import { paymentLabel } from '@/orders/status'
 import { useBuyAgain } from '@/orders/useBuyAgain'
@@ -17,6 +20,7 @@ const PLACED = new Intl.DateTimeFormat('en-NA', { dateStyle: 'long', timeStyle: 
 /** One of the customer's orders: progress, parts, totals, address and what they can do next. */
 export function OrderPage() {
   const { orderNumber = '' } = useParams()
+  usePageTitle(`Order ${orderNumber}`)
   const order = useQuery(orderQuery(orderNumber))
   const buyAgain = useBuyAgain()
   const queryClient = useQueryClient()
@@ -31,23 +35,24 @@ export function OrderPage() {
     },
   })
 
-  if (order.isPending) return <p className="text-sm text-ink-muted">Loading</p>
+  if (order.isPending) return <Skeleton className="h-64 w-full" />
   if (order.isError) return <ErrorMessage error={order.error} />
   const o = order.data
   const address = o.shipping_address
 
   return (
     <div className="space-y-6">
-      <nav aria-label="Breadcrumb" className="text-sm text-ink-subtle">
-        <Link to="/orders" className="hover:text-accent">
-          Orders
-        </Link>{' '}
-        / {o.order_number}
-      </nav>
+      <Breadcrumbs
+        items={[
+          { label: 'Account', to: '/account' },
+          { label: 'Orders', to: '/orders' },
+          { label: o.order_number },
+        ]}
+      />
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="flex items-center gap-3 text-2xl font-semibold">
+          <h1 className="flex flex-wrap items-center gap-3 text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
             Order {o.order_number} <OrderStatusBadge status={o.status} />
           </h1>
           <p className="mt-1 text-sm text-ink-muted">

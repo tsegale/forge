@@ -1,5 +1,5 @@
 import * as Menu from '@radix-ui/react-dropdown-menu'
-import { ChevronDown, CircleUser, Layers, LogOut, Package, ShieldCheck } from 'lucide-react'
+import { Bell, ChevronDown, CircleUser, Layers, LogOut, Package, ShieldCheck } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { useAuth } from '@/auth/context'
@@ -60,11 +60,17 @@ export function AccountMenu() {
             <span className="block truncate text-sm text-ink-subtle">{user.email}</span>
           </Menu.Label>
           <Menu.Separator className="my-1 h-px bg-border" />
+          <Item onSelect={() => void navigate('/account')}>
+            <CircleUser aria-hidden="true" /> Your account
+          </Item>
           <Item onSelect={() => void navigate('/orders')}>
             <Package aria-hidden="true" /> Orders
           </Item>
           <Item onSelect={() => void navigate('/builds')}>
             <Layers aria-hidden="true" /> Saved builds
+          </Item>
+          <Item onSelect={() => void navigate('/account/alerts')}>
+            <Bell aria-hidden="true" /> Price alerts
           </Item>
           {user.role === 'admin' ? (
             <Item onSelect={() => void navigate('/admin/orders')}>

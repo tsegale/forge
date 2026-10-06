@@ -47,9 +47,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (status !== 'loading') reconcileDraftOwner(user?.id ?? null)
   }, [status, user])
 
+  const replaceUser = useCallback((updated: session.User) => {
+    setUser((current) => (current?.id === updated.id ? updated : current))
+  }, [])
+
   const value = useMemo<AuthContextValue>(
-    () => ({ status, user, login, logout: session.logout }),
-    [status, user, login],
+    () => ({ status, user, login, logout: session.logout, replaceUser }),
+    [status, user, login, replaceUser],
   )
   return <AuthContext value={value}>{children}</AuthContext>
 }

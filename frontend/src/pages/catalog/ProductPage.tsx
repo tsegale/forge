@@ -28,6 +28,7 @@ import { NotFound } from '@/pages/NotFound'
 import { BuildVerdict } from './product/BuildVerdict'
 import { CompatibleParts } from './product/CompatibleParts'
 import { Gallery } from './product/Gallery'
+import { PriceAlertControl } from './product/PriceAlertControl'
 import { Reviews } from './product/Reviews'
 
 const RANGES = [
@@ -266,6 +267,9 @@ export function ProductPage() {
                 <ErrorMessage error={add.error} />
               </div>
             ) : null}
+            <div className="mt-4">
+              <PriceAlertControl productId={p.id} productName={p.name} priceCents={p.price.amount_cents} />
+            </div>
             <p className="mt-4 flex items-start gap-2 border-t border-border pt-4 text-sm text-ink-muted">
               <Truck aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-ink-subtle" />
               <span>

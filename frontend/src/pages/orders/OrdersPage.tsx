@@ -3,8 +3,11 @@ import { Package } from 'lucide-react'
 import { Link, useSearchParams } from 'react-router'
 import { Button } from '@/components/ui/Button'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
+import { Select } from '@/components/ui/Field'
+import { Skeleton } from '@/components/ui/Skeleton'
 import { OrderStatusBadge } from '@/components/ui/OrderStatusBadge'
 import { formatPrice } from '@/lib/money'
+import { usePageTitle } from '@/lib/usePageTitle'
 import { ordersQuery } from '@/orders/api'
 import { STATUS_LABELS, type OrderStatus } from '@/orders/status'
 import { useBuyAgain } from '@/orders/useBuyAgain'
@@ -18,6 +21,7 @@ function isStatus(value: string | null): value is OrderStatus {
 
 /** The customer's order history, newest first, filterable by status. */
 export function OrdersPage() {
+  usePageTitle('Orders')
   const [params, setParams] = useSearchParams()
   const raw = params.get('status')
   const status = isStatus(raw) ? raw : null
@@ -28,31 +32,29 @@ export function OrdersPage() {
   return (
     <section aria-labelledby="orders-heading">
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <h1 id="orders-heading" className="text-2xl font-semibold">
+        <h1 id="orders-heading" className="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
           Orders
         </h1>
-        <label className="flex items-center gap-2 text-sm">
-          <span className="text-ink-muted">Status</span>
-          <select
-            value={status ?? ''}
-            onChange={(event) => {
-              setParams(event.target.value ? { status: event.target.value } : {}, { replace: true })
-            }}
-            className="rounded-md border border-border-strong bg-surface px-3 py-2"
-          >
-            <option value="">All orders</option>
-            {STATUSES.map((value) => (
-              <option key={value} value={value}>
-                {STATUS_LABELS[value]}
-              </option>
-            ))}
-          </select>
-        </label>
+        <Select
+          label="Status"
+          className="w-52"
+          value={status ?? ''}
+          onChange={(event) => {
+            setParams(event.target.value ? { status: event.target.value } : {}, { replace: true })
+          }}
+        >
+          <option value="">All orders</option>
+          {STATUSES.map((value) => (
+            <option key={value} value={value}>
+              {STATUS_LABELS[value]}
+            </option>
+          ))}
+        </Select>
       </div>
 
       <div className="mt-6 space-y-4">
         <ErrorMessage error={orders.error ?? buyAgain.error} />
-        {orders.isPending ? <p className="text-sm text-ink-muted">Loading</p> : null}
+        {orders.isPending ? <Skeleton className="h-40 w-full" /> : null}
         {orders.isSuccess && rows.length === 0 ? (
           <div className="py-12 text-center">
             <Package aria-hidden="true" className="mx-auto h-10 w-10 text-ink-subtle" />

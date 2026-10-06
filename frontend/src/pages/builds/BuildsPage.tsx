@@ -5,6 +5,7 @@ import { setDraft, useDraft } from '@/builds/store'
 import { Button } from '@/components/ui/Button'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import { formatPrice } from '@/lib/money'
+import { usePageTitle } from '@/lib/usePageTitle'
 
 const STATUS: Record<string, { label: string; className: string }> = {
   draft: { label: 'Draft', className: 'bg-canvas text-ink-muted' },
@@ -16,6 +17,7 @@ const DATE = new Intl.DateTimeFormat('en-NA', { dateStyle: 'medium', timeStyle: 
 
 /** The signed-in customer's saved builds. */
 export function BuildsPage() {
+  usePageTitle('Saved builds')
   const queryClient = useQueryClient()
   const builds = useQuery(buildsQuery)
   const draft = useDraft()
@@ -30,7 +32,7 @@ export function BuildsPage() {
   return (
     <section aria-labelledby="builds-heading">
       <div className="flex items-center justify-between">
-        <h1 id="builds-heading" className="text-2xl font-semibold">
+        <h1 id="builds-heading" className="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
           My builds
         </h1>
         <Button asChild>
