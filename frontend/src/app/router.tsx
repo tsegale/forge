@@ -18,6 +18,7 @@ import { PayPage } from '@/pages/checkout/PayPage'
 import { CatalogPage } from '@/pages/catalog/CatalogPage'
 import { ProductPage } from '@/pages/catalog/ProductPage'
 import { ConfiguratorPage } from '@/pages/configurator/ConfiguratorPage'
+import { RouteError } from '@/pages/errors/RouteError'
 import { NotFound } from '@/pages/NotFound'
 import { OrderPage } from '@/pages/orders/OrderPage'
 import { OrdersPage } from '@/pages/orders/OrdersPage'
@@ -31,66 +32,79 @@ export const routes: RouteObject[] = [
         <CheckoutShell />
       </RequireAuth>
     ),
+    errorElement: <RouteError />,
     children: [
-      { path: 'checkout', element: <CheckoutPage /> },
-      { path: 'orders/:orderNumber/pay', element: <PayPage /> },
-      { path: 'orders/:orderNumber/confirmation', element: <ConfirmationPage /> },
+      {
+        // A failing page renders inside the frame, not instead of it.
+        errorElement: <RouteError />,
+        children: [
+          { path: 'checkout', element: <CheckoutPage /> },
+          { path: 'orders/:orderNumber/pay', element: <PayPage /> },
+          { path: 'orders/:orderNumber/confirmation', element: <ConfirmationPage /> },
+        ],
+      },
     ],
   },
   {
     element: <AppShell />,
+    errorElement: <RouteError />,
     children: [
-      { index: true, element: <CatalogPage /> },
-      { path: 'shop', element: <CatalogPage /> },
-      { path: 'shop/:kind', element: <CatalogPage /> },
-      { path: 'search', element: <CatalogPage /> },
-      { path: 'products/:slug', element: <ProductPage /> },
-      { path: 'configurator', element: <ConfiguratorPage /> },
       {
-        path: 'builds',
-        element: (
-          <RequireAuth>
-            <BuildsPage />
-          </RequireAuth>
-        ),
-      },
-      { path: 'cart', element: <CartPage /> },
-      {
-        path: 'orders',
-        element: (
-          <RequireAuth>
-            <OrdersPage />
-          </RequireAuth>
-        ),
-      },
-      {
-        path: 'orders/:orderNumber',
-        element: (
-          <RequireAuth>
-            <OrderPage />
-          </RequireAuth>
-        ),
-      },
-      {
-        path: 'admin',
-        element: (
-          <RequireAuth admin>
-            <AdminLayout />
-          </RequireAuth>
-        ),
+        errorElement: <RouteError />,
         children: [
-          { index: true, element: <Navigate to="orders" replace /> },
-          { path: 'orders', element: <AdminOrdersPage /> },
-          { path: 'orders/:orderNumber', element: <AdminOrderPage /> },
-          { path: 'inventory', element: <InventoryPage /> },
+          { index: true, element: <CatalogPage /> },
+          { path: 'shop', element: <CatalogPage /> },
+          { path: 'shop/:kind', element: <CatalogPage /> },
+          { path: 'search', element: <CatalogPage /> },
+          { path: 'products/:slug', element: <ProductPage /> },
+          { path: 'configurator', element: <ConfiguratorPage /> },
+          {
+            path: 'builds',
+            element: (
+              <RequireAuth>
+                <BuildsPage />
+              </RequireAuth>
+            ),
+          },
+          { path: 'cart', element: <CartPage /> },
+          {
+            path: 'orders',
+            element: (
+              <RequireAuth>
+                <OrdersPage />
+              </RequireAuth>
+            ),
+          },
+          {
+            path: 'orders/:orderNumber',
+            element: (
+              <RequireAuth>
+                <OrderPage />
+              </RequireAuth>
+            ),
+          },
+          {
+            path: 'admin',
+            element: (
+              <RequireAuth admin>
+                <AdminLayout />
+              </RequireAuth>
+            ),
+            children: [
+              { index: true, element: <Navigate to="orders" replace /> },
+              { path: 'orders', element: <AdminOrdersPage /> },
+              { path: 'orders/:orderNumber', element: <AdminOrderPage /> },
+              { path: 'inventory', element: <InventoryPage /> },
+            ],
+          },
+          { path: 'styleguide', element: <StyleguidePage /> },
+          { path: 'login', element: <LoginPage /> },
+          { path: 'register', element: <RegisterPage /> },
+          { path: 'forgot-password', element: <ForgotPasswordPage /> },
+          { path: 'reset-password', element: <ResetPasswordPage /> },
+          { path: '*', element: <NotFound /> },
         ],
       },
-      { path: 'styleguide', element: <StyleguidePage /> },
-      { path: 'login', element: <LoginPage /> },
-      { path: 'register', element: <RegisterPage /> },
-      { path: 'forgot-password', element: <ForgotPasswordPage /> },
-      { path: 'reset-password', element: <ResetPasswordPage /> },
-      { path: '*', element: <NotFound /> },
     ],
   },
 ]

@@ -3,6 +3,7 @@
  * generated from the backend's OpenAPI document (npm run api:types); CI fails if it is stale.
  */
 import createClient, { type Middleware } from 'openapi-fetch'
+import { finishCall, parseServerTiming, redact, startCall } from '@/inspector/store'
 import { networkError, toApiError } from './errors'
 import type { paths } from './schema'
 
@@ -28,6 +29,45 @@ const authHeader: Middleware = {
   },
 }
 
+const callIds = new WeakMap<Request, number>()
+
+function errorCode(text: string): string | null {
+  try {
+    const body = JSON.parse(text) as { error?: { code?: unknown } }
+    return typeof body.error?.code === 'string' ? body.error.code : null
+  } catch {
+    return null
+  }
+}
+
+/** Records each call for the API Inspector (redacted, this tab only). */
+const inspector: Middleware = {
+  async onRequest({ request }) {
+    const body = request.body ? await request.clone().text() : null
+    const url = new URL(request.url)
+    callIds.set(request, startCall(request.method, url.pathname + url.search, body))
+    return undefined
+  },
+  async onResponse({ request, response }) {
+    const id = callIds.get(request)
+    if (id === undefined) return undefined
+    const text = response.status === 204 ? '' : await response.clone().text()
+    finishCall(id, {
+      status: response.status,
+      requestId: response.headers.get('X-Request-ID'),
+      timing: parseServerTiming(response.headers.get('Server-Timing')),
+      responseBody: text ? redact(text) : null,
+      errorCode: response.ok ? null : errorCode(text),
+    })
+    return undefined
+  },
+  onError({ request }) {
+    const id = callIds.get(request)
+    if (id !== undefined) finishCall(id, { errorCode: 'network_error' })
+    return undefined
+  },
+}
+
 // Same origin as the page (Nginx serves both in production, the Vite proxy in development), so
 // cookies flow and no CORS is involved.
 export const api = createClient<paths>({
@@ -36,7 +76,7 @@ export const api = createClient<paths>({
   // Resolve fetch at call time, not at import time, so instrumentation (and test mocks) apply.
   fetch: (request: Request) => globalThis.fetch(request),
 })
-api.use(authHeader)
+api.use(inspector, authHeader)
 
 interface Result<T> {
   data?: T

@@ -1,5 +1,6 @@
 import { ChevronLeft, Lock } from 'lucide-react'
 import { Link, Outlet } from 'react-router'
+import { ApiInspector, InspectorToggle } from '@/components/inspector/ApiInspector'
 import { Logo } from '@/components/ui/Logo'
 import { Toaster } from '@/components/ui/Toast'
 
@@ -41,8 +42,10 @@ export function CheckoutShell() {
             <ChevronLeft aria-hidden="true" className="h-4 w-4" /> Return to the store
           </Link>
           <p>Prices in Namibian dollars (N$), VAT included. Card payments are handled by Stripe.</p>
+          <InspectorToggle />
         </div>
       </footer>
+      <ApiInspector />
       <Toaster />
     </div>
   )

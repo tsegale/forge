@@ -1,6 +1,7 @@
 import { Layers } from 'lucide-react'
 import { Link, Outlet } from 'react-router'
 import { useAuth } from '@/auth/context'
+import { ApiInspector, InspectorToggle } from '@/components/inspector/ApiInspector'
 import { Logo } from '@/components/ui/Logo'
 import { Toaster } from '@/components/ui/Toast'
 import { AccountMenu } from './AccountMenu'
@@ -61,8 +62,9 @@ export function AppShell() {
       <main id="main" tabIndex={-1} className={`${CONTAINER} flex-1 py-8 focus:outline-none`}>
         <Outlet />
       </main>
-      <SiteFooter />
+      <SiteFooter inspector={<InspectorToggle />} />
       <MiniCart />
+      <ApiInspector />
       <Toaster />
     </div>
   )
