@@ -44,7 +44,17 @@ from ..models import (
     StorageProduct,
 )
 from ..models.enums import KindCode
-from ..schemas.catalog import ProductPage, ProductQuery
+from ..schemas.catalog import (
+    BrandFacet,
+    CandidateCompatibility,
+    KindFacet,
+    PriceRange,
+    ProductFacets,
+    ProductFilters,
+    ProductPage,
+    ProductQuery,
+)
+from ..schemas.findings import FindingResponse
 from .catalog import SUBTYPES, load_products, to_summary
 
 KIND_CLASSES: dict[KindCode, type[Product]] = {
@@ -214,7 +224,7 @@ def _category_subtree(slug: str) -> Select[tuple[int]]:
     return select(root.c.id)
 
 
-def _spec_predicates(params: ProductQuery) -> list[ColumnElement[bool]]:
+def _spec_predicates(params: ProductFilters) -> list[ColumnElement[bool]]:
     used = {name: getattr(params, name) for name in SPEC_FILTERS if getattr(params, name) is not None}
     if not used:
         return []
@@ -241,7 +251,7 @@ def _spec_predicates(params: ProductQuery) -> list[ColumnElement[bool]]:
     return [SPEC_FILTERS[name][params.kind](value) for name, value in used.items()]
 
 
-def compatibility_base(params: ProductQuery) -> BuildContext | None:
+def compatibility_base(params: ProductFilters) -> BuildContext | None:
     """The build that candidates are judged against: the compatible_with parts, minus the part
     a candidate of a single-slot kind would replace."""
     if params.compatible_with is None:
@@ -275,44 +285,58 @@ def _compatibility_predicates(base: BuildContext, kind: KindCode) -> list[Column
     return [p for rule in RULES if (p := rule.compatible_filter(base, kind)) is not None]
 
 
-def _candidate_warnings(base: BuildContext, product: Product) -> list[str]:
-    candidate = base.with_candidate(product)
-    codes = {
-        f.code
-        for rule in RULES
-        for f in rule.check(candidate)
-        if f.severity is Severity.WARNING and product.id in f.product_ids
-    }
-    return sorted(codes)
+def _entity(params: ProductFilters) -> type[Product]:
+    return KIND_CLASSES.get(params.kind, Product) if params.kind else Product
 
 
-def build_query(params: ProductQuery, base: BuildContext | None = None) -> Select[tuple[Product]]:
-    entity = KIND_CLASSES.get(params.kind, Product) if params.kind else Product
-    stmt = select(entity).where(Product.is_active).options(selectinload(Product.inventory))
+def _in_stock() -> ColumnElement[bool]:
+    available = (
+        select(Inventory.product_id)
+        .where(Inventory.quantity_on_hand - Inventory.quantity_reserved > 0)
+        .scalar_subquery()
+    )
+    return Product.id.in_(available)
+
+
+def filter_clauses(
+    params: ProductFilters,
+    base: BuildContext | None = None,
+    *,
+    compatible_only: bool = True,
+    skip: frozenset[str] = frozenset(),
+) -> list[ColumnElement[bool]]:
+    """Every WHERE condition the filters imply. ``skip`` leaves some out, so a facet can count
+    the alternatives to its own filter (brand counts ignore the brand filter, and so on)."""
+    clauses: list[ColumnElement[bool]] = [Product.is_active]
+    if params.kind is not None:
+        clauses.append(Product.kind_code == params.kind.value)
+    if params.q:
+        clauses.append(search_predicate(params.q))
+    if params.category:
+        clauses.append(Product.category_id.in_(_category_subtree(params.category)))
+    if params.brand and "brand" not in skip:
+        clauses.append(Product.brand_id.in_(select(Brand.id).where(Brand.slug.in_(params.brand))))
+    if "price" not in skip:
+        if params.min_price is not None:
+            clauses.append(Product.price_cents >= params.min_price)
+        if params.max_price is not None:
+            clauses.append(Product.price_cents <= params.max_price)
+    if params.in_stock is not None and "in_stock" not in skip:
+        clauses.append(_in_stock() if params.in_stock else ~_in_stock())
+    clauses.extend(_spec_predicates(params))
+    if base is not None and params.kind is not None and compatible_only:
+        clauses.extend(_compatibility_predicates(base, params.kind))
+    return clauses
+
+
+def build_query(
+    params: ProductFilters, base: BuildContext | None = None, *, compatible_only: bool = True
+) -> Select[tuple[Product]]:
+    entity = _entity(params)
+    stmt = select(entity).where(*filter_clauses(params, base, compatible_only=compatible_only))
+    stmt = stmt.options(selectinload(Product.inventory))
     if entity is Product:
         stmt = stmt.options(selectin_polymorphic(Product, SUBTYPES))
-    if params.kind is not None:
-        stmt = stmt.where(Product.kind_code == params.kind.value)
-    if params.q:
-        stmt = stmt.where(search_predicate(params.q))
-    if params.category:
-        stmt = stmt.where(Product.category_id.in_(_category_subtree(params.category)))
-    if params.brand:
-        stmt = stmt.where(Product.brand_id.in_(select(Brand.id).where(Brand.slug.in_(params.brand))))
-    if params.min_price is not None:
-        stmt = stmt.where(Product.price_cents >= params.min_price)
-    if params.max_price is not None:
-        stmt = stmt.where(Product.price_cents <= params.max_price)
-    if params.in_stock is not None:
-        available = (
-            select(Inventory.product_id)
-            .where(Inventory.quantity_on_hand - Inventory.quantity_reserved > 0)
-            .scalar_subquery()
-        )
-        stmt = stmt.where(Product.id.in_(available) if params.in_stock else Product.id.not_in(available))
-    stmt = stmt.where(*_spec_predicates(params))
-    if base is not None and params.kind is not None:
-        stmt = stmt.where(*_compatibility_predicates(base, params.kind))
     return stmt
 
 
@@ -327,7 +351,8 @@ def list_products(params: ProductQuery) -> ProductPage:
     base = compatibility_base(params)
     # The sort key is selected alongside each product so the cursor carries the exact value
     # the database compared, including computed keys such as search relevance.
-    stmt = build_query(params, base).add_columns(sort.column.label("sort_key"))
+    stmt = build_query(params, base, compatible_only=not params.include_incompatible)
+    stmt = stmt.add_columns(sort.column.label("sort_key"))
     after = _decode_cursor(params, sort)
     if after is not None:
         stmt = _seek(stmt, sort, after)
@@ -345,5 +370,64 @@ def list_products(params: ProductQuery) -> ProductPage:
 def _summarise(product: Product, base: BuildContext | None):
     summary = to_summary(product)
     if base is not None:
-        summary.compatibility_warnings = _candidate_warnings(base, product)
+        summary.compatibility = candidate_compatibility(base, product)
+        summary.compatibility_warnings = sorted({f.code for f in summary.compatibility.warnings})
     return summary
+
+
+def candidate_compatibility(base: BuildContext, product: Product) -> CandidateCompatibility:
+    """What the engine says about this part joining the build: only the findings it is part of,
+    so problems the build already had are not blamed on the candidate."""
+    findings = sorted(
+        (f for rule in RULES for f in rule.check(base.with_candidate(product)) if product.id in f.product_ids),
+        key=lambda f: f.sort_key,
+    )
+    conflicts = [FindingResponse.from_finding(f) for f in findings if f.severity is Severity.CONFLICT]
+    warnings = [FindingResponse.from_finding(f) for f in findings if f.severity is Severity.WARNING]
+    return CandidateCompatibility(compatible=not conflicts, conflicts=conflicts, warnings=warnings)
+
+
+def _count(params: ProductFilters, clauses: list[ColumnElement[bool]]) -> int:
+    return db.session.scalar(select(func.count()).select_from(_entity(params)).where(*clauses)) or 0
+
+
+def product_facets(params: ProductFilters) -> ProductFacets:
+    """Counts for the filter sidebar. Each facet ignores its own filter (disjunctive faceting),
+    so choosing one brand still shows how many products the other brands would add."""
+    base = compatibility_base(params)
+    entity = _entity(params)
+    total = _count(params, filter_clauses(params, base))
+    incompatible = None
+    if base is not None:
+        incompatible = _count(params, filter_clauses(params, base, compatible_only=False)) - total
+
+    in_stock = _count(params, [*filter_clauses(params, base, skip=frozenset({"in_stock"})), _in_stock()])
+    brand_rows = db.session.execute(
+        select(Brand.slug, Brand.name, func.count().label("n"))
+        .select_from(entity)
+        .join(Brand, Brand.id == Product.brand_id)
+        .where(*filter_clauses(params, base, skip=frozenset({"brand"})))
+        .group_by(Brand.id)
+        .order_by(func.count().desc(), Brand.name)
+    ).all()
+    # Kinds: everything but the kind itself, and what only applies within one (specs, the build).
+    across_kinds = params.model_copy(update={"kind": None, "compatible_with": None, **dict.fromkeys(SPEC_FILTERS)})
+    kind_rows = db.session.execute(
+        select(Product.kind_code, func.count().label("n"))
+        .where(*filter_clauses(across_kinds))
+        .group_by(Product.kind_code)
+        .order_by(func.count().desc(), Product.kind_code)
+    ).all()
+    low, high = db.session.execute(
+        select(func.min(Product.price_cents), func.max(Product.price_cents))
+        .select_from(entity)
+        .where(*filter_clauses(params, base, skip=frozenset({"price"})))
+    ).one()
+    return ProductFacets(
+        total=total,
+        incompatible=incompatible,
+        in_stock=in_stock,
+        kinds=[KindFacet(kind=kind, count=n) for kind, n in kind_rows],
+        brands=[BrandFacet(slug=slug, name=name, count=n) for slug, name, n in brand_rows],
+        price=PriceRange(min_cents=low, max_cents=high) if low is not None else None,
+    )

@@ -28,6 +28,7 @@ export function cpu(overrides: Partial<ProductSummary> = {}): ProductSummary {
       includes_cooler: false,
     },
     compatibility_warnings: null,
+    compatibility: null,
     ...overrides,
   }
 }
@@ -59,6 +60,7 @@ export function psu(overrides: Partial<ProductSummary> = {}): ProductSummary {
       atx_version: '3.1',
     },
     compatibility_warnings: null,
+    compatibility: null,
     ...overrides,
   }
 }

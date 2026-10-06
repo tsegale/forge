@@ -51,6 +51,7 @@ const SAMPLE: Product = {
     includes_cooler: false,
   },
   compatibility_warnings: null,
+  compatibility: null,
 }
 
 const SAMPLE_GPU: Product = {

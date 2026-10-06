@@ -83,6 +83,44 @@ def test_sql_filter_agrees_with_the_engine(client, session, product_by_sku, base
     )
 
 
+@pytest.mark.parametrize("base_name", [name for name, skus in BASES.items() if skus])
+@pytest.mark.parametrize("kind", KINDS, ids=[k.value for k in KINDS])
+def test_include_incompatible_lists_every_part_with_the_engine_verdict(
+    client, session, product_by_sku, base_name, kind
+):
+    parts = [product_by_sku(s) for s in BASES[base_name]]
+    ctx = BuildContext(Part(p) for p in parts)
+    base = ctx.without_kind(kind) if kind in SINGLE_SLOT_KINDS else ctx
+    candidates = session.scalars(select(Product).where(Product.kind_code == kind.value, Product.is_active)).all()
+
+    ids = ",".join(str(p.id) for p in parts)
+    response = client.get(f"{PRODUCTS}?kind={kind.value}&limit=100&compatible_with={ids}&include_incompatible=true")
+    assert response.status_code == 200, response.get_json()
+    listed = {i["id"]: i["compatibility"] for i in response.get_json()["items"]}
+    assert set(listed) == {p.id for p in candidates}
+    for product in candidates:
+        engine = [f for f in evaluate(base.with_candidate(product), []).conflicts if product.id in f.product_ids]
+        verdict = listed[product.id]
+        assert verdict["compatible"] is (not engine), f"{product.sku} vs {base_name}"
+        assert sorted(c["code"] for c in verdict["conflicts"]) == sorted(f.code for f in engine)
+
+
+def test_conflicts_carry_the_measured_reason(client, product_by_sku):
+    itx = _ids(product_by_sku, BASES["itx_full_slots"])
+    response = client.get(
+        f"{PRODUCTS}?kind=gpu&limit=100&compatible_with={','.join(map(str, itx))}&include_incompatible=true"
+    )
+    gpus = {i["id"]: i["compatibility"] for i in response.get_json()["items"]}
+    big = gpus[product_by_sku("FRG-GPU-ASUS-4080S-TUF").id]
+    assert big["compatible"] is False
+    conflict = next(c for c in big["conflicts"] if c["code"] == "GPU_TOO_LONG")
+    assert conflict["message"] and conflict["details"]
+
+
+def test_include_incompatible_needs_a_build(client):
+    assert client.get(f"{PRODUCTS}?kind=gpu&include_incompatible=true").status_code == 422
+
+
 def test_filters_actually_exclude_something(client, product_by_sku):
     """Guards the parity test against passing vacuously."""
     itx = _ids(product_by_sku, BASES["itx_full_slots"])

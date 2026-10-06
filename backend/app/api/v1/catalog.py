@@ -8,6 +8,8 @@ from ...schemas.catalog import (
     BrandList,
     CategoryList,
     ProductDetail,
+    ProductFacets,
+    ProductFilters,
     ProductPage,
     ProductQuery,
     SearchSuggestions,
@@ -34,6 +36,15 @@ def categories():
 def brands():
     """All brands, alphabetically."""
     return BrandList(items=catalog_service.list_brands())
+
+
+@bp.get("/products/facets")
+@api.validate(query=ProductFilters, resp=responses(422, HTTP_200=ProductFacets), tags=[TAG])
+def product_facets():
+    """Counts for a filter sidebar, from the same filters as GET /products: the total, brands,
+    price span and stock. Each facet ignores its own filter, so the alternatives stay visible.
+    With compatible_with, also how many matches were left out as incompatible."""
+    return catalog_query.product_facets(request.context.query)
 
 
 @bp.get("/products/<string:slug>")

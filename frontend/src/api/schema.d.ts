@@ -649,6 +649,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/products/facets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Counts for a filter sidebar, from the same filters as GET /products: the total, brands, price span and stock. Each facet ignores its own filter, so the alternatives stay visible. With compatible_with, also how many matches were left out as incompatible. */
+        get: operations["get__api_v1_products_facets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/products/{slug}": {
         parameters: {
             query?: never;
@@ -1051,6 +1068,18 @@ export interface components {
             /** Quantity Available */
             quantity_available: number;
         };
+        /** BrandFacet */
+        BrandFacet: {
+            /**
+             * Count
+             * @description Matches with this brand, counting every other filter except brand.
+             */
+            count: number;
+            /** Name */
+            name: string;
+            /** Slug */
+            slug: string;
+        };
         /** BrandList */
         BrandList: {
             /** Items */
@@ -1176,6 +1205,21 @@ export interface components {
             power: components["schemas"]["PowerResponse"];
             /** @description validated only when the build is both compatible and complete. */
             status: components["schemas"]["BuildStatus"];
+            /** Warnings */
+            warnings: components["schemas"]["FindingResponse"][];
+        };
+        /** CandidateCompatibility */
+        CandidateCompatibility: {
+            /**
+             * Compatible
+             * @description Adding the part (or swapping it in, for a single-slot kind) adds no conflict.
+             */
+            compatible: boolean;
+            /**
+             * Conflicts
+             * @description Conflicts this part would cause; only listed with include_incompatible.
+             */
+            conflicts: components["schemas"]["FindingResponse"][];
             /** Warnings */
             warnings: components["schemas"]["FindingResponse"][];
         };
@@ -1521,6 +1565,16 @@ export interface components {
          * @enum {string}
          */
         KindCode: "cpu" | "motherboard" | "memory" | "gpu" | "storage" | "psu" | "case" | "cooler" | "accessory";
+        /** KindFacet */
+        KindFacet: {
+            /**
+             * Count
+             * @description Matches of this kind, ignoring the kind and spec filters.
+             */
+            count: number;
+            /** Kind */
+            kind: string;
+        };
         /** Liveness */
         Liveness: {
             /**
@@ -1716,11 +1770,23 @@ export interface components {
              */
             currency: string;
         };
+        /** PriceRange */
+        PriceRange: {
+            /** Max Cents */
+            max_cents: number;
+            /** Min Cents */
+            min_cents: number;
+        };
         /** ProductDetail */
         ProductDetail: {
             availability: components["schemas"]["Availability"];
             brand: components["schemas"]["BrandResponse"];
             category: components["schemas"]["CategoryRef"];
+            /**
+             * @description With compatible_with: how this part would fit that build, with the measured reasons. Null otherwise.
+             * @default null
+             */
+            compatibility: components["schemas"]["CandidateCompatibility"] | null;
             /**
              * Compatibility Warnings
              * @description With compatible_with: warning codes this part would add to that build. Null otherwise.
@@ -1743,6 +1809,190 @@ export interface components {
             /** Specs */
             specs: components["schemas"]["CpuSpecs"] | components["schemas"]["MotherboardSpecs"] | components["schemas"]["MemorySpecs"] | components["schemas"]["GpuSpecs"] | components["schemas"]["StorageSpecs"] | components["schemas"]["PsuSpecs"] | components["schemas"]["CaseSpecs"] | components["schemas"]["CoolerSpecs"] | components["schemas"]["AccessorySpecs"];
         };
+        /** ProductFacets */
+        ProductFacets: {
+            /**
+             * Brands
+             * @description Brands among the matches, most products first.
+             */
+            brands: components["schemas"]["BrandFacet"][];
+            /**
+             * In Stock
+             * @description Of the matches, how many are in stock (ignoring the in_stock filter).
+             */
+            in_stock: number;
+            /**
+             * Incompatible
+             * @description With compatible_with: matching parts left out because they would conflict. Null otherwise.
+             */
+            incompatible: number | null;
+            /**
+             * Kinds
+             * @description Component kinds among the matches, most products first.
+             */
+            kinds: components["schemas"]["KindFacet"][];
+            /** @description Price span of the matches, ignoring the price filters. */
+            price: components["schemas"]["PriceRange"] | null;
+            /**
+             * Total
+             * @description Products the same filters list (with compatible_with: the compatible ones).
+             */
+            total: number;
+        };
+        /**
+         * ProductFilters
+         * @description What selects products, shared by GET /products and GET /products/facets. Unknown parameters
+         *     are rejected rather than ignored, so a misspelled filter fails loudly instead of silently
+         *     returning unfiltered results.
+         */
+        ProductFilters: {
+            /**
+             * Brand
+             * @description Brand slugs, comma-separated or repeated (brand=amd,intel or brand=amd&brand=intel).
+             * @default null
+             */
+            brand: string[] | null;
+            /**
+             * Capacity Min Gb
+             * @description memory (kit total), storage.
+             * @default null
+             */
+            capacity_min_gb: number | null;
+            /**
+             * Category
+             * @description Category slug; includes its subcategories.
+             * @default null
+             */
+            category: string | null;
+            /**
+             * Chipset
+             * @description motherboard, gpu; substring match.
+             * @default null
+             */
+            chipset: string | null;
+            /**
+             * Compatible With
+             * @description Product ids of a build (comma-separated or repeated). Lists only parts of `kind` that would not conflict with it; a part of a single-slot kind (cpu, motherboard, psu, case, cooler) is judged as a replacement for the build's current one. Requires `kind`.
+             * @default null
+             */
+            compatible_with: number[] | null;
+            /**
+             * @description cooler.
+             * @default null
+             */
+            cooler_type: components["schemas"]["CoolerType"] | null;
+            /**
+             * Cores Min
+             * @description cpu.
+             * @default null
+             */
+            cores_min: number | null;
+            /**
+             * @description psu.
+             * @default null
+             */
+            efficiency: components["schemas"]["PsuEfficiency"] | null;
+            /**
+             * Fits Cooler Height Mm
+             * @description case: cooler clearance at least this.
+             * @default null
+             */
+            fits_cooler_height_mm: number | null;
+            /**
+             * Fits Gpu Length Mm
+             * @description case: GPU clearance at least this.
+             * @default null
+             */
+            fits_gpu_length_mm: number | null;
+            /**
+             * Form Factor
+             * @description motherboard (board), case (supported board), psu, storage.
+             * @default null
+             */
+            form_factor: string | null;
+            /**
+             * Has Integrated Graphics
+             * @description cpu.
+             * @default null
+             */
+            has_integrated_graphics: boolean | null;
+            /**
+             * Height Max Mm
+             * @description cooler.
+             * @default null
+             */
+            height_max_mm: number | null;
+            /**
+             * In Stock
+             * @default null
+             */
+            in_stock: boolean | null;
+            /**
+             * @description storage.
+             * @default null
+             */
+            interface: components["schemas"]["StorageInterface"] | null;
+            /** @default null */
+            kind: components["schemas"]["KindCode"] | null;
+            /**
+             * Length Max Mm
+             * @description gpu.
+             * @default null
+             */
+            length_max_mm: number | null;
+            /**
+             * Max Price
+             * @description Inclusive, in minor units.
+             * @default null
+             */
+            max_price: number | null;
+            /**
+             * @description motherboard, memory.
+             * @default null
+             */
+            memory_type: components["schemas"]["MemoryType"] | null;
+            /**
+             * Min Price
+             * @description Inclusive, in minor units.
+             * @default null
+             */
+            min_price: number | null;
+            /**
+             * @description psu.
+             * @default null
+             */
+            modularity: components["schemas"]["PsuModularity"] | null;
+            /**
+             * Q
+             * @description Search: words, model fragments (x3d) and typos.
+             * @default null
+             */
+            q: string | null;
+            /**
+             * Socket
+             * @description cpu, motherboard, cooler (supported socket).
+             * @default null
+             */
+            socket: string | null;
+            /**
+             * Speed Min Mts
+             * @description memory.
+             * @default null
+             */
+            speed_min_mts: number | null;
+            /**
+             * Vram Min Gb
+             * @description gpu.
+             * @default null
+             */
+            vram_min_gb: number | null;
+            /**
+             * Wattage Min W
+             * @description psu.
+             * @default null
+             */
+            wattage_min_w: number | null;
+        };
         /** ProductPage */
         ProductPage: {
             /** Items */
@@ -1755,8 +2005,7 @@ export interface components {
         };
         /**
          * ProductQuery
-         * @description Query string for GET /products. Unknown parameters are rejected rather than ignored, so a
-         *     misspelled filter fails loudly instead of silently returning unfiltered results.
+         * @description Query string for GET /products.
          */
         ProductQuery: {
             /**
@@ -1847,6 +2096,12 @@ export interface components {
              */
             in_stock: boolean | null;
             /**
+             * Include Incompatible
+             * @description With compatible_with: list conflicting parts too, each with `compatibility.conflicts` saying why, instead of leaving them out.
+             * @default false
+             */
+            include_incompatible: boolean;
+            /**
              * @description storage.
              * @default null
              */
@@ -1927,6 +2182,11 @@ export interface components {
         ProductSummary: {
             availability: components["schemas"]["Availability"];
             brand: components["schemas"]["BrandResponse"];
+            /**
+             * @description With compatible_with: how this part would fit that build, with the measured reasons. Null otherwise.
+             * @default null
+             */
+            compatibility: components["schemas"]["CandidateCompatibility"] | null;
             /**
              * Compatibility Warnings
              * @description With compatible_with: warning codes this part would add to that build. Null otherwise.
@@ -4532,11 +4792,102 @@ export interface operations {
                 /** @description Inclusive, in minor units. */
                 max_price?: number | null;
                 in_stock?: boolean | null;
+                /** @description Product ids of a build (comma-separated or repeated). Lists only parts of `kind` that would not conflict with it; a part of a single-slot kind (cpu, motherboard, psu, case, cooler) is judged as a replacement for the build's current one. Requires `kind`. */
+                compatible_with?: number[] | null;
+                /** @description cpu, motherboard, cooler (supported socket). */
+                socket?: string | null;
+                /** @description motherboard, memory. */
+                memory_type?: components["schemas"]["MemoryType"] | null;
+                /** @description motherboard (board), case (supported board), psu, storage. */
+                form_factor?: string | null;
+                /** @description motherboard, gpu; substring match. */
+                chipset?: string | null;
+                /** @description cpu. */
+                cores_min?: number | null;
+                /** @description cpu. */
+                has_integrated_graphics?: boolean | null;
+                /** @description memory (kit total), storage. */
+                capacity_min_gb?: number | null;
+                /** @description memory. */
+                speed_min_mts?: number | null;
+                /** @description gpu. */
+                vram_min_gb?: number | null;
+                /** @description gpu. */
+                length_max_mm?: number | null;
+                /** @description case: GPU clearance at least this. */
+                fits_gpu_length_mm?: number | null;
+                /** @description case: cooler clearance at least this. */
+                fits_cooler_height_mm?: number | null;
+                /** @description cooler. */
+                height_max_mm?: number | null;
+                /** @description cooler. */
+                cooler_type?: components["schemas"]["CoolerType"] | null;
+                /** @description psu. */
+                wattage_min_w?: number | null;
+                /** @description psu. */
+                efficiency?: components["schemas"]["PsuEfficiency"] | null;
+                /** @description psu. */
+                modularity?: components["schemas"]["PsuModularity"] | null;
+                /** @description storage. */
+                interface?: components["schemas"]["StorageInterface"] | null;
                 /** @description Defaults to relevance with q, otherwise name. */
                 sort?: ("relevance" | "price" | "-price" | "name" | "-name" | "newest") | null;
                 limit?: number;
                 /** @description Opaque; from next_cursor of the previous page. */
                 cursor?: string | null;
+                /** @description With compatible_with: list conflicting parts too, each with `compatibility.conflicts` saying why, instead of leaving them out. */
+                include_incompatible?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductPage"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get__api_v1_products_facets: {
+        parameters: {
+            query?: {
+                /** @description Search: words, model fragments (x3d) and typos. */
+                q?: string | null;
+                kind?: components["schemas"]["KindCode"] | null;
+                /** @description Category slug; includes its subcategories. */
+                category?: string | null;
+                /** @description Brand slugs, comma-separated or repeated (brand=amd,intel or brand=amd&brand=intel). */
+                brand?: string[] | null;
+                /** @description Inclusive, in minor units. */
+                min_price?: number | null;
+                /** @description Inclusive, in minor units. */
+                max_price?: number | null;
+                in_stock?: boolean | null;
                 /** @description Product ids of a build (comma-separated or repeated). Lists only parts of `kind` that would not conflict with it; a part of a single-slot kind (cpu, motherboard, psu, case, cooler) is judged as a replacement for the build's current one. Requires `kind`. */
                 compatible_with?: number[] | null;
                 /** @description cpu, motherboard, cooler (supported socket). */
@@ -4588,16 +4939,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProductPage"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
+                    "application/json": components["schemas"]["ProductFacets"];
                 };
             };
             /** @description Unprocessable Content */
