@@ -12,6 +12,9 @@ export const defaultHandlers = [
   http.get('/api/v1/cart', () => HttpResponse.json(emptyCart)),
   http.get('/api/v1/component-kinds', () => HttpResponse.json(kinds)),
   http.get('/api/v1/products/facets', () => HttpResponse.json(facets())),
+  http.get('/api/v1/products/price-drops', () => HttpResponse.json({ items: [] })),
+  http.get('/api/v1/products/back-in-stock', () => HttpResponse.json({ items: [] })),
+  http.get('/api/v1/builds/featured', () => HttpResponse.json({ items: [] })),
   http.get('/api/v1/search/suggest', ({ request }) =>
     HttpResponse.json({
       query: new URL(request.url).searchParams.get('q') ?? '',

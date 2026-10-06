@@ -472,7 +472,9 @@ def reset(seed_path: Path = DEFAULT_SEED) -> dict[str, int]:
     db.session.execute(delete(Address).where(Address.user_id == customer.id))
     db.session.add(Address(user_id=customer.id, type=AddressType.SHIPPING, is_default=True, **ADDRESS))
     orders = [
-        _past_order(customer, admin, lines, final, days, n) for n, (lines, final, days) in enumerate(PAST_ORDERS, 1)
+        _past_order(customer, admin, lines, final, days, n)
+        # Oldest first, so order numbers follow the dates (lists sort by id, as real orders do).
+        for n, (lines, final, days) in enumerate(sorted(PAST_ORDERS, key=lambda o: -o[2]), 1)
     ]
     _demo_build(customer)
     featured = _featured_builds(admin)

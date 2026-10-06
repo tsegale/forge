@@ -70,19 +70,19 @@ export function OrdersPage() {
                 <th scope="col" className="px-4 py-2 font-medium">
                   Order
                 </th>
-                <th scope="col" className="px-4 py-2 font-medium">
+                <th scope="col" className="hidden px-4 py-2 font-medium sm:table-cell">
                   Placed
                 </th>
                 <th scope="col" className="px-4 py-2 font-medium">
                   Status
                 </th>
-                <th scope="col" className="px-4 py-2 text-right font-medium">
+                <th scope="col" className="hidden px-4 py-2 text-right font-medium md:table-cell">
                   Items
                 </th>
                 <th scope="col" className="px-4 py-2 text-right font-medium">
                   Total
                 </th>
-                <th scope="col" className="px-4 py-2">
+                <th scope="col" className="hidden px-4 py-2 sm:table-cell">
                   <span className="sr-only">Actions</span>
                 </th>
               </tr>
@@ -90,18 +90,23 @@ export function OrdersPage() {
             <tbody>
               {rows.map((order) => (
                 <tr key={order.order_number} className="border-t border-border">
-                  <td className="px-4 py-3 font-medium">
+                  <td className="px-4 py-3 font-medium whitespace-nowrap">
                     <Link to={`/orders/${order.order_number}`} className="text-accent hover:underline">
                       {order.order_number}
                     </Link>
                   </td>
-                  <td className="px-4 py-3 text-ink-muted">{DATE.format(new Date(order.created_at))}</td>
+                  <td className="hidden px-4 py-3 text-ink-muted sm:table-cell">
+                    {DATE.format(new Date(order.created_at))}
+                  </td>
                   <td className="px-4 py-3">
                     <OrderStatusBadge status={order.status} />
                   </td>
-                  <td className="px-4 py-3 text-right tabular">{order.item_count}</td>
-                  <td className="px-4 py-3 text-right tabular">{formatPrice(order.total)}</td>
-                  <td className="px-4 py-3">
+                  <td className="hidden px-4 py-3 text-right tabular md:table-cell">{order.item_count}</td>
+                  <td className="px-4 py-3 text-right whitespace-nowrap tabular">
+                    {formatPrice(order.total)}
+                  </td>
+                  {/* On a phone the order page offers these; the row keeps order, status and total. */}
+                  <td className="hidden px-4 py-3 sm:table-cell">
                     <div className="flex justify-end gap-2">
                       {order.status === 'pending_payment' ? (
                         <Button asChild>

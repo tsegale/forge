@@ -24,6 +24,7 @@ import { CatalogPage } from '@/pages/catalog/CatalogPage'
 import { ProductPage } from '@/pages/catalog/ProductPage'
 import { ConfiguratorPage } from '@/pages/configurator/ConfiguratorPage'
 import { RouteError } from '@/pages/errors/RouteError'
+import { HomePage } from '@/pages/home/HomePage'
 import { NotFound } from '@/pages/NotFound'
 import { OrderPage } from '@/pages/orders/OrderPage'
 import { OrdersPage } from '@/pages/orders/OrdersPage'
@@ -57,7 +58,7 @@ export const routes: RouteObject[] = [
       {
         errorElement: <RouteError />,
         children: [
-          { index: true, element: <CatalogPage /> },
+          { index: true, element: <HomePage /> },
           { path: 'shop', element: <CatalogPage /> },
           { path: 'shop/:kind', element: <CatalogPage /> },
           { path: 'search', element: <CatalogPage /> },
