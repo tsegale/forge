@@ -6,8 +6,10 @@ import { AdminLayout } from '@/pages/admin/AdminLayout'
 import { AdminOrderPage } from '@/pages/admin/AdminOrderPage'
 import { AdminOrdersPage } from '@/pages/admin/AdminOrdersPage'
 import { InventoryPage } from '@/pages/admin/InventoryPage'
+import { ForgotPasswordPage } from '@/pages/auth/ForgotPasswordPage'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { RegisterPage } from '@/pages/auth/RegisterPage'
+import { ResetPasswordPage } from '@/pages/auth/ResetPasswordPage'
 import { BuildsPage } from '@/pages/builds/BuildsPage'
 import { CartPage } from '@/pages/cart/CartPage'
 import { CheckoutPage } from '@/pages/checkout/CheckoutPage'
@@ -86,6 +88,8 @@ export const routes: RouteObject[] = [
       { path: 'styleguide', element: <StyleguidePage /> },
       { path: 'login', element: <LoginPage /> },
       { path: 'register', element: <RegisterPage /> },
+      { path: 'forgot-password', element: <ForgotPasswordPage /> },
+      { path: 'reset-password', element: <ResetPasswordPage /> },
       { path: '*', element: <NotFound /> },
     ],
   },
