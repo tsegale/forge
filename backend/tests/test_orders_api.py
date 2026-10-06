@@ -3,7 +3,7 @@
 import pytest
 from sqlalchemy import select
 
-from app.models import Order, OrderStatusHistory, Payment
+from app.models import Order, OrderStatusHistory, Payment, ProductImage
 from app.models.enums import OrderStatus, PaymentStatus
 
 ORDERS = "/api/v1/orders"
@@ -142,3 +142,18 @@ def test_reorder_caps_a_line_at_the_cart_limit(client, buyer, product_by_sku):
 def test_reorder_is_only_for_my_orders(client, buyer, product_by_sku, make_user, auth_headers):
     number = _place(client, buyer[1], product_by_sku(RAM))
     assert client.post(f"{ORDERS}/{number}/reorder", headers=auth_headers(make_user())).status_code == 404
+
+
+def test_lines_keep_the_snapshot_but_show_the_current_photo(client, session, buyer, product_by_sku):
+    ram = product_by_sku(RAM)
+    number = _place(client, buyer[1], ram)
+    ram.name = "Renamed after purchase"
+    session.add(
+        ProductImage(product_id=ram.id, position=0, storage_key=f"{RAM}-1", alt_text="Kit", width=1280, height=960)
+    )
+    session.flush()
+    session.expire(ram)
+    line = client.get(f"{ORDERS}/{number}", headers=buyer[1]).get_json()["items"][0]
+    assert line["name"] != "Renamed after purchase"  # the purchase snapshot
+    assert line["kind"] == "memory"
+    assert line["image"]["thumb"] == f"/media/products/{RAM}-1-thumb.webp"

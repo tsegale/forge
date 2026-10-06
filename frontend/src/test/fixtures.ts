@@ -145,6 +145,8 @@ export function order(overrides: Partial<OrderDetail> = {}): OrderDetail {
         quantity: 1,
         unit_price: nad(799_900),
         line_total: nad(799_900),
+        kind: 'cpu',
+        image: null,
       },
     ],
     totals: totals(814_900),

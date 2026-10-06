@@ -10,7 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from ..models.enums import OrderStatus
 from .addresses import AddressIn
 from .cart import Totals
-from .catalog import Price
+from .catalog import Price, ProductImageResponse
 
 
 class BuildSource(BaseModel):
@@ -42,6 +42,10 @@ class OrderLine(BaseModel):
     quantity: int
     unit_price: Price = Field(description="Gross, VAT included, at the time of purchase.")
     line_total: Price
+    kind: str = Field(description="The product's component kind (for its drawing when there is no photo).")
+    image: ProductImageResponse | None = Field(
+        description="The product's current first photo. Name, SKU and prices above are the purchase snapshot."
+    )
 
 
 class ShippingAddress(BaseModel):

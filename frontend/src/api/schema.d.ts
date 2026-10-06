@@ -1743,6 +1743,13 @@ export interface components {
         };
         /** OrderLine */
         OrderLine: {
+            /** @description The product's current first photo. Name, SKU and prices above are the purchase snapshot. */
+            image: components["schemas"]["ProductImageResponse"] | null;
+            /**
+             * Kind
+             * @description The product's component kind (for its drawing when there is no photo).
+             */
+            kind: string;
             line_total: components["schemas"]["Price"];
             /** Name */
             name: string;

@@ -2339,6 +2339,22 @@
       },
       "OrderLine": {
         "properties": {
+          "image": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProductImageResponse"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The product's current first photo. Name, SKU and prices above are the purchase snapshot."
+          },
+          "kind": {
+            "description": "The product's component kind (for its drawing when there is no photo).",
+            "title": "Kind",
+            "type": "string"
+          },
           "line_total": {
             "$ref": "#/components/schemas/Price"
           },
@@ -2369,7 +2385,9 @@
           "name",
           "quantity",
           "unit_price",
-          "line_total"
+          "line_total",
+          "kind",
+          "image"
         ],
         "title": "OrderLine",
         "type": "object"
