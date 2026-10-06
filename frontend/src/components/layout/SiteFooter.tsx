@@ -101,6 +101,7 @@ export function SiteFooter({ inspector }: { inspector?: ReactNode }) {
             <FooterLink to="/orders">Orders</FooterLink>
           </Column>
           <Column title="How it works">
+            <FooterLink to="/how-it-works">How Forge works</FooterLink>
             <FooterLink to="/api/docs" external>
               API documentation
             </FooterLink>

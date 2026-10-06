@@ -28,6 +28,7 @@ import { ProductPage } from '@/pages/catalog/ProductPage'
 import { ConfiguratorPage } from '@/pages/configurator/ConfiguratorPage'
 import { RouteError } from '@/pages/errors/RouteError'
 import { HomePage } from '@/pages/home/HomePage'
+import { HowItWorksPage } from '@/pages/how/HowItWorksPage'
 import { NotFound } from '@/pages/NotFound'
 import { OrderPage } from '@/pages/orders/OrderPage'
 import { OrdersPage } from '@/pages/orders/OrdersPage'
@@ -103,6 +104,7 @@ export const routes: RouteObject[] = [
             ],
           },
           { path: 'styleguide', element: <StyleguidePage /> },
+          { path: 'how-it-works', element: <HowItWorksPage /> },
           { path: 'login', element: <LoginPage /> },
           { path: 'register', element: <RegisterPage /> },
           { path: 'forgot-password', element: <ForgotPasswordPage /> },
