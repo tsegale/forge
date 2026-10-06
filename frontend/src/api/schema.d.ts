@@ -385,6 +385,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/builds/featured": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Builds the store recommends (public, featured and validated), with parts and totals. No sign-in needed. */
+        get: operations["get__api_v1_builds_featured"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/builds/{build_id}": {
         parameters: {
             query?: never;
@@ -736,6 +753,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/products/back-in-stock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Parts that went from none available to some within `days`, most recent first. From the trigger-fed inventory_events. */
+        get: operations["get__api_v1_products_back-in-stock"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/products/facets": {
         parameters: {
             query?: never;
@@ -745,6 +779,23 @@ export interface paths {
         };
         /** Counts for a filter sidebar, from the same filters as GET /products: the total, brands, price span and stock. Each facet ignores its own filter, so the alternatives stay visible. With compatible_with, also how many matches were left out as incompatible. */
         get: operations["get__api_v1_products_facets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/products/price-drops": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Parts whose latest price change was a cut within `days`, still at the lower price and in stock, biggest percentage first. From the trigger-fed price history. */
+        get: operations["get__api_v1_products_price-drops"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1225,6 +1276,20 @@ export interface components {
             /** Quantity Available */
             quantity_available: number;
         };
+        /** BackInStock */
+        BackInStock: {
+            product: components["schemas"]["ProductSummary"];
+            /**
+             * Restocked At
+             * Format: date-time
+             */
+            restocked_at: string;
+        };
+        /** BackInStockList */
+        BackInStockList: {
+            /** Items */
+            items: components["schemas"]["BackInStock"][];
+        };
         /** BrandFacet */
         BrandFacet: {
             /**
@@ -1537,6 +1602,20 @@ export interface components {
             status: components["schemas"]["OrderStatus"];
             totals: components["schemas"]["Totals"];
         };
+        /** CollectionQuery */
+        CollectionQuery: {
+            /**
+             * Days
+             * @description How recent the change must be.
+             * @default 30
+             */
+            days: number;
+            /**
+             * Limit
+             * @default 8
+             */
+            limit: number;
+        };
         /** CompatibilityCheckRequest */
         CompatibilityCheckRequest: {
             /** Items */
@@ -1665,6 +1744,41 @@ export interface components {
          */
         ErrorResponse: {
             error: components["schemas"]["ErrorBody"];
+        };
+        /** FeaturedBuild */
+        FeaturedBuild: {
+            /** Blurb */
+            blurb: string | null;
+            /**
+             * Compatible
+             * @description Always true: only validated builds are featured.
+             */
+            compatible: boolean;
+            /** Id */
+            id: number;
+            /**
+             * Item Count
+             * @description Total parts, counting quantities.
+             */
+            item_count: number;
+            /** Items */
+            items: components["schemas"]["BuildItemResponse"][];
+            /** Name */
+            name: string;
+            /** Share Slug */
+            share_slug: string;
+            status: components["schemas"]["BuildStatus"];
+            subtotal: components["schemas"]["Price"];
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** FeaturedBuildList */
+        FeaturedBuildList: {
+            /** Items */
+            items: components["schemas"]["FeaturedBuild"][];
         };
         /** FindingResponse */
         FindingResponse: {
@@ -2020,6 +2134,29 @@ export interface components {
              * @description When the drop email went out; null while waiting.
              */
             triggered_at: string | null;
+        };
+        /** PriceDrop */
+        PriceDrop: {
+            /**
+             * Dropped At
+             * Format: date-time
+             */
+            dropped_at: string;
+            /**
+             * Percent Off
+             * @description Whole percent, rounded down.
+             */
+            percent_off: number;
+            product: components["schemas"]["ProductSummary"];
+            /** Saving Cents */
+            saving_cents: number;
+            /** @description The price before the latest change. */
+            was: components["schemas"]["Price"];
+        };
+        /** PriceDropList */
+        PriceDropList: {
+            /** Items */
+            items: components["schemas"]["PriceDrop"][];
         };
         /** PriceHistoryQuery */
         PriceHistoryQuery: {
@@ -4451,6 +4588,35 @@ export interface operations {
             };
         };
     };
+    get__api_v1_builds_featured: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeaturedBuildList"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     "get__api_v1_builds_{build_id}": {
         parameters: {
             query?: never;
@@ -5670,6 +5836,39 @@ export interface operations {
             };
         };
     };
+    "get__api_v1_products_back-in-stock": {
+        parameters: {
+            query?: {
+                limit?: number;
+                /** @description How recent the change must be. */
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackInStockList"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     get__api_v1_products_facets: {
         parameters: {
             query?: {
@@ -5737,6 +5936,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProductFacets"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    "get__api_v1_products_price-drops": {
+        parameters: {
+            query?: {
+                limit?: number;
+                /** @description How recent the change must be. */
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriceDropList"];
                 };
             };
             /** @description Unprocessable Content */

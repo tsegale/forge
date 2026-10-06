@@ -12,6 +12,8 @@ PROTECTED = re.compile(
 )
 # Paths that are public to read but need a session to write.
 PROTECTED_WRITES = {("post", "/api/v1/products/{slug}/reviews")}
+# Under a protected prefix, but deliberately public.
+PUBLIC = {("get", "/api/v1/builds/featured")}
 
 
 @pytest.fixture(scope="module")
@@ -62,7 +64,8 @@ def test_protected_operations_declare_bearer_auth(spec):
     assert spec["components"]["securitySchemes"]["bearerAuth"]["scheme"] == "bearer"
     for path, method, operation in _operations(spec):
         secured = {"bearerAuth": []} in operation.get("security", [])
-        protected = bool(PROTECTED.match(path)) or (method.lower(), path) in PROTECTED_WRITES
+        operation_id = (method.lower(), path)
+        protected = (bool(PROTECTED.match(path)) or operation_id in PROTECTED_WRITES) and operation_id not in PUBLIC
         assert secured == protected, f"{method} {path}"
 
 

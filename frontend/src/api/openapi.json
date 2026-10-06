@@ -886,6 +886,40 @@
         "title": "Availability",
         "type": "object"
       },
+      "BackInStock": {
+        "properties": {
+          "product": {
+            "$ref": "#/components/schemas/ProductSummary"
+          },
+          "restocked_at": {
+            "format": "date-time",
+            "title": "Restocked At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "product",
+          "restocked_at"
+        ],
+        "title": "BackInStock",
+        "type": "object"
+      },
+      "BackInStockList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BackInStock"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "BackInStockList",
+        "type": "object"
+      },
       "BrandFacet": {
         "properties": {
           "count": {
@@ -1659,6 +1693,28 @@
         "title": "CheckoutResponse",
         "type": "object"
       },
+      "CollectionQuery": {
+        "additionalProperties": false,
+        "properties": {
+          "days": {
+            "default": 30,
+            "description": "How recent the change must be.",
+            "maximum": 90,
+            "minimum": 1,
+            "title": "Days",
+            "type": "integer"
+          },
+          "limit": {
+            "default": 8,
+            "maximum": 24,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "CollectionQuery",
+        "type": "object"
+      },
       "CompatibilityCheckRequest": {
         "additionalProperties": false,
         "properties": {
@@ -1960,6 +2016,91 @@
           "error"
         ],
         "title": "ErrorResponse",
+        "type": "object"
+      },
+      "FeaturedBuild": {
+        "properties": {
+          "blurb": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Blurb"
+          },
+          "compatible": {
+            "description": "Always true: only validated builds are featured.",
+            "title": "Compatible",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "item_count": {
+            "description": "Total parts, counting quantities.",
+            "title": "Item Count",
+            "type": "integer"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BuildItemResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "share_slug": {
+            "title": "Share Slug",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/BuildStatus"
+          },
+          "subtotal": {
+            "$ref": "#/components/schemas/Price"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "status",
+          "item_count",
+          "subtotal",
+          "updated_at",
+          "items",
+          "blurb",
+          "share_slug",
+          "compatible"
+        ],
+        "title": "FeaturedBuild",
+        "type": "object"
+      },
+      "FeaturedBuildList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/FeaturedBuild"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "FeaturedBuildList",
         "type": "object"
       },
       "FindingResponse": {
@@ -2778,6 +2919,56 @@
           "created_at"
         ],
         "title": "PriceAlertResponse",
+        "type": "object"
+      },
+      "PriceDrop": {
+        "properties": {
+          "dropped_at": {
+            "format": "date-time",
+            "title": "Dropped At",
+            "type": "string"
+          },
+          "percent_off": {
+            "description": "Whole percent, rounded down.",
+            "title": "Percent Off",
+            "type": "integer"
+          },
+          "product": {
+            "$ref": "#/components/schemas/ProductSummary"
+          },
+          "saving_cents": {
+            "title": "Saving Cents",
+            "type": "integer"
+          },
+          "was": {
+            "$ref": "#/components/schemas/Price",
+            "description": "The price before the latest change."
+          }
+        },
+        "required": [
+          "product",
+          "was",
+          "saving_cents",
+          "percent_off",
+          "dropped_at"
+        ],
+        "title": "PriceDrop",
+        "type": "object"
+      },
+      "PriceDropList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PriceDrop"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "PriceDropList",
         "type": "object"
       },
       "PriceHistoryQuery": {
@@ -7098,6 +7289,39 @@
         ]
       }
     },
+    "/api/v1/builds/featured": {
+      "get": {
+        "description": "",
+        "operationId": "get__api_v1_builds_featured",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeaturedBuildList"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "summary": "Builds the store recommends (public, featured and validated), with parts and totals. No sign-in needed.",
+        "tags": [
+          "Builds"
+        ]
+      }
+    },
     "/api/v1/builds/{build_id}": {
       "delete": {
         "description": "",
@@ -9249,6 +9473,67 @@
         ]
       }
     },
+    "/api/v1/products/back-in-stock": {
+      "get": {
+        "description": "",
+        "operationId": "get__api_v1_products_back-in-stock",
+        "parameters": [
+          {
+            "description": "",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 8,
+              "maximum": 24,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "How recent the change must be.",
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "description": "How recent the change must be.",
+              "maximum": 90,
+              "minimum": 1,
+              "title": "Days",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackInStockList"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "summary": "Parts that went from none available to some within `days`, most recent first. From the trigger-fed inventory_events.",
+        "tags": [
+          "Catalog"
+        ]
+      }
+    },
     "/api/v1/products/facets": {
       "get": {
         "description": "",
@@ -9785,6 +10070,67 @@
           }
         },
         "summary": "Counts for a filter sidebar, from the same filters as GET /products: the total, brands, price span and stock. Each facet ignores its own filter, so the alternatives stay visible. With compatible_with, also how many matches were left out as incompatible.",
+        "tags": [
+          "Catalog"
+        ]
+      }
+    },
+    "/api/v1/products/price-drops": {
+      "get": {
+        "description": "",
+        "operationId": "get__api_v1_products_price-drops",
+        "parameters": [
+          {
+            "description": "",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 8,
+              "maximum": 24,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "How recent the change must be.",
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "description": "How recent the change must be.",
+              "maximum": 90,
+              "minimum": 1,
+              "title": "Days",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PriceDropList"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "summary": "Parts whose latest price change was a cut within `days`, still at the lower price and in stock, biggest percentage first. From the trigger-fed price history.",
         "tags": [
           "Catalog"
         ]

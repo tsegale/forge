@@ -5,8 +5,10 @@ from __future__ import annotations
 from flask import request
 
 from ...schemas.builds import BuildCreate, BuildDetail, BuildItemCreate, BuildItemUpdate, BuildList, BuildUpdate
+from ...schemas.home import FeaturedBuildList
 from ...security.guards import current_user, require_auth
 from ...services import builds as build_service
+from ...services import home
 from ..spec import api, responses
 from . import bp
 
@@ -21,6 +23,14 @@ def create_build():
     """Start a new, empty build."""
     build = build_service.create(current_user(), request.context.json.name)
     return build_service.detail(build), 201
+
+
+@bp.get("/builds/featured")
+@api.validate(resp=responses(HTTP_200=FeaturedBuildList), tags=[TAG])
+def featured_builds():
+    """Builds the store recommends (public, featured and validated), with parts and totals. No
+    sign-in needed."""
+    return FeaturedBuildList(items=home.featured_builds())
 
 
 @bp.get("/builds")

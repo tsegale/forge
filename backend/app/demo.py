@@ -18,12 +18,15 @@ from pathlib import Path
 from sqlalchemy import delete, func, select, update
 
 from .cli import DEFAULT_SEED, load_catalog
+from .compat import BuildContext, Part, evaluate
 from .extensions import db
 from .models import (
     Address,
     Build,
     BuildItem,
     Cart,
+    ComponentKind,
+    Inventory,
     Order,
     OrderAddress,
     OrderItem,
@@ -200,6 +203,51 @@ DEMO_BUILD = [
     "FRG-CASE-FD-NORTH",
     "FRG-COOL-TR-PA120SE",
 ]
+
+# Home-page builds: (share slug, name, blurb, SKUs). Each must pass the engine (compatible and
+# complete) or the reset fails; tests/test_demo.py checks the same.
+FEATURED_BUILDS: list[tuple[str, str, str, list[str]]] = [
+    (
+        "featured-1440p-gaming",
+        "1440p gaming",
+        "High refresh 1440p on a mid tower, with room to grow. The demo build.",
+        DEMO_BUILD,
+    ),
+    (
+        "featured-compact-sff",
+        "Compact small form factor",
+        "A 9800X3D and RX 7800 XT in a 20-litre case, on an SFX supply.",
+        [
+            "FRG-CPU-R7-9800X3D",
+            "FRG-MB-ASUS-B650E-I",
+            "FRG-RAM-GS-TZ5-32-6000",
+            "FRG-SSD-WD-SN850X-1TB",
+            "FRG-GPU-SAP-7800XT-PULSE",
+            "FRG-PSU-CR-SF750",
+            "FRG-CASE-CM-NR200P",
+            "FRG-COOL-NZ-KRAKEN240",
+        ],
+    ),
+    (
+        "featured-creator-workstation",
+        "Creator workstation",
+        "16 cores, 64 GB and an RTX 4080 SUPER for editing, rendering and play.",
+        [
+            "FRG-CPU-R9-7950X",
+            "FRG-MB-ASUS-X670E-E",
+            "FRG-RAM-CR-VEN-64-6000",
+            "FRG-SSD-SAM-990PRO-2TB",
+            "FRG-HDD-SEA-BC-2TB",
+            "FRG-GPU-ASUS-4080S-TUF",
+            "FRG-PSU-CR-RM1000X",
+            "FRG-CASE-LL-O11EVO",
+            "FRG-COOL-AR-LF3-360",
+        ],
+    ),
+]
+
+# Restocked during the reset, so "Back in stock" has something to show.
+RESTOCKED = ["FRG-GPU-SAP-7800XT-PULSE", "FRG-CASE-FD-NORTH", "FRG-COOL-NZ-KRAKEN240"]
 
 
 def _clear_transactions() -> None:
@@ -384,6 +432,38 @@ def _reviews(customer: User, now: datetime) -> int:
     return len(REVIEWS)
 
 
+def _featured_builds(owner: User) -> int:
+    """The store's own builds, public and featured, validated by the engine itself."""
+    required = list(db.session.scalars(select(ComponentKind.code).where(ComponentKind.required_in_build)))
+    for slug, name, blurb, skus in FEATURED_BUILDS:
+        build = Build(
+            user_id=owner.id, name=name, is_public=True, share_slug=slug, is_featured=True, featured_blurb=blurb
+        )
+        products = [db.session.scalar(select(Product).where(Product.sku == sku)) for sku in skus]
+        for product in products:
+            build.items.append(BuildItem.for_product(product))
+        db.session.add(build)
+        db.session.flush()
+        report = evaluate(BuildContext(Part(p) for p in products), required)
+        if not (report.compatible and report.complete):
+            problems = [f.code for f in report.conflicts] + report.missing_kinds
+            raise RuntimeError(f"Featured build {slug!r} does not validate: {problems}")
+        build.status = BuildStatus.VALIDATED
+    return len(FEATURED_BUILDS)
+
+
+def _restock() -> None:
+    """Take a few parts to zero and back, so the inventory trigger records a restock."""
+    for sku in RESTOCKED:
+        product_id = db.session.scalar(select(Product.id).where(Product.sku == sku))
+        inventory = db.session.get(Inventory, product_id)
+        on_hand = inventory.quantity_on_hand
+        db.session.execute(update(Inventory).where(Inventory.product_id == product_id).values(quantity_on_hand=0))
+        db.session.execute(update(Inventory).where(Inventory.product_id == product_id).values(quantity_on_hand=on_hand))
+        db.session.expire(inventory)
+    db.session.flush()
+
+
 def reset(seed_path: Path = DEFAULT_SEED) -> dict[str, int]:
     """Reset to the demo state. Idempotent: running it twice leaves the same data."""
     _clear_transactions()
@@ -395,8 +475,10 @@ def reset(seed_path: Path = DEFAULT_SEED) -> dict[str, int]:
         _past_order(customer, admin, lines, final, days, n) for n, (lines, final, days) in enumerate(PAST_ORDERS, 1)
     ]
     _demo_build(customer)
+    featured = _featured_builds(admin)
+    _restock()
     now = datetime.now(UTC)
     _price_history(now)
     reviews = _reviews(customer, now)  # after the past orders, so the trigger can verify purchases
     db.session.commit()
-    return {"orders": len(orders), "accounts": 2 + len(REVIEWERS), "reviews": reviews}
+    return {"orders": len(orders), "accounts": 2 + len(REVIEWERS), "reviews": reviews, "featured": featured}

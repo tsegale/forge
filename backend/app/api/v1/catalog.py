@@ -17,8 +17,9 @@ from ...schemas.catalog import (
     SearchSuggestions,
     SuggestQuery,
 )
+from ...schemas.home import BackInStockList, CollectionQuery, PriceDropList
 from ...services import catalog as catalog_service
-from ...services import catalog_query
+from ...services import catalog_query, home
 from ...services import search as search_service
 from ..spec import api, responses
 from . import bp
@@ -38,6 +39,24 @@ def categories():
 def brands():
     """All brands, alphabetically."""
     return BrandList(items=catalog_service.list_brands())
+
+
+@bp.get("/products/price-drops")
+@api.validate(query=CollectionQuery, resp=responses(422, HTTP_200=PriceDropList), tags=[TAG])
+def price_drops():
+    """Parts whose latest price change was a cut within `days`, still at the lower price and in
+    stock, biggest percentage first. From the trigger-fed price history."""
+    q: CollectionQuery = request.context.query
+    return PriceDropList(items=home.price_drops(q.limit, q.days))
+
+
+@bp.get("/products/back-in-stock")
+@api.validate(query=CollectionQuery, resp=responses(422, HTTP_200=BackInStockList), tags=[TAG])
+def back_in_stock():
+    """Parts that went from none available to some within `days`, most recent first. From the
+    trigger-fed inventory_events."""
+    q: CollectionQuery = request.context.query
+    return BackInStockList(items=home.back_in_stock(q.limit, q.days))
 
 
 @bp.get("/products/facets")

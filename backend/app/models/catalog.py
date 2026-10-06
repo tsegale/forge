@@ -19,6 +19,7 @@ from decimal import Decimal
 from typing import Any, ClassVar
 
 from sqlalchemy import (
+    BigInteger,
     Boolean,
     CheckConstraint,
     Column,
@@ -457,6 +458,24 @@ class ProductImage(db.Model):
         # A file name, never a path: the key is joined onto the media root when serving.
         CheckConstraint("storage_key ~ '^[A-Za-z0-9][A-Za-z0-9._-]*$'", name="storage_key_safe"),
     )
+
+
+class InventoryEvent(db.Model):
+    """Every change to a product's stock, written by a trigger on inventory (whatever the code
+    path: checkout, reservations, admin edits, seeds). Append-only. available = on hand - reserved."""
+
+    __tablename__ = "inventory_events"
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)
+    product_id: Mapped[int] = mapped_column(ForeignKey("products.id", ondelete="CASCADE"), nullable=False)
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"), nullable=False)
+    on_hand_before: Mapped[int] = mapped_column(Integer, nullable=False)
+    on_hand_after: Mapped[int] = mapped_column(Integer, nullable=False)
+    reserved_before: Mapped[int] = mapped_column(Integer, nullable=False)
+    reserved_after: Mapped[int] = mapped_column(Integer, nullable=False)
+    actor_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+
+    __table_args__ = (Index("ix_inventory_events_product_occurred", "product_id", "occurred_at"),)
 
 
 class PriceHistory(db.Model):
