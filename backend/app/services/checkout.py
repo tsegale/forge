@@ -49,7 +49,13 @@ class InsufficientStock(Conflict):
 
 def _lines_from_cart(user: User) -> tuple[list[Line], int | None]:
     cart = cart_service.find(user, None, lock=True)
-    rows = list(db.session.scalars(select(CartItem).where(CartItem.cart_id == cart.id))) if cart else []
+    rows = (
+        list(
+            db.session.scalars(select(CartItem).where(CartItem.cart_id == cart.id, CartItem.saved_for_later.is_(False)))
+        )
+        if cart
+        else []
+    )
     if not rows:
         raise ValidationFailed(
             "The cart is empty.", details=[{"field": "source", "message": "The cart is empty.", "type": "cart_empty"}]
@@ -151,7 +157,8 @@ def place_order(user: User, request: CheckoutRequest) -> Order:
     if build is not None:
         build.status = BuildStatus.ORDERED
     if cart_id is not None:
-        db.session.execute(delete(CartItem).where(CartItem.cart_id == cart_id))
+        # The order now holds these lines; anything saved for later stays in the cart.
+        db.session.execute(delete(CartItem).where(CartItem.cart_id == cart_id, CartItem.saved_for_later.is_(False)))
     db.session.commit()
     return order
 

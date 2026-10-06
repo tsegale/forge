@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from .catalog import Price, ProductSummary
 
@@ -25,7 +25,8 @@ class CartLine(BaseModel):
 
 
 class CartResponse(BaseModel):
-    items: list[CartLine]
+    items: list[CartLine] = Field(description="Lines being bought; totals and item_count cover these only.")
+    saved: list[CartLine] = Field(description="Lines saved for later: kept, but not in the order.")
     item_count: int
     totals: Totals
 
@@ -46,4 +47,13 @@ class CartItemCreate(BaseModel):
 class CartItemUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    quantity: int = Field(strict=True, ge=1, le=99)
+    quantity: int | None = Field(default=None, strict=True, ge=1, le=99)
+    saved_for_later: bool | None = Field(
+        default=None, strict=True, description="Move the line to saved for later (true) or back to the cart."
+    )
+
+    @model_validator(mode="after")
+    def _something_to_change(self) -> CartItemUpdate:
+        if self.quantity is None and self.saved_for_later is None:
+            raise ValueError("Send quantity, saved_for_later, or both.")
+        return self

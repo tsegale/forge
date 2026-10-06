@@ -126,12 +126,13 @@ export function cartWith(quantity = 1, overrides: Partial<Cart['items'][number]>
         ...overrides,
       },
     ],
+    saved: [],
     item_count: quantity,
     totals: totals(product.price.amount_cents * quantity + 15_000),
   }
 }
 
-export const emptyCart: Cart = { items: [], item_count: 0, totals: totals(15_000) }
+export const emptyCart: Cart = { items: [], saved: [], item_count: 0, totals: totals(15_000) }
 
 export function order(overrides: Partial<OrderDetail> = {}): OrderDetail {
   return {

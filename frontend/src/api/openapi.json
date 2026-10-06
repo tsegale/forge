@@ -1280,15 +1280,33 @@
         "additionalProperties": false,
         "properties": {
           "quantity": {
-            "maximum": 99,
-            "minimum": 1,
-            "title": "Quantity",
-            "type": "integer"
+            "anyOf": [
+              {
+                "maximum": 99,
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Quantity"
+          },
+          "saved_for_later": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Move the line to saved for later (true) or back to the cart.",
+            "title": "Saved For Later"
           }
         },
-        "required": [
-          "quantity"
-        ],
         "title": "CartItemUpdate",
         "type": "object"
       },
@@ -1332,10 +1350,19 @@
             "type": "integer"
           },
           "items": {
+            "description": "Lines being bought; totals and item_count cover these only.",
             "items": {
               "$ref": "#/components/schemas/CartLine"
             },
             "title": "Items",
+            "type": "array"
+          },
+          "saved": {
+            "description": "Lines saved for later: kept, but not in the order.",
+            "items": {
+              "$ref": "#/components/schemas/CartLine"
+            },
+            "title": "Saved",
             "type": "array"
           },
           "totals": {
@@ -1344,6 +1371,7 @@
         },
         "required": [
           "items",
+          "saved",
           "item_count",
           "totals"
         ],
@@ -4263,10 +4291,19 @@
             "type": "integer"
           },
           "items": {
+            "description": "Lines being bought; totals and item_count cover these only.",
             "items": {
               "$ref": "#/components/schemas/CartLine"
             },
             "title": "Items",
+            "type": "array"
+          },
+          "saved": {
+            "description": "Lines saved for later: kept, but not in the order.",
+            "items": {
+              "$ref": "#/components/schemas/CartLine"
+            },
+            "title": "Saved",
             "type": "array"
           },
           "totals": {
@@ -4283,6 +4320,7 @@
         },
         "required": [
           "items",
+          "saved",
           "item_count",
           "totals",
           "unavailable_product_ids"
@@ -7227,7 +7265,7 @@
             "description": "Unprocessable Content"
           }
         },
-        "summary": "Empty the cart.",
+        "summary": "Empty the cart. Lines saved for later stay saved.",
         "tags": [
           "Cart"
         ]
@@ -7457,7 +7495,7 @@
             "description": "Unprocessable Content"
           }
         },
-        "summary": "Set a line's quantity.",
+        "summary": "Set a line's quantity, or move it to saved for later and back. Saved lines stay in the cart but are left out of the totals, the item count and checkout.",
         "tags": [
           "Cart"
         ]

@@ -64,13 +64,17 @@ def _active_product(product_id: int) -> Product:
 
 
 def add_item(cart: Cart, product_id: int, quantity: int) -> None:
-    """Add units; adding a product already in the cart increases that line atomically.
-    Going past 99 trips ck_cart_items_quantity_range (422)."""
+    """Add units; adding a product already in the cart increases that line atomically, and
+    brings it back from "saved for later". Going past 99 trips ck_cart_items_quantity_range (422)."""
     _active_product(product_id)
     stmt = insert(CartItem).values(cart_id=cart.id, product_id=product_id, quantity=quantity)
     stmt = stmt.on_conflict_do_update(
         constraint="uq_cart_items_cart_product",
-        set_={"quantity": CartItem.quantity + stmt.excluded.quantity, "updated_at": func.now()},
+        set_={
+            "quantity": CartItem.quantity + stmt.excluded.quantity,
+            "saved_for_later": False,
+            "updated_at": func.now(),
+        },
     )
     db.session.execute(stmt)
     db.session.commit()
@@ -83,8 +87,12 @@ def _owned_line(cart: Cart | None, item_id: int) -> CartItem:
     return line
 
 
-def update_item(cart: Cart | None, item_id: int, quantity: int) -> None:
-    _owned_line(cart, item_id).quantity = quantity
+def update_item(cart: Cart | None, item_id: int, quantity: int | None, saved_for_later: bool | None) -> None:
+    line = _owned_line(cart, item_id)
+    if quantity is not None:
+        line.quantity = quantity
+    if saved_for_later is not None:
+        line.saved_for_later = saved_for_later
     db.session.commit()
 
 
@@ -94,8 +102,9 @@ def remove_item(cart: Cart | None, item_id: int) -> None:
 
 
 def clear(cart: Cart | None) -> None:
+    """Empty the cart. Lines saved for later stay saved."""
     if cart is not None:
-        db.session.execute(delete(CartItem).where(CartItem.cart_id == cart.id))
+        db.session.execute(delete(CartItem).where(CartItem.cart_id == cart.id, CartItem.saved_for_later.is_(False)))
         db.session.commit()
 
 
@@ -109,7 +118,7 @@ def merge_guest_cart(guest_token: uuid.UUID | None, user: User) -> None:
         return
     target = get_or_create(user, None)
     for line in db.session.scalars(select(CartItem).where(CartItem.cart_id == guest.id)):
-        _add_capped(target, line.product_id, line.quantity)
+        _add_capped(target, line.product_id, line.quantity, saved_for_later=line.saved_for_later)
     db.session.delete(guest)
     db.session.commit()
 
@@ -127,13 +136,20 @@ def add_order_lines(cart: Cart, order: Order) -> list[int]:
     return [pid for pid in product_ids if pid not in active]
 
 
-def _add_capped(cart: Cart, product_id: int, quantity: int) -> None:
-    stmt = insert(CartItem).values(cart_id=cart.id, product_id=product_id, quantity=min(quantity, MAX_LINE_QUANTITY))
+def _add_capped(cart: Cart, product_id: int, quantity: int, *, saved_for_later: bool = False) -> None:
+    """Add units capped at 99. The line stays saved for later only if both copies were saved."""
+    stmt = insert(CartItem).values(
+        cart_id=cart.id,
+        product_id=product_id,
+        quantity=min(quantity, MAX_LINE_QUANTITY),
+        saved_for_later=saved_for_later,
+    )
     db.session.execute(
         stmt.on_conflict_do_update(
             constraint="uq_cart_items_cart_product",
             set_={
                 "quantity": func.least(CartItem.quantity + stmt.excluded.quantity, MAX_LINE_QUANTITY),
+                "saved_for_later": CartItem.saved_for_later & stmt.excluded.saved_for_later,
                 "updated_at": func.now(),
             },
         )
@@ -161,16 +177,22 @@ def view(cart: Cart | None) -> CartResponse:
         else []
     )
     products = load_products([line.product_id for line in lines])
-    items = [
-        CartLine(
+
+    def to_line(line: CartItem) -> CartLine:
+        product = products[line.product_id]
+        return CartLine(
             id=line.id,
             quantity=line.quantity,
-            line_total=_price(products[line.product_id].price_cents * line.quantity),
-            in_stock=products[line.product_id].is_active
-            and products[line.product_id].inventory.quantity_available >= line.quantity,
-            product=to_summary(products[line.product_id]),
+            line_total=_price(product.price_cents * line.quantity),
+            in_stock=product.is_active and product.inventory.quantity_available >= line.quantity,
+            product=to_summary(product),
         )
-        for line in lines
-    ]
-    goods = sum(products[line.product_id].price_cents * line.quantity for line in lines)
-    return CartResponse(items=items, item_count=sum(line.quantity for line in lines), totals=totals_block(goods))
+
+    active = [line for line in lines if not line.saved_for_later]
+    goods = sum(products[line.product_id].price_cents * line.quantity for line in active)
+    return CartResponse(
+        items=[to_line(line) for line in active],
+        saved=[to_line(line) for line in lines if line.saved_for_later],
+        item_count=sum(line.quantity for line in active),
+        totals=totals_block(goods),
+    )

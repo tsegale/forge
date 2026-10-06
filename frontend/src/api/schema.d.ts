@@ -414,7 +414,7 @@ export interface paths {
         get: operations["get__api_v1_cart"];
         put?: never;
         post?: never;
-        /** Empty the cart. */
+        /** Empty the cart. Lines saved for later stay saved. */
         delete: operations["delete__api_v1_cart"];
         options?: never;
         head?: never;
@@ -452,7 +452,7 @@ export interface paths {
         delete: operations["delete__api_v1_cart_items_{item_id}"];
         options?: never;
         head?: never;
-        /** Set a line's quantity. */
+        /** Set a line's quantity, or move it to saved for later and back. Saved lines stay in the cart but are left out of the totals, the item count and checkout. */
         patch: operations["patch__api_v1_cart_items_{item_id}"];
         trace?: never;
     };
@@ -1339,8 +1339,17 @@ export interface components {
         };
         /** CartItemUpdate */
         CartItemUpdate: {
-            /** Quantity */
-            quantity: number;
+            /**
+             * Quantity
+             * @default null
+             */
+            quantity: number | null;
+            /**
+             * Saved For Later
+             * @description Move the line to saved for later (true) or back to the cart.
+             * @default null
+             */
+            saved_for_later: boolean | null;
         };
         /** CartLine */
         CartLine: {
@@ -1361,8 +1370,16 @@ export interface components {
         CartResponse: {
             /** Item Count */
             item_count: number;
-            /** Items */
+            /**
+             * Items
+             * @description Lines being bought; totals and item_count cover these only.
+             */
             items: components["schemas"]["CartLine"][];
+            /**
+             * Saved
+             * @description Lines saved for later: kept, but not in the order.
+             */
+            saved: components["schemas"]["CartLine"][];
             totals: components["schemas"]["Totals"];
         };
         /** CaseSpecs */
@@ -2579,8 +2596,16 @@ export interface components {
         ReorderResponse: {
             /** Item Count */
             item_count: number;
-            /** Items */
+            /**
+             * Items
+             * @description Lines being bought; totals and item_count cover these only.
+             */
             items: components["schemas"]["CartLine"][];
+            /**
+             * Saved
+             * @description Lines saved for later: kept, but not in the order.
+             */
+            saved: components["schemas"]["CartLine"][];
             totals: components["schemas"]["Totals"];
             /**
              * Unavailable Product Ids
