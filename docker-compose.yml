@@ -14,6 +14,8 @@ x-backend-env: &backend-env
   MAIL_USERNAME: ${MAIL_USERNAME:-}
   MAIL_PASSWORD: ${MAIL_PASSWORD:-}
   MAIL_FROM: ${MAIL_FROM:-Forge <orders@forge.local>}
+  # Where links in emails point (password reset). Defaults to the local Nginx port.
+  PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://127.0.0.1:8080}
   STORE_CURRENCY: ${STORE_CURRENCY:-nad}
   FORGE_ENV: ${FORGE_ENV:-production}
   TRUSTED_PROXY_COUNT: 1   # nginx; makes per-IP rate limits see the real client address

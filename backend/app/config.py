@@ -109,6 +109,8 @@ class BaseConfig:
     LOGIN_FAILURE_LIMIT_PER_ACCOUNT = "10 per 15 minutes"
     REGISTER_LIMIT_PER_IP = "10 per hour"
     REVIEW_LIMIT_PER_USER = "10 per hour"
+    PASSWORD_RESET_LIMIT_PER_IP = "5 per 15 minutes"
+    PASSWORD_RESET_LIMIT_PER_EMAIL = "3 per hour"
 
     def __init__(self) -> None:
         self.FORGE_ENV_NAME = {
@@ -142,6 +144,11 @@ class BaseConfig:
         self.MAIL_USERNAME = os.environ.get("MAIL_USERNAME", "")
         self.MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD", "")
         self.MAIL_FROM = os.environ.get("MAIL_FROM", "Forge <orders@forge.local>")
+        # The store's public address, for links in emails. The Vite dev server outside production.
+        self.PUBLIC_BASE_URL = (
+            _require("PUBLIC_BASE_URL") if production else os.environ.get("PUBLIC_BASE_URL", "http://127.0.0.1:5173")
+        ).rstrip("/")
+        self.PASSWORD_RESET_TTL = timedelta(minutes=int(os.environ.get("PASSWORD_RESET_TTL_MINUTES", "30")))
         self.CELERY = {
             "broker_url": os.environ.get("CELERY_BROKER_URL", self.REDIS_URL.rsplit("/", 1)[0] + "/1"),
             "task_ignore_result": True,

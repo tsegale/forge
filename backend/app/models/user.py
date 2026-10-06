@@ -101,3 +101,24 @@ class RefreshToken(db.Model):
         CheckConstraint("expires_at > issued_at", name="expiry_after_issue"),
         CheckConstraint("replaced_by_jti IS NULL OR revoked_at IS NOT NULL", name="replaced_by_requires_revoked"),
     )
+
+
+class PasswordResetToken(db.Model):
+    """A single-use, short-lived password reset. Only a SHA-256 hash of the token is stored, so a
+    database leak cannot be replayed into account takeovers. At most one unused token per user
+    (partial unique index): asking again supersedes the previous link."""
+
+    __tablename__ = "password_reset_tokens"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    token_hash: Mapped[str] = mapped_column(CHAR(64), unique=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    __table_args__ = (
+        CheckConstraint("expires_at > created_at", name="expiry_after_creation"),
+        CheckConstraint("token_hash ~ '^[0-9a-f]{64}$'", name="token_hash_hex"),
+        Index("uq_password_reset_tokens_one_active", "user_id", unique=True, postgresql_where=text("used_at IS NULL")),
+    )

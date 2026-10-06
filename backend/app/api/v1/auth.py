@@ -12,10 +12,19 @@ from flask_limiter.util import get_remote_address
 
 from ...errors import Unauthorized
 from ...extensions import limiter
-from ...schemas.auth import LoginRequest, RegisterRequest, TokenResponse, UserResponse
+from ...schemas.auth import (
+    LoginRequest,
+    PasswordResetAccepted,
+    PasswordResetConfirm,
+    PasswordResetRequest,
+    RegisterRequest,
+    TokenResponse,
+    UserResponse,
+)
 from ...security.guards import current_user, require_auth
 from ...services import auth as auth_service
 from ...services import cart as cart_service
+from ...services import password_reset
 from ...services.auth import IssuedSession
 from ..spec import api, responses
 from . import bp
@@ -176,5 +185,34 @@ def logout():
 def logout_all():
     """End every session for the authenticated user, on every device."""
     auth_service.end_all_sessions(current_user())
+    _clear_refresh_cookie()
+    return "", 204
+
+
+RESET_ACCEPTED = (
+    "If an account exists for that address, we have emailed a link to reset its password. "
+    "It expires soon and works once."
+)
+
+
+@bp.post("/auth/password-reset")
+@limiter.limit(_limit("PASSWORD_RESET_LIMIT_PER_IP"))
+@limiter.limit(_limit("PASSWORD_RESET_LIMIT_PER_EMAIL"), key_func=_login_account_key)
+@api.validate(json=PasswordResetRequest, resp=responses(422, 429, HTTP_202=PasswordResetAccepted), tags=[TAG])
+def request_password_reset():
+    """Email a single-use reset link. The answer is the same whether or not the address has an
+    account (no enumeration), and requests are limited per address and per client."""
+    password_reset.request_reset(str(request.context.json.email))
+    return PasswordResetAccepted(message=RESET_ACCEPTED), 202
+
+
+@bp.post("/auth/password-reset/confirm")
+@limiter.limit(_limit("PASSWORD_RESET_LIMIT_PER_IP"))
+@api.validate(json=PasswordResetConfirm, resp=responses(400, 422, 429, HTTP_204=None), tags=[TAG])
+def confirm_password_reset():
+    """Set a new password with the emailed token. The token works once; every session of the
+    account is signed out, and the account owner is told by email."""
+    body: PasswordResetConfirm = request.context.json
+    password_reset.complete_reset(body.token, body.password)
     _clear_refresh_cookie()
     return "", 204
