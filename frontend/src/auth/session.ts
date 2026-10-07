@@ -142,6 +142,11 @@ export async function restore(): Promise<User | null> {
  * a thunk so it can be re-issued (a request body can only be sent once).
  */
 export async function withSession<T>(call: () => Promise<T>): Promise<T> {
+  // A refresh in flight (restoring the session after a reload, or rotating an expired token) is
+  // about to supply the token. Without waiting, the call would go out anonymously: an early
+  // "Add to cart" landed in a guest cart and the signed-in customer's cart stayed empty. A failed
+  // refresh ends the session, and the call then runs as a guest, as it should.
+  if (inFlight) await inFlight.catch(() => false)
   try {
     return await call()
   } catch (error) {
