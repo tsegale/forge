@@ -9,20 +9,31 @@ import { renderApp } from '@/test/render'
 import { server } from '@/test/server'
 
 const confirmPayment = vi.fn()
+// Whether the mocked Payment Element reports ready once mounted, as the real one does when loaded.
+const element = vi.hoisted(() => ({ readies: true }))
 
 // Stripe's iframe cannot run in jsdom; the real Payment Element is covered by Playwright.
-vi.mock('@stripe/react-stripe-js', () => ({
-  Elements: ({ children }: { children: ReactNode }) => children,
-  PaymentElement: () => <div data-testid="payment-element" />,
-  useStripe: () => ({ confirmPayment }),
-  useElements: () => ({}),
-}))
+vi.mock('@stripe/react-stripe-js', async () => {
+  const { useEffect } = await import('react')
+  return {
+    Elements: ({ children }: { children: ReactNode }) => children,
+    PaymentElement: ({ onReady }: { onReady?: () => void }) => {
+      useEffect(() => {
+        if (element.readies) onReady?.()
+      }, [onReady])
+      return <div data-testid="payment-element" />
+    },
+    useStripe: () => ({ confirmPayment }),
+    useElements: () => ({}),
+  }
+})
 
 const ORDER = '/api/v1/orders/FRG-000042'
 const expired = () => new Date(Date.now() - 1000).toISOString()
 
 beforeEach(() => {
   confirmPayment.mockReset()
+  element.readies = true
   server.use(
     ...signedIn(),
     http.get('/api/v1/config', () => HttpResponse.json(storeConfig)),
@@ -65,6 +76,14 @@ describe('PayPage', () => {
       { timeout: 5000 },
     )
     expect(confirmPayment).toHaveBeenCalledTimes(2)
+  })
+
+  it('keeps Pay disabled until the card form has loaded', async () => {
+    element.readies = false
+    server.use(http.get(ORDER, () => HttpResponse.json(order())))
+    renderApp('/orders/FRG-000042/pay')
+    await screen.findByTestId('payment-element')
+    expect(screen.getByRole('button', { name: 'Pay N$ 8,149.00' })).toBeDisabled()
   })
 
   it('offers a fresh checkout when the reservation has expired, refilling the cart', async () => {

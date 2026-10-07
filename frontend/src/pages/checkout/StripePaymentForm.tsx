@@ -31,6 +31,9 @@ export function StripePaymentForm({
   const [busy, setBusy] = useState(false)
   const [failure, setFailure] = useState<Failure | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
+  // Stripe.js loads only on this screen, so the element can still be mounting when Stripe is ready:
+  // a click before then would be lost.
+  const [ready, setReady] = useState(false)
 
   async function pay(event: SyntheticEvent) {
     event.preventDefault()
@@ -74,6 +77,9 @@ export function StripePaymentForm({
     <form onSubmit={(event) => void pay(event)} className="space-y-4" aria-label="Card payment">
       <PaymentElement
         options={ELEMENT_OPTIONS}
+        onReady={() => {
+          setReady(true)
+        }}
         onLoadError={({ error }) => {
           setLoadError(error.message ?? 'Unknown error')
         }}
@@ -92,7 +98,7 @@ export function StripePaymentForm({
         type="submit"
         className="w-full"
         busy={busy}
-        disabled={!stripe || !elements || loadError !== null}
+        disabled={!stripe || !elements || !ready || loadError !== null}
       >
         {busy ? 'Processing' : `Pay ${formatPrice(total)}`}
       </Button>
