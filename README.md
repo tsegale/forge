@@ -73,7 +73,9 @@ docker compose run --rm api flask seed demo --yes
 
 `flask seed demo` is an idempotent reset for presentations: it restores the catalog and its seeded
 stock, clears orders, carts and builds, and creates the accounts below, five past orders (paid,
-fulfilling, shipped, delivered, refunded) and a validated build. Run it again before each demo.
+fulfilling, shipped, delivered, refunded), a validated build, three featured builds, reviews,
+recent price drops and restocks. Run it again before each demo. If you have the product photos
+in `backend/seed/images/`, `docker compose run --rm api flask seed images` adds them.
 It refuses to run under the production configuration without `--yes`.
 
 > **Demo only.** These credentials are public. Never run `flask seed demo` against a real store.
@@ -201,7 +203,10 @@ to 409 `stock_below_reserved`. Validation failures are 422 with per-field `detai
 | `POST /auth/login` | Returns a 15-minute access token; sets the refresh token cookie |
 | `POST /auth/refresh` | Rotates the refresh token and issues a new access token |
 | `POST /auth/logout`, `POST /auth/logout-all` | End this session, or every session |
-| `GET /auth/me` | The authenticated user |
+| `GET /auth/me`, `PATCH /auth/me` | The authenticated user; change first and last name |
+| `POST /auth/me/password` | Change password: keeps this session, signs out every other one, emails a notice |
+| `POST /auth/password-reset` | Email a reset link; always 202, so it never reveals whether an account exists |
+| `POST /auth/password-reset/confirm` | Set a new password with the link's token; signs out every session |
 
 - Passwords are hashed with Argon2id (RFC 9106 parameters) and transparently re-hashed when
   parameters change. Unknown emails still run a hash, so timing does not reveal accounts.
@@ -224,6 +229,11 @@ to 409 `stock_below_reserved`. Validation failures are 422 with per-field `detai
   the number of workers that receive the traffic: with the image's 3 workers, up to 15 login
   attempts per minute per IP per container, and the per-account limit is likewise
   multiplied. Counters also start from zero when the fallback engages.
+- Password reset tokens are stored only as SHA-256 hashes, expire after 30 minutes (`PASSWORD_RESET_TTL_MINUTES`), and are
+  consumed atomically (`UPDATE ... RETURNING`), so a link works once; a partial unique index keeps
+  one live token per user. The link carries the token in the URL fragment, which never reaches
+  a server log, and points at `PUBLIC_BASE_URL` (required in production). Requests are
+  rate-limited per IP and per email address.
 - Roles are re-read from the database on every request, so deactivation and demotion take
   effect immediately. Create the first administrator with
   `flask users create-admin --email ... --first-name ... --last-name ...` (password is prompted).
@@ -242,6 +252,27 @@ Pagination is keyset-based: each page compares `(sort_key, id)` with the previou
 row, so pages stay consistent while data changes and deep pages cost the same as the first.
 `next_cursor` is signed and bound to its query; tampering or reusing it with other filters is
 a 400.
+
+| Endpoint | Purpose |
+| --- | --- |
+| `GET /products/facets` | Counts for the current filters (kinds, brands, price range, in stock, incompatible); each facet ignores its own filter |
+| `GET /search/suggest` | Type-ahead suggestions for the header search |
+| `GET /products/{slug}/price-history?days=` | The price as a step series from the start of the window |
+| `GET /products/{slug}/reviews` | Reviews with a rating summary, newest, highest or lowest first, optionally verified purchases only |
+| `POST /products/{slug}/reviews`, `PATCH`/`DELETE /reviews/{id}` | One review per customer per product; admins may delete but never edit |
+| `GET /products/price-drops`, `GET /products/back-in-stock` | Recent price drops (`LAG` over `price_history`) and restocks (`DISTINCT ON` over `inventory_events`) |
+| `GET /builds/featured` | Public, validated builds picked by the store |
+| `GET`/`POST /alerts`, `DELETE /alerts/{id}` | Price alerts: email me once when this part is at or below a target price; setting a new target re-arms it |
+
+A review is marked "verified purchase" by a database trigger, recomputed whenever one of the
+customer's orders changes status, so a refund removes the badge.
+
+Product photos are converted once by `flask seed images`: it reads
+`backend/seed/images/<SKU>-<n>.<ext>` (not in the repository: the photos are the manufacturers'
+copyrighted images, listed with their sources in `docs/IMAGE_SOURCES.md`), corrects orientation,
+flattens onto white, trims the margin and writes 320, 640 and 1280 px WebP variants named by a
+hash of the photo, so their URLs change when the photo does and can be cached forever. Nginx serves
+them from the `media` volume. Products without a photo show a drawing of their kind.
 
 ### Builds and compatibility
 
@@ -331,7 +362,10 @@ A Celery worker and a single beat scheduler (Redis broker) run:
   `FOR UPDATE SKIP LOCKED`, so parallel sweepers never block each other or a webhook, releases their
   stock, cancels them, and then cancels their PaymentIntents;
 - monthly `price_history` partition maintenance, creating the next months' partitions ahead of time;
-- the order confirmation email, sent exactly once per order.
+- price alerts, every 15 minutes and straight after an admin changes a price: each alert is claimed
+  before its email is sent, so it fires once;
+- the order confirmation email, sent exactly once per order, and the password reset and
+  password changed emails.
 
 In development, Mailpit catches every email: http://127.0.0.1:8025.
 
@@ -342,6 +376,20 @@ partitioned `price_history` table by a trigger). Stock edits use HTTP conditiona
 for optimistic concurrency: `GET /admin/inventory/{id}` returns the row version as an `ETag`,
 and `PATCH` requires `If-Match` with it, answering 412 if someone else changed the stock first,
 428 if `If-Match` is missing, and 409 if the new level would fall below reserved stock.
+
+`GET /admin/metrics` gives the dashboard's revenue, order count, average order and best sellers, with daily sales in
+the store's time zone (`STORE_TIMEZONE`). `GET /admin/audit` merges the four append-only logs
+(order status, price, inventory and payment events) into one feed with the acting user, and
+`GET /admin/webhooks` lists every Stripe event received and what it did.
+
+### Observability
+
+Every request gets an ID (the client's `X-Request-ID`, or one Nginx generates), echoed in the
+response, in error bodies and on every log line the request produces, in both Nginx's and the
+app's logs. The app writes one `forge.access` line per request, as JSON in production
+(`LOG_FORMAT`). Responses carry `Server-Timing` with the time spent in the app and in the database
+and the number of SQL statements, so the browser's network panel shows where time went
+(`SERVER_TIMING=false` turns it off).
 
 ## Database design
 
@@ -403,12 +451,18 @@ A single-page React app in `frontend/`, served by Nginx from the same origin as 
 
 | Screen | What it does |
 | --- | --- |
-| Catalog and product | Search, kind filters with per-kind spec filters, cursor paging, stock, add to cart or build |
-| Configurator | One row per component kind; pickers filtered to compatible parts; live conflicts, warnings, missing parts and power meter; save and validate |
-| Cart and checkout | Quantities, stock warnings, VAT and shipping totals; saved or one-off address; short lines named on 409 |
+| Home | Featured validated builds, shop by category, recent price drops, back in stock |
+| Catalog | `/shop`, `/shop/:kind` and `/search`: faceted filters kept in the URL, "fits my build" filtering (or show conflicting parts with the reason), grid or list |
+| Product | Gallery, full specs, a verdict against the current build, price history chart, reviews, compatible parts, price alert |
+| Configurator | One row per component kind; a part picker filtered to compatible parts; live conflicts, warnings, missing parts and power meter; save and validate |
+| Cart | Quantities, stock warnings, VAT and shipping totals, save for later, undo on remove |
+| Checkout | Delivery, review, payment and confirmation steps in a focused frame; saved or one-off address; short lines named on 409 |
 | Pay | Stripe Payment Element, reservation countdown, decline retry, "confirming" until the webhook lands, fresh checkout after expiry |
-| Orders | History with status filter and "buy again"; detail with status timeline and cancel |
-| Admin | Orders with legal next steps and refunds (with reason); inventory with stock, price and availability editing |
+| Account | Overview, orders with status timeline, cancel and "buy again", builds, addresses, price alerts, profile and password |
+| Sign-in | Sign in, register, forgot and reset password |
+| Admin | Dashboard with sales charts; orders with legal next steps and refunds; inventory, price and availability editing; audit log; webhook log |
+| How Forge works | The architecture and database rules behind the store, linking the style guide (`/styleguide`) and the API docs |
+| API Inspector | A drawer (footer button) listing the app's last 50 API calls with status, timing and request ID, each copyable as `curl`; auth headers are never shown |
 
 Design decisions worth knowing:
 
@@ -428,8 +482,13 @@ Design decisions worth knowing:
   disturbed while the customer types.
 - **Money.** Amounts are integer cents end to end; typed prices are parsed with string arithmetic,
   never floats.
+- **Design system.** Tailwind CSS 4 tokens (zinc neutrals, Forge blue `#1E4FA8`, status colours
+  with AA-contrast text shades), Inter and JetBrains Mono served from the same origin, and charts
+  drawn as SVG with accessible titles and a data-table fallback (no chart library). `/styleguide`
+  shows every token and component.
 - **Accessibility.** Light theme, inline SVG icons, labelled controls, focus-trapped dialogs, and
-  colour tokens that meet WCAG AA contrast; axe checks every demo-path screen in CI.
+  colour tokens that meet WCAG AA contrast; axe checks every page in CI at desktop and phone
+  width, and a purchase is completed with the keyboard alone.
 
 ### Typed API client
 
@@ -462,14 +521,14 @@ installing, so an incompatible set fails the build instead of being installed si
 
 ## Testing
 
-**Backend** (`cd backend && pytest`, about 530 tests). Tests run against a real PostgreSQL
+**Backend** (`cd backend && pytest`, about 700 tests). Tests run against a real PostgreSQL
 database, never SQLite, because triggers, partitions and composite constraints are part of what is
 under test. The session fixture rebuilds the schema, runs every migration up, down to base and up
 again (proving each `downgrade()` works), then seeds the catalog. Each test runs in a transaction
 that is rolled back; concurrency tests (checkout races, sweeper against webhook) use real commits.
 Payments use the fake gateway, but webhooks always go through real signature verification.
 
-**Frontend** (`cd frontend && npm test`, about 100 tests). Vitest with Testing Library renders the
+**Frontend** (`cd frontend && npm test`, about 240 tests). Vitest with Testing Library renders the
 real route tree; MSW answers the API at the network level, and fixtures are typed against the
 generated schema so they cannot drift from it. Stripe's components are mocked at the module
 boundary; the real Payment Element is covered end to end.
@@ -482,15 +541,23 @@ boundary; the real Payment Element is covered end to end.
 | `checkout-expiry.spec.ts` | An expired hold: payment withdrawn, fresh checkout with the same parts |
 | `payment.stripe.spec.ts` | Real Stripe test mode: a declined card, then a good one (runs with `E2E_STRIPE=1`) |
 | `api-docs.spec.ts` | Swagger UI and Redoc render under their own policy, with no policy or integrity violations |
+| `keyboard-checkout.spec.ts` | A complete purchase with the keyboard alone, from search to confirmation |
+| `accessibility.spec.ts` | Every page (guest, customer and admin) at 1440 and 390 px: no axe violation, no sideways scrolling |
+| `visual.spec.ts` | Full-page screenshots of the main pages at both widths against committed Linux baselines (runs with `VISUAL=1`); products show their kind drawings, never photos |
 
-CI runs on every push and pull request:
+CI runs on every push to `main` and `feat/**` branches and on every pull request:
 
 | Job | Steps |
 | --- | --- |
 | `backend` | `pip check`, ruff, pytest with coverage, `flask db check` (no model or migration drift), committed OpenAPI document is current |
 | `frontend` | Generated API types are current, type check, ESLint (strict type-checked), Prettier, unit tests, production build |
-| `e2e` | Migrates and seeds a fresh database, serves the production build, runs Playwright with simulated payments |
+| `e2e` | Migrates and seeds a fresh database, serves the production build, runs Playwright with simulated payments (visual comparison included once baselines are committed) |
 | `e2e-stripe` | Manual (`workflow_dispatch`): the same suite against Stripe test mode, with webhooks forwarded by the Stripe CLI. Needs the `STRIPE_SECRET_KEY` and `STRIPE_PUBLISHABLE_KEY` repository secrets (test-mode keys only; the job refuses live ones) |
+
+Two more workflows: **Lighthouse** builds the production images, starts the compose stack and
+audits it through Nginx (accessibility and best practices must score 95 or more; on pushes to
+`main` and by hand). **Visual baselines** (by hand) takes the Linux screenshots for
+`visual.spec.ts` and uploads them as an artifact to commit under `frontend/e2e/visual.spec.ts-snapshots/`.
 
 ## Project structure
 
@@ -507,13 +574,17 @@ backend/
     services/        business logic (auth, catalog, builds, cart, checkout, webhooks, sweeper, ...)
     tasks.py         Celery tasks; celery_app.py is the worker entry point
     errors.py        error envelope; db_errors.py maps constraint names to HTTP errors
-    cli.py           flask seed catalog, flask seed demo, flask users create-admin
+    observability.py request IDs, access log, JSON logging, Server-Timing
+    cli.py           flask seed catalog|images|demo, flask users create-admin
     demo.py          the demo data reset behind flask seed demo
   migrations/        Alembic: 0001 schema, 0002 reference data and database logic,
                      0003 pg_trgm search and refresh token families,
                      0004 compatibility inputs and build guards,
-                     0005 checkout and payment integrity
+                     0005 checkout and payment integrity,
+                     0006 product images and verified reviews, 0007 password reset tokens,
+                     0008 saved for later, 0009 inventory events and featured builds
   seed/catalog.json  62 real components with manufacturer specs
+  seed/images/       product photos for flask seed images (not in the repository)
   scripts/           ERD, DBML and OpenAPI exporters
   tests/
 frontend/
@@ -522,6 +593,7 @@ frontend/
     api/             generated OpenAPI types and the typed client
     auth/            in-memory session, cross-tab refresh, route guard
     builds/ cart/ orders/ admin/ catalog/ payments/   data access per area
+    inspector/       the API Inspector's call log
     pages/           screens, one folder per area
     components/      layout and shared UI (buttons, fields, dialogs, alerts)
     lib/             money, time and navigation helpers
@@ -536,8 +608,10 @@ scripts/ci/          starts the end-to-end stack in CI
 ## Known limitations
 
 - One currency (NAD) and one VAT rate; shipping is a flat fee with a free threshold.
-- Email is sent only for order confirmation; shipping and delivery are visible in the order
-  timeline but not emailed.
+- Email is sent for order confirmation, price alerts and password reset and change; shipping and
+  delivery are visible in the order timeline but not emailed.
+- Product photos are not in the repository (copyright); without them every product shows its
+  kind's drawing.
 - Refunds are full refunds; partial refunds and returns are not modelled.
 - During a Redis outage, rate limits fall back to per-worker in-memory counters (see
   [Authentication](#authentication)).
@@ -550,3 +624,6 @@ scripts/ci/          starts the end-to-end stack in CI
 - [x] Phase 4: cart, two-phase checkout with reservations, Stripe webhooks, Celery workers
 - [x] Phase 5: React frontend (catalog, configurator, cart and checkout, payments, orders, admin), end-to-end tests
 - [x] Phase 6: production-stack run, documentation, release (v1.0.0)
+- [x] Redesign (v1.1.0): design system, every page redesigned; product images, reviews, price
+  history and alerts, password reset, saved for later, home, admin dashboard and audit log,
+  observability, keyboard, accessibility, visual and Lighthouse gates

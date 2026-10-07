@@ -48,7 +48,7 @@ class ErrorResponse(BaseModel):
 api = SpecTree(
     "flask",
     title="Forge API",
-    version="1.0.0",
+    version="1.1.0",
     description="PC hardware marketplace with a database-enforced build compatibility engine.",
     path="api/docs",
     mode="strict",
