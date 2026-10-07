@@ -1,8 +1,9 @@
 name: Visual baselines
 
-# Run by hand once the product photos are in: makes the Linux screenshots that visual.spec.ts
-# compares against and uploads them. Download the artifact, unzip it into
-# frontend/e2e/visual.spec.ts-snapshots/ and commit; from then on the e2e job compares every run.
+# Run by hand: makes the Linux screenshots that visual.spec.ts compares against and uploads them.
+# Products always show their kind drawings (photos are copyrighted and never committed). Download
+# the artifact, unzip it into frontend/e2e/visual.spec.ts-snapshots/ and commit; from then on the
+# e2e job compares every run.
 on:
   workflow_dispatch:
 
@@ -37,10 +38,11 @@ jobs:
       E2E_LOG_DIR: ${{ github.workspace }}/e2e-logs
       PAYMENT_GATEWAY: fake
       VISUAL: "1"
+      E2E_SKIP_PHOTOS: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/e2e-setup
-      - name: Start the stack (API, demo data and photos, production build)
+      - name: Start the stack (API, demo data, production build)
         run: scripts/ci/start-e2e-stack.sh
       - name: Take the screenshots
         working-directory: frontend
