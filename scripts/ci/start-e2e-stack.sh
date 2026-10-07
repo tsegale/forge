@@ -24,6 +24,8 @@ cd "$root/backend"
 flask db upgrade
 flask seed catalog
 flask seed demo --yes
+# Product photos, when the run has them (docs/IMAGE_SOURCES.md); otherwise the kind drawings show.
+if [ -d seed/images ] && [ -n "$(ls -A seed/images)" ]; then flask seed images; fi
 gunicorn --bind 127.0.0.1:8080 --workers 2 --access-logfile - wsgi:app >"$logs/api.log" 2>&1 &
 wait_for http://127.0.0.1:8080/api/v1/health/ready api
 

@@ -40,13 +40,18 @@ export async function cartWithOnly(page: Page, slug: string): Promise<void> {
     await expect(remove).toHaveCount(before - 1)
   }
   await page.goto(`/products/${slug}`)
+  // Wait for the API, not the mini-cart it opens: specs that install a fake clock pause the
+  // timers the UI uses to report a finished request.
+  const added = page.waitForResponse(
+    (response) => response.url().endsWith('/api/v1/cart/items') && response.request().method() === 'POST',
+  )
   await page.getByRole('button', { name: 'Add to cart' }).click()
-  await expect(page.getByText('Added to your cart')).toBeVisible()
+  expect((await added).ok()).toBe(true)
 }
 
 /** From a cart with items, place the order to the default saved address; returns its number. */
 export async function placeOrder(page: Page): Promise<string> {
-  await page.goto('/checkout')
+  await page.goto('/checkout?step=review') // the saved default address is already chosen
   await page.getByRole('button', { name: 'Place order and pay' }).click()
   await page.waitForURL(/\/orders\/FRG-\d+\/pay$/)
   const number = /FRG-\d+/.exec(page.url())?.[0]

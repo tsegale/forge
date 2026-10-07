@@ -279,7 +279,7 @@ export function HowItWorksPage() {
           error.
         </p>
         <div
-          className="overflow-x-auto rounded-md border border-border bg-surface"
+          className="relative overflow-x-auto rounded-md border border-border bg-surface"
           tabIndex={0}
           role="region"
           aria-label="Rules the database enforces"

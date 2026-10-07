@@ -195,17 +195,20 @@ export function CheckoutPage() {
 
   if (!lines.length) {
     return (
-      <EmptyState
-        icon={ShoppingCart}
-        title="Nothing to check out"
-        action={
-          <Button asChild>
-            <Link to="/shop">Browse the catalog</Link>
-          </Button>
-        }
-      >
-        <p>Your cart is empty.</p>
-      </EmptyState>
+      <div className="flex flex-col gap-6">
+        <h1 className="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">Checkout</h1>
+        <EmptyState
+          icon={ShoppingCart}
+          title="Nothing to check out"
+          action={
+            <Button asChild>
+              <Link to="/shop">Browse the catalog</Link>
+            </Button>
+          }
+        >
+          <p>Your cart is empty.</p>
+        </EmptyState>
+      </div>
     )
   }
 

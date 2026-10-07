@@ -2,7 +2,8 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    # Feature branches too, so a long-lived branch (feat/redesign) is checked before its pull request.
+    branches: [main, "feat/**"]
   pull_request:
   # Run by hand to also exercise real Stripe test mode (job e2e-stripe).
   workflow_dispatch:
@@ -122,8 +123,11 @@ jobs:
       - uses: ./.github/actions/e2e-setup
       - name: Start the stack (API, demo data, production build)
         run: scripts/ci/start-e2e-stack.sh
-      - name: End-to-end tests, with axe checks on every demo screen
+      - name: End-to-end tests (demo path, keyboard-only checkout, axe on every page, visual once baselined)
         working-directory: frontend
+        env:
+          # Visual comparison starts once the baselines from "Visual baselines" are committed.
+          VISUAL: ${{ hashFiles('frontend/e2e/visual.spec.ts-snapshots/**') != '' && '1' || '' }}
         run: npx playwright test
       - name: Keep the report and server logs
         if: failure()

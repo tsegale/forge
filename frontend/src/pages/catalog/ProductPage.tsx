@@ -287,7 +287,7 @@ export function ProductPage() {
         aria-label="On this page"
         className="sticky top-16 z-10 -mx-4 border-y border-border bg-canvas/95 px-4 sm:mx-0 sm:rounded-md sm:border sm:px-2"
       >
-        <ul className="flex gap-1 overflow-x-auto py-1.5 text-sm">
+        <ul className="relative flex gap-1 overflow-x-auto py-1.5 text-sm">
           {sections.map(([id, label]) => (
             <li key={id}>
               <a

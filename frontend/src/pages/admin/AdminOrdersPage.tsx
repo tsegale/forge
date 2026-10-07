@@ -54,7 +54,7 @@ export function AdminOrdersPage() {
         <p className="py-8 text-center text-ink-muted">No orders match.</p>
       ) : null}
       {rows.length ? (
-        <div className="overflow-x-auto rounded-md border border-border bg-surface">
+        <div className="relative overflow-x-auto rounded-md border border-border bg-surface">
           <table className="w-full text-sm">
             <thead className="bg-canvas text-left text-ink-muted">
               <tr>

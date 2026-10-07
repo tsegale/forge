@@ -14,11 +14,11 @@ const LINKS = [
 export function AdminLayout() {
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-[13rem_minmax(0,1fr)]">
-      <nav aria-label="Administration" className="lg:sticky lg:top-28 lg:self-start">
+      <nav aria-label="Administration" className="min-w-0 lg:sticky lg:top-28 lg:self-start">
         <p className="mb-3 hidden text-xs font-semibold tracking-wide text-ink-subtle uppercase lg:block">
           Back office
         </p>
-        <ul className="-mx-4 flex gap-1 overflow-x-auto px-4 pb-1 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0">
+        <ul className="relative -mx-4 flex gap-1 overflow-x-auto px-4 pb-1 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0">
           {LINKS.map(({ to, label, icon: Icon }) => (
             <li key={to} className="shrink-0">
               <NavLink

@@ -1,0 +1,60 @@
+name: Visual baselines
+
+# Run by hand once the product photos are in: makes the Linux screenshots that visual.spec.ts
+# compares against and uploads them. Download the artifact, unzip it into
+# frontend/e2e/visual.spec.ts-snapshots/ and commit; from then on the e2e job compares every run.
+on:
+  workflow_dispatch:
+
+jobs:
+  baselines:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: forge
+          POSTGRES_PASSWORD: forge
+          POSTGRES_DB: forge
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U forge -d forge"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      FLASK_APP: wsgi.py
+      FORGE_ENV: development
+      SECRET_KEY: ci-only-secret
+      JWT_SECRET_KEY: ci-only-jwt-secret-at-least-32-bytes-long
+      DATABASE_URL: postgresql+psycopg://forge:forge@localhost:5432/forge
+      REDIS_URL: redis://localhost:6379/0
+      E2E_BASE_URL: http://127.0.0.1:4173
+      E2E_LOG_DIR: ${{ github.workspace }}/e2e-logs
+      PAYMENT_GATEWAY: fake
+      VISUAL: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/e2e-setup
+      - name: Start the stack (API, demo data and photos, production build)
+        run: scripts/ci/start-e2e-stack.sh
+      - name: Take the screenshots
+        working-directory: frontend
+        run: npx playwright test e2e/visual.spec.ts --update-snapshots
+      - name: Upload the baselines
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-baselines
+          path: frontend/e2e/visual.spec.ts-snapshots
+          retention-days: 14
+      - name: Keep the server logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-baselines-logs
+          path: e2e-logs
+          retention-days: 7

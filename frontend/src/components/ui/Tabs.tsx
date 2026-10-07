@@ -17,7 +17,7 @@ export function TabList({
   return (
     <RadixTabs.List
       aria-label={label}
-      className={cn('flex gap-1 overflow-x-auto border-b border-border', className)}
+      className={cn('relative flex gap-1 overflow-x-auto border-b border-border', className)}
     >
       {children}
     </RadixTabs.List>
