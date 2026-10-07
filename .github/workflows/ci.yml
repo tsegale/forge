@@ -119,6 +119,8 @@ jobs:
       REDIS_URL: redis://localhost:6379/0
       E2E_BASE_URL: http://127.0.0.1:4173
       E2E_LOG_DIR: ${{ github.workspace }}/e2e-logs
+      # Every spec signs in from 127.0.0.1; production keeps 5 per minute.
+      LOGIN_LIMIT_PER_IP: 100 per minute
       PAYMENT_GATEWAY: fake
       # The simulator signs its webhook events with this; any whsec_ value works for the fake gateway.
       STRIPE_WEBHOOK_SECRET: whsec_ci_only_fake_gateway
@@ -175,6 +177,8 @@ jobs:
       REDIS_URL: redis://localhost:6379/0
       E2E_BASE_URL: http://127.0.0.1:4173
       E2E_LOG_DIR: ${{ github.workspace }}/e2e-logs
+      # Every spec signs in from 127.0.0.1; production keeps 5 per minute.
+      LOGIN_LIMIT_PER_IP: 100 per minute
       PAYMENT_GATEWAY: stripe
       STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
       STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}

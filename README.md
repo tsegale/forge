@@ -223,6 +223,9 @@ to 409 `stock_below_reserved`. Validation failures are 422 with per-field `detai
   (across IPs), stored in Redis; 429 responses carry `Retry-After`. Behind Nginx the limiter
   keys on the address Nginx appends to `X-Forwarded-For` (`TRUSTED_PROXY_COUNT=1`), so a client
   cannot pick its own key by sending that header.
+  The end-to-end stack raises the per-IP login limit with `LOGIN_LIMIT_PER_IP` (for example
+  `100 per minute`), since every spec signs in from one address; production refuses that
+  variable at startup.
 - If Redis becomes unreachable, limiting continues with in-memory counters instead of failing
   open, and switches back once Redis recovers. Those counters are per Gunicorn worker and are
   not shared, so during an outage the effective limit is the configured limit multiplied by

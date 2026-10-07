@@ -19,6 +19,8 @@ x-backend-env: &backend-env
   STORE_CURRENCY: ${STORE_CURRENCY:-nad}
   FORGE_ENV: ${FORGE_ENV:-production}
   TRUSTED_PROXY_COUNT: 1   # nginx; makes per-IP rate limits see the real client address
+  # End-to-end runs only (repeated Playwright sign-ins); production refuses it at startup.
+  LOGIN_LIMIT_PER_IP: ${LOGIN_LIMIT_PER_IP:-}
 
 services:
   db:

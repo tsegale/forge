@@ -5,8 +5,12 @@ from datetime import timedelta
 from pathlib import Path
 
 from celery.schedules import crontab
+from limits import parse_many
 
 TEST_WEBHOOK_SECRET = "whsec_forge_test_signing_secret"
+
+# Sign-in attempts per client IP. Production always uses this value.
+LOGIN_LIMIT_PER_IP = "5 per minute"
 
 # HS256 keys must be at least as long as the hash output (RFC 7518, section 3.2).
 MIN_JWT_KEY_BYTES = 32
@@ -16,6 +20,22 @@ def _require(name: str) -> str:
     value = os.environ.get(name)
     if not value:
         raise RuntimeError(f"Missing required environment variable: {name}")
+    return value
+
+
+def _login_limit(production: bool) -> str:
+    """The end-to-end stack raises the per-IP sign-in limit with LOGIN_LIMIT_PER_IP: repeated
+    Playwright runs sign in from one address far more often than 5 times a minute. Production
+    refuses the override, so the deployed limit cannot be loosened by an environment variable."""
+    value = os.environ.get("LOGIN_LIMIT_PER_IP", "").strip()  # compose passes unset as ""
+    if not value:
+        return LOGIN_LIMIT_PER_IP
+    if production:
+        raise RuntimeError("LOGIN_LIMIT_PER_IP is for the end-to-end stack and cannot be set in production")
+    try:
+        parse_many(value)
+    except ValueError as exc:
+        raise RuntimeError(f"LOGIN_LIMIT_PER_IP is not a rate limit such as '100 per minute': {value!r}") from exc
     return value
 
 
@@ -114,7 +134,6 @@ class BaseConfig:
     # Commerce. Prices include VAT; amounts are integer cents in STORE_CURRENCY.
     VAT_RATE_BPS = 1500  # Namibian VAT, 15%
 
-    LOGIN_LIMIT_PER_IP = "5 per minute"
     LOGIN_FAILURE_LIMIT_PER_ACCOUNT = "10 per 15 minutes"
     REGISTER_LIMIT_PER_IP = "10 per hour"
     REVIEW_LIMIT_PER_USER = "10 per hour"
@@ -131,6 +150,7 @@ class BaseConfig:
         self.JWT_SECRET_KEY = _jwt_key()
         for key, value in _payment_settings(production=isinstance(self, ProductionConfig)).items():
             setattr(self, key, value)
+        self.LOGIN_LIMIT_PER_IP = _login_limit(production=isinstance(self, ProductionConfig))
         self.SQLALCHEMY_DATABASE_URI = _require("DATABASE_URL")
         self.SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True, "pool_size": 10, "max_overflow": 20}
         self.REDIS_URL = os.environ.get("REDIS_URL", "redis://redis:6379/0")
@@ -202,6 +222,8 @@ class TestingConfig(BaseConfig):
         # Tests never reach Stripe: the fake gateway, with a fixed secret for signed test webhooks.
         os.environ["PAYMENT_GATEWAY"] = "fake"
         os.environ["STRIPE_WEBHOOK_SECRET"] = TEST_WEBHOOK_SECRET
+        # Limit tests assert the production values, even in a shell set up for the e2e stack.
+        os.environ.pop("LOGIN_LIMIT_PER_IP", None)
         os.environ.setdefault("DATABASE_URL", _require("TEST_DATABASE_URL"))
         super().__init__()
         self.SQLALCHEMY_DATABASE_URI = _require("TEST_DATABASE_URL")

@@ -5,7 +5,7 @@ import time
 import pytest
 from limits.storage import RedisStorage
 
-from app import create_app
+from app import config, create_app
 from app.extensions import limiter
 from tests.conftest import DEFAULT_PASSWORD
 
@@ -20,6 +20,60 @@ def _login(client, email, password="wrong password", ip="203.0.113.10"):
 def test_limits_are_stored_in_redis(app):
     with app.app_context():
         assert isinstance(limiter.storage, RedisStorage)
+
+
+def test_login_limit_is_five_per_minute(app):
+    assert app.config["LOGIN_LIMIT_PER_IP"] == "5 per minute"
+
+
+def test_testing_ignores_the_e2e_login_limit_override(monkeypatch):
+    monkeypatch.setenv("LOGIN_LIMIT_PER_IP", "100 per minute")
+    assert config.TestingConfig().LOGIN_LIMIT_PER_IP == "5 per minute"
+
+
+@pytest.fixture()
+def dev_env(monkeypatch):
+    monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", "whsec_local")
+    monkeypatch.delenv("STRIPE_SECRET_KEY", raising=False)
+    monkeypatch.delenv("PAYMENT_GATEWAY", raising=False)
+    return monkeypatch
+
+
+@pytest.mark.parametrize("value", [None, "", "  "])
+def test_unset_override_keeps_five_per_minute(dev_env, value):
+    if value is None:
+        dev_env.delenv("LOGIN_LIMIT_PER_IP", raising=False)
+    else:
+        dev_env.setenv("LOGIN_LIMIT_PER_IP", value)  # compose passes an unset variable as ""
+    assert config.DevelopmentConfig().LOGIN_LIMIT_PER_IP == "5 per minute"
+
+
+def test_e2e_stack_can_raise_the_login_limit(dev_env):
+    dev_env.setenv("LOGIN_LIMIT_PER_IP", "100 per minute")
+    assert config.DevelopmentConfig().LOGIN_LIMIT_PER_IP == "100 per minute"
+
+
+def test_malformed_login_limit_stops_startup(dev_env):
+    dev_env.setenv("LOGIN_LIMIT_PER_IP", "lots")
+    with pytest.raises(RuntimeError, match="not a rate limit"):
+        config.DevelopmentConfig()
+
+
+def test_production_refuses_a_login_limit_override(monkeypatch):
+    for name, value in {
+        "STRIPE_SECRET_KEY": "sk_test_abc",
+        "STRIPE_WEBHOOK_SECRET": "whsec_abc",
+        "STRIPE_PUBLISHABLE_KEY": "pk_test_abc",
+        "MAIL_SERVER": "smtp.example.com",
+        "PUBLIC_BASE_URL": "https://forge.example.com",
+        "LOGIN_LIMIT_PER_IP": "100 per minute",
+    }.items():
+        monkeypatch.setenv(name, value)
+    monkeypatch.delenv("PAYMENT_GATEWAY", raising=False)
+    with pytest.raises(RuntimeError, match="cannot be set in production"):
+        config.ProductionConfig()
+    monkeypatch.delenv("LOGIN_LIMIT_PER_IP")
+    assert config.ProductionConfig().LOGIN_LIMIT_PER_IP == "5 per minute"
 
 
 def test_sixth_login_attempt_from_one_ip_is_429(app, client, make_user, monkeypatch):
