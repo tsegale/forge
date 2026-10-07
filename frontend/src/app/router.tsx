@@ -22,7 +22,6 @@ import { BuildsPage } from '@/pages/builds/BuildsPage'
 import { CartPage } from '@/pages/cart/CartPage'
 import { CheckoutPage } from '@/pages/checkout/CheckoutPage'
 import { ConfirmationPage } from '@/pages/checkout/ConfirmationPage'
-import { PayPage } from '@/pages/checkout/PayPage'
 import { CatalogPage } from '@/pages/catalog/CatalogPage'
 import { ProductPage } from '@/pages/catalog/ProductPage'
 import { ConfiguratorPage } from '@/pages/configurator/ConfiguratorPage'
@@ -49,7 +48,11 @@ export const routes: RouteObject[] = [
         errorElement: <RouteError />,
         children: [
           { path: 'checkout', element: <CheckoutPage /> },
-          { path: 'orders/:orderNumber/pay', element: <PayPage /> },
+          {
+            // Loaded on demand: Stripe's libraries stay out of the bundle every other page downloads.
+            path: 'orders/:orderNumber/pay',
+            lazy: async () => ({ Component: (await import('@/pages/checkout/PayPage')).PayPage }),
+          },
           { path: 'orders/:orderNumber/confirmation', element: <ConfirmationPage /> },
         ],
       },
