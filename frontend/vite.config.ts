@@ -12,6 +12,11 @@ const apiTarget = process.env.FORGE_API_ORIGIN ?? 'http://127.0.0.1:8080'
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: { alias: { '@': path.resolve(import.meta.dirname, 'src') } },
+  build: {
+    // Vite inlines small assets as data: URIs, which the CSP (font-src 'self') refuses: the small
+    // font subsets would be blocked and logged. Fonts are always separate files.
+    assetsInlineLimit: (file) => (/\.woff2?$/.test(file) ? false : undefined),
+  },
   server: {
     port: 5173,
     proxy: {
