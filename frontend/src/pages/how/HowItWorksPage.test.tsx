@@ -10,8 +10,9 @@ describe('How Forge works', () => {
     server.use(signedOut())
     const router = renderApp('/')
     await userEvent.click(await screen.findByRole('link', { name: 'How Forge works' }))
-    expect(router.state.location.pathname).toBe('/how-it-works')
+    // The page loads on demand: the router navigates once its code has arrived.
     expect(await screen.findByRole('heading', { level: 1, name: 'How Forge works' })).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe('/how-it-works')
     expect(screen.getByRole('img', { name: 'Order lifecycle' })).toHaveAccessibleDescription(/late payment/)
     const rules = screen.getByRole('table', { name: /Rules the database enforces/ })
     expect(within(rules).getAllByRole('row').length).toBeGreaterThan(8)

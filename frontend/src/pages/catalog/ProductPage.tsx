@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Check, Layers, ShoppingCart, Truck } from 'lucide-react'
-import { useState, type ReactNode } from 'react'
+import { lazy, Suspense, useState, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { ApiError } from '@/api/errors'
 import { configQuery } from '@/app/config'
@@ -12,7 +12,6 @@ import { inSentence, KIND_LABELS } from '@/catalog/labels'
 import { componentKindsQuery, productQuery } from '@/catalog/queries'
 import { priceHistoryQuery } from '@/catalog/reviews'
 import { keySpecs, specGroups } from '@/catalog/specs'
-import { PriceHistoryChart } from '@/components/charts/PriceHistoryChart'
 import { SpecTable } from '@/components/catalog/SpecTable'
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs'
 import { Button } from '@/components/ui/Button'
@@ -30,6 +29,11 @@ import { CompatibleParts } from './product/CompatibleParts'
 import { Gallery } from './product/Gallery'
 import { PriceAlertControl } from './product/PriceAlertControl'
 import { Reviews } from './product/Reviews'
+
+// Below the fold, so it loads on demand rather than with every page.
+const PriceHistoryChart = lazy(async () => ({
+  default: (await import('@/components/charts/PriceHistoryChart')).PriceHistoryChart,
+}))
 
 const RANGES = [
   { days: 30, label: '30 days' },
@@ -115,11 +119,13 @@ function PriceHistorySection({ slug, name }: { slug: string; name: string }) {
             Lowest in this period:{' '}
             <span className="font-medium text-ink tabular">{formatCents(data.lowest_cents)}</span>.
           </p>
-          <PriceHistoryChart
-            points={data.points}
-            currentCents={data.current_cents}
-            title={`Price of ${name} over the last ${days === 365 ? 'year' : `${String(days)} days`}`}
-          />
+          <Suspense fallback={<Skeleton className="aspect-[640/220] w-full" />}>
+            <PriceHistoryChart
+              points={data.points}
+              currentCents={data.current_cents}
+              title={`Price of ${name} over the last ${days === 365 ? 'year' : `${String(days)} days`}`}
+            />
+          </Suspense>
         </div>
       )}
     </Section>

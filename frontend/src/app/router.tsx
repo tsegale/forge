@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate, type RouteObject } from 'react-router'
+import { createBrowserRouter, Navigate, Outlet, type RouteObject } from 'react-router'
 import { RequireAuth } from '@/auth/RequireAuth'
 import { AppShell } from '@/components/layout/AppShell'
 import { CheckoutShell } from '@/components/layout/CheckoutShell'
@@ -7,13 +7,6 @@ import { AccountOverview } from '@/pages/account/AccountOverview'
 import { AddressesPage } from '@/pages/account/AddressesPage'
 import { AlertsPage } from '@/pages/account/AlertsPage'
 import { ProfilePage } from '@/pages/account/ProfilePage'
-import { AdminLayout } from '@/pages/admin/AdminLayout'
-import { AdminOrderPage } from '@/pages/admin/AdminOrderPage'
-import { AdminOrdersPage } from '@/pages/admin/AdminOrdersPage'
-import { AuditPage } from '@/pages/admin/AuditPage'
-import { DashboardPage } from '@/pages/admin/DashboardPage'
-import { InventoryPage } from '@/pages/admin/InventoryPage'
-import { WebhooksPage } from '@/pages/admin/WebhooksPage'
 import { ForgotPasswordPage } from '@/pages/auth/ForgotPasswordPage'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { RegisterPage } from '@/pages/auth/RegisterPage'
@@ -27,11 +20,16 @@ import { ProductPage } from '@/pages/catalog/ProductPage'
 import { ConfiguratorPage } from '@/pages/configurator/ConfiguratorPage'
 import { RouteError } from '@/pages/errors/RouteError'
 import { HomePage } from '@/pages/home/HomePage'
-import { HowItWorksPage } from '@/pages/how/HowItWorksPage'
 import { NotFound } from '@/pages/NotFound'
 import { OrderPage } from '@/pages/orders/OrderPage'
 import { OrdersPage } from '@/pages/orders/OrdersPage'
-import { StyleguidePage } from '@/pages/styleguide/StyleguidePage'
+
+/**
+ * Pages most visitors never open load on demand, so they stay out of the bundle every page
+ * downloads. The router fetches the code during navigation, keeping the current page on screen
+ * until it arrives. The back office is one chunk (./pages/admin/index.ts).
+ */
+const admin = () => import('@/pages/admin')
 
 export const routes: RouteObject[] = [
   {
@@ -93,21 +91,37 @@ export const routes: RouteObject[] = [
             path: 'admin',
             element: (
               <RequireAuth admin>
-                <AdminLayout />
+                <Outlet />
               </RequireAuth>
             ),
             children: [
-              { index: true, element: <Navigate to="dashboard" replace /> },
-              { path: 'dashboard', element: <DashboardPage /> },
-              { path: 'orders', element: <AdminOrdersPage /> },
-              { path: 'orders/:orderNumber', element: <AdminOrderPage /> },
-              { path: 'inventory', element: <InventoryPage /> },
-              { path: 'audit', element: <AuditPage /> },
-              { path: 'webhooks', element: <WebhooksPage /> },
+              {
+                lazy: async () => ({ Component: (await admin()).AdminLayout }),
+                children: [
+                  { index: true, element: <Navigate to="dashboard" replace /> },
+                  { path: 'dashboard', lazy: async () => ({ Component: (await admin()).DashboardPage }) },
+                  { path: 'orders', lazy: async () => ({ Component: (await admin()).AdminOrdersPage }) },
+                  {
+                    path: 'orders/:orderNumber',
+                    lazy: async () => ({ Component: (await admin()).AdminOrderPage }),
+                  },
+                  { path: 'inventory', lazy: async () => ({ Component: (await admin()).InventoryPage }) },
+                  { path: 'audit', lazy: async () => ({ Component: (await admin()).AuditPage }) },
+                  { path: 'webhooks', lazy: async () => ({ Component: (await admin()).WebhooksPage }) },
+                ],
+              },
             ],
           },
-          { path: 'styleguide', element: <StyleguidePage /> },
-          { path: 'how-it-works', element: <HowItWorksPage /> },
+          {
+            path: 'styleguide',
+            lazy: async () => ({
+              Component: (await import('@/pages/styleguide/StyleguidePage')).StyleguidePage,
+            }),
+          },
+          {
+            path: 'how-it-works',
+            lazy: async () => ({ Component: (await import('@/pages/how/HowItWorksPage')).HowItWorksPage }),
+          },
           { path: 'login', element: <LoginPage /> },
           { path: 'register', element: <RegisterPage /> },
           { path: 'forgot-password', element: <ForgotPasswordPage /> },
