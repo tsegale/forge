@@ -159,7 +159,7 @@ Stripe keys there apply to the development server too.
 ### Payments without Stripe keys
 
 Without `STRIPE_SECRET_KEY` (or with `PAYMENT_GATEWAY=fake`) the API uses an in-process fake
-gateway, and the pay screen shows a clearly marked test panel instead of Stripe's card form.
+gateway (`STRIPE_WEBHOOK_SECRET` is still required: any `whsec_` value), and the pay screen shows a clearly marked test panel instead of Stripe's card form.
 "Pay" and "Simulate a declined card" call `POST /api/test/payments/{order_number}`, which builds
 the event Stripe would send, signs it with the webhook secret and runs it through the normal
 webhook processing, signature check included, so the order is paid by exactly the code a real

@@ -22,7 +22,7 @@ jobs:
       # and no real mail server (nothing in this audit sends mail).
       FORGE_ENV: development
       STRIPE_SECRET_KEY: ""
-      STRIPE_WEBHOOK_SECRET: ""
+      STRIPE_WEBHOOK_SECRET: whsec_ci_only_fake_gateway # required by both gateways
       STRIPE_PUBLISHABLE_KEY: ""
       MAIL_SERVER: 127.0.0.1
       HTTP_PORT: "8080"

@@ -34,9 +34,15 @@ def _payment_settings(production: bool) -> dict[str, str]:
             raise RuntimeError("STRIPE_SECRET_KEY is not a Stripe secret key")
         if "_live_" in secret and not production:
             raise RuntimeError("Refusing a live Stripe key outside production")
-        webhook_secret = _require("STRIPE_WEBHOOK_SECRET").strip()
-    else:
-        webhook_secret = os.environ.get("STRIPE_WEBHOOK_SECRET", "whsec_local_fake_gateway").strip()
+    # Both gateways verify every webhook signature, the fake one included (the payment simulator
+    # signs its events with this secret). Checked here so a missing secret stops startup instead
+    # of failing each webhook. Compose passes an unset variable as an empty string.
+    webhook_secret = os.environ.get("STRIPE_WEBHOOK_SECRET", "").strip()
+    if not webhook_secret:
+        hint = "from `stripe listen` or the Stripe Dashboard" if gateway == "stripe" else "any whsec_ value"
+        raise RuntimeError(f"Missing required environment variable: STRIPE_WEBHOOK_SECRET ({hint})")
+    if not webhook_secret.startswith("whsec_"):
+        raise RuntimeError("STRIPE_WEBHOOK_SECRET is not a Stripe webhook signing secret (whsec_...)")
     # The publishable key is public by design (Stripe.js uses it in the browser).
     publishable = os.environ.get("STRIPE_PUBLISHABLE_KEY", "").strip()
     if publishable and not publishable.startswith(("pk_test_", "pk_live_")):

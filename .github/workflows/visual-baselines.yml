@@ -41,6 +41,7 @@ jobs:
       E2E_BASE_URL: http://127.0.0.1:4173
       E2E_LOG_DIR: ${{ github.workspace }}/e2e-logs
       PAYMENT_GATEWAY: fake
+      STRIPE_WEBHOOK_SECRET: whsec_ci_only_fake_gateway
       VISUAL: "1"
       E2E_SKIP_PHOTOS: "1"
     steps:

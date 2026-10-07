@@ -118,6 +118,8 @@ jobs:
       E2E_BASE_URL: http://127.0.0.1:4173
       E2E_LOG_DIR: ${{ github.workspace }}/e2e-logs
       PAYMENT_GATEWAY: fake
+      # The simulator signs its webhook events with this; any whsec_ value works for the fake gateway.
+      STRIPE_WEBHOOK_SECRET: whsec_ci_only_fake_gateway
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/e2e-setup
