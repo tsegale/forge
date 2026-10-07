@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { ArrowRight, CircleCheck, Cpu, Gauge, Ruler, ShieldCheck, TriangleAlert } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { preload } from 'react-dom'
 import { Link, useNavigate } from 'react-router'
 import { configQuery } from '@/app/config'
 import { emptyDraft } from '@/builds/draft'
@@ -8,13 +9,14 @@ import { setDraft } from '@/builds/store'
 import { KIND_LABELS } from '@/catalog/labels'
 import { CATEGORY_LINKS } from '@/catalog/navigation'
 import { facetsQuery } from '@/catalog/queries'
-import { KindIllustration } from '@/components/catalog/KindIllustration'
 import { ProductCard, ProductCardSkeleton } from '@/components/catalog/ProductCard'
 import { Button } from '@/components/ui/Button'
+import { Photo } from '@/components/ui/Photo'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { toast } from '@/components/ui/toastStore'
 import { backInStockQuery, featuredBuildsQuery, priceDropsQuery, type FeaturedBuild } from '@/home/queries'
 import { formatPrice } from '@/lib/money'
+import { buildPhoto, CATEGORY_PHOTOS, PHOTOS } from '@/lib/photos'
 import { usePageTitle } from '@/lib/usePageTitle'
 
 const SHORT_KIND: Record<string, string> = { cpu: 'CPU', gpu: 'GPU', memory: 'Memory', case: 'Case' }
@@ -102,50 +104,55 @@ function LiveCheck() {
   )
 }
 
-function FeaturedBuildCard({ build }: { build: FeaturedBuild }) {
+const HERO_SIZES = '(min-width: 1280px) 640px, (min-width: 1024px) 52vw, 100vw'
+
+function FeaturedBuildCard({ build, index }: { build: FeaturedBuild; index: number }) {
   const navigate = useNavigate()
   const parts = build.items.map((item) => item.product)
   const highlight = ['cpu', 'gpu', 'memory', 'case']
     .map((kind) => parts.find((p) => p.kind === kind))
     .filter((p) => p !== undefined)
   return (
-    <article className="flex flex-col rounded-md border border-border bg-surface p-5">
-      <p className="flex items-center gap-1.5 text-xs font-semibold tracking-wide text-success-ink uppercase">
-        <ShieldCheck aria-hidden="true" className="h-3.5 w-3.5" /> Validated
-      </p>
-      <h3 className="mt-2 text-lg font-semibold text-ink">{build.name}</h3>
-      {build.blurb ? <p className="mt-1 text-sm text-ink-muted">{build.blurb}</p> : null}
-      <ul className="mt-4 flex flex-col gap-1.5 text-sm" aria-label={`Key parts of ${build.name}`}>
-        {highlight.map((p) => (
-          <li key={p.id} className="flex gap-2">
-            <span className="w-16 shrink-0 text-ink-subtle">{SHORT_KIND[p.kind] ?? p.kind}</span>
-            <span className="min-w-0 truncate text-ink">{p.name}</span>
-          </li>
-        ))}
-      </ul>
-      <p className="mt-2 text-sm text-ink-subtle">{build.item_count} parts in total</p>
-      <div className="mt-auto flex items-end justify-between gap-3 pt-5">
-        <div>
-          <p className="text-xs text-ink-subtle">Parts total</p>
-          <p className="text-xl font-semibold text-ink tabular">{formatPrice(build.subtotal)}</p>
+    <article className="flex flex-col overflow-hidden rounded-md border border-border bg-surface">
+      <Photo photo={buildPhoto(build.name, index)} sizes="(min-width: 768px) 33vw, 100vw" />
+      <div className="flex flex-1 flex-col p-5">
+        <p className="flex items-center gap-1.5 text-xs font-semibold tracking-wide text-success-ink uppercase">
+          <ShieldCheck aria-hidden="true" className="h-3.5 w-3.5" /> Validated
+        </p>
+        <h3 className="mt-2 text-lg font-semibold text-ink">{build.name}</h3>
+        {build.blurb ? <p className="mt-1 text-sm text-ink-muted">{build.blurb}</p> : null}
+        <ul className="mt-4 flex flex-col gap-1.5 text-sm" aria-label={`Key parts of ${build.name}`}>
+          {highlight.map((p) => (
+            <li key={p.id} className="flex gap-2">
+              <span className="w-16 shrink-0 text-ink-subtle">{SHORT_KIND[p.kind] ?? p.kind}</span>
+              <span className="min-w-0 truncate text-ink">{p.name}</span>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-2 text-sm text-ink-subtle">{build.item_count} parts in total</p>
+        <div className="mt-auto flex items-end justify-between gap-3 pt-5">
+          <div>
+            <p className="text-xs text-ink-subtle">Parts total</p>
+            <p className="text-xl font-semibold text-ink tabular">{formatPrice(build.subtotal)}</p>
+          </div>
+          <Button
+            aria-label={`Open ${build.name} in the configurator`}
+            onClick={() => {
+              setDraft({
+                ...emptyDraft(),
+                name: build.name,
+                items: build.items.map((item) => ({ product: item.product, quantity: item.quantity })),
+              })
+              toast({
+                title: `${build.name} is in your configurator`,
+                description: 'Change any part; it is checked again.',
+              })
+              void navigate('/configurator')
+            }}
+          >
+            Customise
+          </Button>
         </div>
-        <Button
-          aria-label={`Open ${build.name} in the configurator`}
-          onClick={() => {
-            setDraft({
-              ...emptyDraft(),
-              name: build.name,
-              items: build.items.map((item) => ({ product: item.product, quantity: item.quantity })),
-            })
-            toast({
-              title: `${build.name} is in your configurator`,
-              description: 'Change any part; it is checked again.',
-            })
-            void navigate('/configurator')
-          }}
-        >
-          Customise
-        </Button>
       </div>
     </article>
   )
@@ -161,12 +168,19 @@ export function HomePage() {
   const config = useQuery(configQuery)
   const counts = new Map((kinds.data?.kinds ?? []).map((k) => [k.kind, k.count]))
   const holdMinutes = config.data ? Math.round(config.data.reservation_ttl_seconds / 60) : null
+  // The hero photo is the largest element on the page: fetch it before React reaches the <img>.
+  preload(PHOTOS.hero.src, {
+    as: 'image',
+    imageSrcSet: PHOTOS.hero.srcSet,
+    imageSizes: HERO_SIZES,
+    fetchPriority: 'high',
+  })
 
   return (
     <div className="flex flex-col gap-16">
       <section
         aria-labelledby="hero-heading"
-        className="grid grid-cols-1 items-center gap-10 lg:grid-cols-[minmax(0,1fr)_26rem]"
+        className="grid grid-cols-1 items-center gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]"
       >
         <div>
           <p className="text-sm font-semibold tracking-wide text-accent uppercase">
@@ -191,7 +205,17 @@ export function HomePage() {
             </Button>
           </div>
         </div>
-        <LiveCheck />
+        <div className="relative lg:pb-16">
+          <Photo
+            photo={PHOTOS.hero}
+            sizes={HERO_SIZES}
+            priority
+            className="rounded-md border border-border"
+          />
+          <div className="mt-4 lg:absolute lg:bottom-0 lg:-left-8 lg:mt-0 lg:w-72">
+            <LiveCheck />
+          </div>
+        </div>
       </section>
 
       <Section
@@ -201,29 +225,44 @@ export function HomePage() {
       >
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {featured.data
-            ? featured.data.items.map((build) => <FeaturedBuildCard key={build.id} build={build} />)
+            ? featured.data.items.map((build, index) => (
+                <FeaturedBuildCard key={build.id} build={build} index={index} />
+              ))
             : Array.from({ length: 3 }, (_, i) => <Skeleton key={i} className="h-80 w-full" />)}
         </div>
       </Section>
 
       <Section id="categories-heading" title="Shop by category">
-        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-          {CATEGORY_LINKS.filter((c) => c.kind !== 'accessory').map((category) => (
-            <li key={category.kind}>
-              <Link
-                to={`/shop/${category.kind}`}
-                className="group flex h-full flex-col rounded-md border border-border bg-surface p-4 hover:border-ink-subtle"
-              >
-                <span className="block h-20 text-ink-subtle group-hover:text-accent" aria-hidden="true">
-                  <KindIllustration kind={category.kind} label="" />
-                </span>
-                <span className="mt-3 font-medium text-ink">{KIND_LABELS[category.kind]}</span>
-                <span className="text-sm text-ink-subtle">
-                  {counts.has(category.kind) ? `${String(counts.get(category.kind))} parts` : category.blurb}
-                </span>
-              </Link>
-            </li>
-          ))}
+        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {CATEGORY_LINKS.filter((c) => c.kind !== 'accessory').map((category) => {
+            const photo = CATEGORY_PHOTOS[category.kind]
+            return (
+              <li key={category.kind}>
+                <Link
+                  to={`/shop/${category.kind}`}
+                  className="group flex h-full flex-col overflow-hidden rounded-md border border-border bg-surface hover:border-ink-subtle"
+                >
+                  {photo ? (
+                    <Photo
+                      photo={photo}
+                      sizes="(min-width: 1280px) 300px, (min-width: 640px) 25vw, 50vw"
+                      imgClassName="transition-transform duration-300 group-hover:scale-[1.03] motion-reduce:transition-none"
+                    />
+                  ) : null}
+                  <span className="flex flex-col p-4">
+                    <span className="font-medium text-ink group-hover:text-accent">
+                      {KIND_LABELS[category.kind]}
+                    </span>
+                    <span className="text-sm text-ink-subtle">
+                      {counts.has(category.kind)
+                        ? `${String(counts.get(category.kind))} parts`
+                        : category.blurb}
+                    </span>
+                  </span>
+                </Link>
+              </li>
+            )
+          })}
         </ul>
       </Section>
 

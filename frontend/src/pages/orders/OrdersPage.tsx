@@ -2,11 +2,13 @@ import { useInfiniteQuery } from '@tanstack/react-query'
 import { Package } from 'lucide-react'
 import { Link, useSearchParams } from 'react-router'
 import { Button } from '@/components/ui/Button'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import { Select } from '@/components/ui/Field'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { OrderStatusBadge } from '@/components/ui/OrderStatusBadge'
 import { formatPrice } from '@/lib/money'
+import { PHOTOS } from '@/lib/photos'
 import { usePageTitle } from '@/lib/usePageTitle'
 import { ordersQuery } from '@/orders/api'
 import { STATUS_LABELS, type OrderStatus } from '@/orders/status'
@@ -56,12 +58,22 @@ export function OrdersPage() {
         <ErrorMessage error={orders.error ?? buyAgain.error} />
         {orders.isPending ? <Skeleton className="h-40 w-full" /> : null}
         {orders.isSuccess && rows.length === 0 ? (
-          <div className="py-12 text-center">
-            <Package aria-hidden="true" className="mx-auto h-10 w-10 text-ink-subtle" />
-            <p className="mt-3 text-ink-muted">
-              {status ? `No orders are ${STATUS_LABELS[status].toLowerCase()}.` : 'No orders yet.'}
-            </p>
-          </div>
+          status ? (
+            <EmptyState icon={Package} title={`No orders are ${STATUS_LABELS[status].toLowerCase()}.`} />
+          ) : (
+            <EmptyState
+              icon={Package}
+              photo={PHOTOS.emptyOrders}
+              title="No orders yet."
+              action={
+                <Button asChild>
+                  <Link to="/shop">Browse the catalog</Link>
+                </Button>
+              }
+            >
+              <p>Orders you place appear here, from payment to delivery.</p>
+            </EmptyState>
+          )
         ) : null}
         {rows.length ? (
           <table className="w-full overflow-hidden rounded-md border border-border bg-surface text-sm">

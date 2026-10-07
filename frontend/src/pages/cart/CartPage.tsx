@@ -17,6 +17,7 @@ import { Alert } from '@/components/ui/Alert'
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs'
 import { Button, IconButton } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { PHOTOS } from '@/lib/photos'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { StockIndicator } from '@/components/ui/StockIndicator'
@@ -252,6 +253,7 @@ export function CartPage() {
         <div>
           <EmptyState
             icon={ShoppingCart}
+            photo={PHOTOS.emptyCart}
             title="Your cart is empty"
             action={
               <>
