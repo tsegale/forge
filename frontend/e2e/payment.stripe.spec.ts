@@ -29,7 +29,8 @@ test('a declined card shows a clear retry, and a good card then pays the order',
 
   await enterCard(page, DECLINED)
   await pay.click()
-  await expect(page.getByRole('alert')).toContainText('Your card was declined')
+  // A real round trip to Stripe, which can run a fraud check first: measured 2 to 11 s.
+  await expect(page.getByRole('alert')).toContainText('Your card was declined', { timeout: 30_000 })
   await expect(page.getByRole('alert')).toContainText('try a different card')
 
   await enterCard(page, VISA)
