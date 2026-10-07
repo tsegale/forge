@@ -3,12 +3,16 @@ name: Visual baselines
 # Run by hand: makes the Linux screenshots that visual.spec.ts compares against and uploads them.
 # Products always show their kind drawings (photos are copyrighted and never committed). Download
 # the artifact, unzip it into frontend/e2e/visual.spec.ts-snapshots/ and commit; from then on the
-# e2e job compares every run.
+# e2e job compares every run. Also runs on a push to feat/redesign whose commit message contains
+# [baselines] (workflow_dispatch only works once the file is on the default branch).
 on:
+  push:
+    branches: [feat/redesign]
   workflow_dispatch:
 
 jobs:
   baselines:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[baselines]')
     runs-on: ubuntu-latest
     services:
       postgres:

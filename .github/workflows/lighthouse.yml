@@ -2,10 +2,11 @@ name: Lighthouse
 
 # The production build behind Nginx, as deployed (docker compose), audited by Lighthouse.
 # Accessibility and best practices must score 95 or more on every page (lighthouserc.json).
-# Pushes to main and by hand; not on every branch push (it builds every image).
+# Pushes to main and the redesign branch, and by hand (workflow_dispatch only works once the file
+# is on the default branch). Not on other branch pushes: it builds every image.
 on:
   push:
-    branches: [main]
+    branches: [main, feat/redesign]
   workflow_dispatch:
 
 jobs:
