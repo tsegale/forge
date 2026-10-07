@@ -72,9 +72,11 @@ def add_cart_item():
 @bp.patch("/cart/items/<int:item_id>")
 @api.validate(json=CartItemUpdate, resp=responses(401, 404, 422, HTTP_200=CartResponse), tags=[TAG])
 def update_cart_item(item_id: int):
-    """Set a line's quantity."""
+    """Set a line's quantity, or move it to saved for later and back. Saved lines stay in the
+    cart but are left out of the totals, the item count and checkout."""
+    body: CartItemUpdate = request.context.json
     cart_service.update_item(
-        cart_service.find(optional_user(), _guest_token(), lock=True), item_id, request.context.json.quantity
+        cart_service.find(optional_user(), _guest_token(), lock=True), item_id, body.quantity, body.saved_for_later
     )
     return _current_view()
 
@@ -90,6 +92,6 @@ def remove_cart_item(item_id: int):
 @bp.delete("/cart")
 @api.validate(resp=responses(401, HTTP_200=CartResponse), tags=[TAG])
 def clear_cart():
-    """Empty the cart."""
+    """Empty the cart. Lines saved for later stay saved."""
     cart_service.clear(cart_service.find(optional_user(), _guest_token(), lock=True))
     return _current_view()

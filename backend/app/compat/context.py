@@ -93,6 +93,10 @@ class BuildContext:
         This is what "compatible with" means when browsing for a part to add or swap."""
         kind = KindCode(product.kind_code)
         kept = [p for p in self.parts if not (kind in SINGLE_SLOT_KINDS and p.product.kind_code == kind.value)]
+        if any(p.product.id == product.id for p in kept):  # another unit of a part already chosen
+            return BuildContext(
+                Part(p.product, p.quantity + quantity) if p.product.id == product.id else p for p in kept
+            )
         return BuildContext([*kept, Part(product, quantity)])
 
     def without_kind(self, kind: KindCode) -> BuildContext:

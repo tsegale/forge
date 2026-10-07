@@ -49,8 +49,9 @@ describe('ConfiguratorPage', () => {
 
     const parts = screen.getByRole('list', { name: 'Components' })
     expect(await within(parts).findByRole('link', { name: 'AMD Ryzen 7 7800X3D' })).toBeInTheDocument()
-    expect(await screen.findByText('Compatible so far')).toBeInTheDocument()
-    expect(screen.getByText('Still needed: Graphics card')).toBeInTheDocument()
+    const summary = screen.getByRole('complementary', { name: 'Build summary' })
+    expect(await within(summary).findByText('Compatible so far')).toBeInTheDocument()
+    expect(within(summary).getByText('Still needed: Graphics card')).toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: 'Choose graphics card' }))
     await screen.findByRole('dialog', { name: 'Choose graphics card' })
@@ -72,7 +73,7 @@ describe('ConfiguratorPage', () => {
                 severity: 'conflict',
                 message: 'The graphics card is 336 mm long; the case fits 320 mm.',
                 product_ids: [5],
-                details: {},
+                details: { gpu_length_mm: 336, case_max_gpu_length_mm: 320 },
               },
             ],
           }),
@@ -80,9 +81,65 @@ describe('ConfiguratorPage', () => {
       ),
     )
     renderApp('/configurator')
-    expect(await screen.findByText('1 conflict')).toBeInTheDocument()
-    expect(screen.getByText('The graphics card is 336 mm long; the case fits 320 mm.')).toBeInTheDocument()
-    expect(screen.getByText('Conflicts with another part')).toBeInTheDocument()
+    const summary = screen.getByRole('complementary', { name: 'Build summary' })
+    expect(await within(summary).findByText('1 conflict')).toBeInTheDocument()
+    // On the part itself: the engine's message and the two measurements it compared.
+    const findings = await screen.findByRole('list', { name: `Findings for ${gpu.name}` })
+    expect(
+      within(findings).getByText('The graphics card is 336 mm long; the case fits 320 mm.'),
+    ).toBeInTheDocument()
+    expect(within(findings).getByText('Card length').nextElementSibling).toHaveTextContent('336 mm')
+    expect(within(findings).getByText('Case fits up to').nextElementSibling).toHaveTextContent('320 mm')
+    // The docked bar (phones) carries the same verdict.
+    expect(screen.getAllByText('1 conflict')).toHaveLength(2)
+  })
+
+  it('lists parts that do not fit on request, with the reason, and will not add them', async () => {
+    setDraft((draft) => addPart(draft, cpu(), 1))
+    const tooLong = cpu({
+      id: 7,
+      kind: 'gpu',
+      slug: 'rtx-4090',
+      name: 'NVIDIA GeForce RTX 4090',
+      compatibility: {
+        compatible: false,
+        conflicts: [
+          {
+            code: 'PSU_INSUFFICIENT',
+            severity: 'conflict',
+            message: 'The build can draw 760 W at peak; the 550 W supply is too small.',
+            product_ids: [6, 7],
+            details: { peak_w: 760, psu_w: 550 },
+          },
+        ],
+        warnings: [],
+      },
+    })
+    server.use(
+      http.get('/api/v1/products', ({ request }) => {
+        const url = new URL(request.url)
+        productRequests.push(url)
+        const all = url.searchParams.get('include_incompatible') === 'true'
+        return HttpResponse.json({ items: all ? [gpu, tooLong] : [gpu], next_cursor: null })
+      }),
+    )
+    renderApp('/configurator')
+    await userEvent.click(await screen.findByRole('button', { name: 'Choose graphics card' }))
+    const picker = await screen.findByRole('dialog', { name: 'Choose graphics card' })
+    await userEvent.click(within(picker).getByRole('checkbox', { name: 'Show parts that do not fit' }))
+    expect(await within(picker).findByText(/the 550 W supply is too small/)).toBeInTheDocument()
+    expect(within(picker).getByText('Peak draw').nextElementSibling).toHaveTextContent('760 W')
+    expect(within(picker).getByRole('button', { name: 'Add NVIDIA GeForce RTX 4090' })).toBeDisabled()
+    expect(within(picker).getByRole('button', { name: 'Add NVIDIA GeForce RTX 4070' })).toBeEnabled()
+  })
+
+  it('opens the full summary from the docked bar', async () => {
+    setDraft((draft) => addPart(draft, cpu(), 1))
+    renderApp('/configurator')
+    await userEvent.click(await screen.findByRole('button', { name: 'Summary' }))
+    const sheet = await screen.findByRole('dialog', { name: 'Build summary' })
+    expect(within(sheet).getByRole('heading', { name: 'Compatibility' })).toBeInTheDocument()
+    expect(within(sheet).getByRole('link', { name: 'Sign in to save and check out' })).toBeInTheDocument()
   })
 
   it('asks a guest to sign in, returning to save the draft', async () => {

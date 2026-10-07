@@ -9,6 +9,7 @@ from sqlalchemy import (
     CheckConstraint,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     SmallInteger,
     String,
@@ -26,11 +27,12 @@ class Review(TimestampMixin, db.Model):
     __tablename__ = "reviews"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    product_id: Mapped[int] = mapped_column(ForeignKey("products.id", ondelete="CASCADE"), nullable=False, index=True)
+    product_id: Mapped[int] = mapped_column(ForeignKey("products.id", ondelete="CASCADE"), nullable=False)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     rating: Mapped[int] = mapped_column(SmallInteger, nullable=False)
     title: Mapped[str | None] = mapped_column(String(120))
-    body: Mapped[str | None] = mapped_column(Text)
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    # Set by trigger from the reviewer's paid orders; whatever the client sends is overwritten.
     is_verified_purchase: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
 
     user = relationship("User")
@@ -38,6 +40,8 @@ class Review(TimestampMixin, db.Model):
     __table_args__ = (
         UniqueConstraint("product_id", "user_id", name="uq_reviews_one_per_user"),
         CheckConstraint("rating BETWEEN 1 AND 5", name="rating_range"),
+        CheckConstraint("char_length(btrim(body)) >= 10", name="body_length"),
+        Index("ix_reviews_product_created", "product_id", "created_at"),
     )
 
 

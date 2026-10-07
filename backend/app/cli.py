@@ -135,6 +135,23 @@ def seed_catalog(path: Path) -> None:
     click.echo(f"Catalog seeded: {created} created, {updated} updated.")
 
 
+@seed_cli.command("images")
+@click.option("--source", type=click.Path(file_okay=False, path_type=Path), default=None)
+def seed_images(source: Path | None) -> None:
+    """Convert product photos (<SKU>-<n>.jpg|png|webp) to WebP variants and record them. Idempotent."""
+    from .services.images import import_images
+
+    folder = source or Path(current_app.config["IMAGE_SOURCE_DIR"])
+    if not folder.is_dir():
+        raise click.UsageError(f"No image folder at {folder}. See docs/IMAGE_SOURCES.md.")
+    report = import_images(folder)
+    click.echo(f"Images: {report.images} written for {report.products} products.")
+    for name in report.unknown:
+        click.echo(f"  skipped {name}: no product with that SKU", err=True)
+    for name in report.unreadable:
+        click.echo(f"  skipped {name}: not a readable image", err=True)
+
+
 @users_cli.command("create-admin")
 @click.option("--email", required=True)
 @click.option("--first-name", required=True)

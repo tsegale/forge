@@ -2,21 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 from pydantic import BaseModel, ConfigDict, Field
 
 from ..compat import Report
 from ..models.enums import BuildStatus
 from .builds import Quantity
-
-
-class FindingResponse(BaseModel):
-    code: str = Field(description="Stable identifier, e.g. SOCKET_MISMATCH.")
-    severity: str = Field(description="conflict: cannot work as specified. warning: works, needs attention.")
-    message: str
-    product_ids: list[int]
-    details: dict[str, Any] = Field(description="The measured values behind the finding.")
+from .findings import FindingResponse
 
 
 class PowerResponse(BaseModel):
@@ -38,20 +29,11 @@ class CompatibilityReport(BaseModel):
 
     @classmethod
     def from_report(cls, report: Report) -> CompatibilityReport:
-        def finding(f: Any) -> FindingResponse:
-            return FindingResponse(
-                code=f.code,
-                severity=f.severity.value,
-                message=f.message,
-                product_ids=list(f.product_ids),
-                details=dict(f.details),
-            )
-
         return cls(
             compatible=report.compatible,
             complete=report.complete,
-            conflicts=[finding(f) for f in report.conflicts],
-            warnings=[finding(f) for f in report.warnings],
+            conflicts=[FindingResponse.from_finding(f) for f in report.conflicts],
+            warnings=[FindingResponse.from_finding(f) for f in report.warnings],
             missing_kinds=list(report.missing_kinds),
             power=PowerResponse(
                 sustained_w=report.power.sustained_w,

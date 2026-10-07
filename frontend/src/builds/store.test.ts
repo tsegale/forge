@@ -1,5 +1,5 @@
 import { http, HttpResponse } from 'msw'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { setAccessToken } from '@/api/client'
 import { logout } from '@/auth/session'
 import { cpu } from '@/test/fixtures'
@@ -68,5 +68,23 @@ describe('draft store when the session settles', () => {
     expect(getDraft().ownerId).toBeNull()
     reconcileDraftOwner(1)
     expect(getDraft().buildId).toBeNull()
+  })
+})
+
+describe('draft store on page load', () => {
+  it('reads the stored draft when the module first loads (a reload)', async () => {
+    const stored = { ...addPart(emptyDraft(), cpu(), 1), name: 'Saved earlier' }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(stored))
+    vi.resetModules()
+    const fresh = await import('./store')
+    expect(fresh.getDraft().name).toBe('Saved earlier')
+    expect(fresh.getDraft().items).toHaveLength(1)
+  })
+
+  it('starts empty from corrupt storage', async () => {
+    localStorage.setItem(STORAGE_KEY, '{not json')
+    vi.resetModules()
+    const fresh = await import('./store')
+    expect(fresh.getDraft()).toEqual(emptyDraft())
   })
 })

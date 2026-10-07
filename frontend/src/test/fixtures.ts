@@ -28,6 +28,22 @@ export function cpu(overrides: Partial<ProductSummary> = {}): ProductSummary {
       includes_cooler: false,
     },
     compatibility_warnings: null,
+    compatibility: null,
+    image: null,
+    ...overrides,
+  }
+}
+
+type Facets = components['schemas']['ProductFacets']
+
+export function facets(overrides: Partial<Facets> = {}): Facets {
+  return {
+    total: 1,
+    incompatible: null,
+    in_stock: 1,
+    kinds: [{ kind: 'cpu', count: 1 }],
+    brands: [{ slug: 'amd', name: 'AMD', count: 1 }],
+    price: { min_cents: 799_900, max_cents: 799_900 },
     ...overrides,
   }
 }
@@ -59,6 +75,8 @@ export function psu(overrides: Partial<ProductSummary> = {}): ProductSummary {
       atx_version: '3.1',
     },
     compatibility_warnings: null,
+    compatibility: null,
+    image: null,
     ...overrides,
   }
 }
@@ -108,12 +126,13 @@ export function cartWith(quantity = 1, overrides: Partial<Cart['items'][number]>
         ...overrides,
       },
     ],
+    saved: [],
     item_count: quantity,
     totals: totals(product.price.amount_cents * quantity + 15_000),
   }
 }
 
-export const emptyCart: Cart = { items: [], item_count: 0, totals: totals(15_000) }
+export const emptyCart: Cart = { items: [], saved: [], item_count: 0, totals: totals(15_000) }
 
 export function order(overrides: Partial<OrderDetail> = {}): OrderDetail {
   return {
@@ -127,6 +146,8 @@ export function order(overrides: Partial<OrderDetail> = {}): OrderDetail {
         quantity: 1,
         unit_price: nad(799_900),
         line_total: nad(799_900),
+        kind: 'cpu',
+        image: null,
       },
     ],
     totals: totals(814_900),

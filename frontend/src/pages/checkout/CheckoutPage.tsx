@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState, type SyntheticEvent } from 'react'
+import { Clock, MapPin, ShoppingCart, Truck } from 'lucide-react'
+import { useEffect, useRef, useState, type SyntheticEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 import { ApiError } from '@/api/errors'
 import { configQuery } from '@/app/config'
@@ -8,20 +9,20 @@ import { buildQuery } from '@/builds/api'
 import { CART_KEY, useCart } from '@/cart/api'
 import { Alert } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/Button'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
-import { formatCents, formatPrice } from '@/lib/money'
-import { addressesQuery, createAddress, placeOrder, type Address, type CheckoutRequest } from '@/orders/api'
+import { Checkbox } from '@/components/ui/Field'
+import { Skeleton } from '@/components/ui/Skeleton'
+import { Stepper } from '@/components/ui/Stepper'
+import { cn } from '@/lib/cn'
+import { formatCents } from '@/lib/money'
+import { usePageTitle } from '@/lib/usePageTitle'
+import { emptyAddress, formatAddress, toAddressIn, type AddressValues } from '@/orders/address'
+import { addressesQuery, createAddress, placeOrder, type CheckoutRequest } from '@/orders/api'
 import { TotalsTable } from '@/pages/cart/TotalsTable'
-import { emptyAddress, toAddressIn, type AddressValues } from '@/orders/address'
 import { AddressForm } from './AddressForm'
-
-interface Line {
-  key: number
-  productId: number
-  name: string
-  quantity: number
-  lineTotal: { amount_cents: number; currency: string }
-}
+import { OrderSummary, type SummaryLine } from './OrderSummary'
+import { CHECKOUT_STEPS } from './steps'
 
 interface ShortLine {
   product_id: number
@@ -30,22 +31,16 @@ interface ShortLine {
 }
 
 const NEW = 'new'
+const REQUIRED: (keyof AddressValues)[] = ['recipient_name', 'line1', 'city', 'country_code']
+const REQUIRED_MESSAGES: Partial<Record<keyof AddressValues, string>> = {
+  recipient_name: 'Enter the name of the person receiving the parcel.',
+  line1: 'Enter a street address.',
+  city: 'Enter a city or town.',
+  country_code: 'Enter a two-letter country code, for example NA.',
+}
 
 function isShortLine(value: unknown): value is ShortLine {
   return typeof value === 'object' && value !== null && 'product_id' in value && 'available' in value
-}
-
-function formatAddress(address: Address): string {
-  return [
-    address.line1,
-    address.line2,
-    address.city,
-    address.region,
-    address.postal_code,
-    address.country_code,
-  ]
-    .filter(Boolean)
-    .join(', ')
 }
 
 /** Strip the checkout prefix from address field errors ("address.city" becomes "city"). */
@@ -58,12 +53,28 @@ function addressErrors(error: unknown): Record<string, string> {
   return out
 }
 
+/** The same checks the API makes on the required fields, so the customer hears about them before review. */
+function validateAddress(values: AddressValues): Record<string, string> {
+  const errors: Record<string, string> = {}
+  for (const key of REQUIRED) if (!values[key].trim()) errors[key] = REQUIRED_MESSAGES[key] ?? 'Required.'
+  if (values.country_code.trim() && !/^[A-Za-z]{2}$/.test(values.country_code.trim())) {
+    errors.country_code = 'Use the two-letter code, for example NA for Namibia.'
+  }
+  return errors
+}
+
+/**
+ * Checkout in two steps before payment: where it goes (a saved address or a new one), then a
+ * review of address, delivery and totals. "Place order and pay" reserves the stock and opens the
+ * payment step. The step is in the URL, so Back returns to the delivery step.
+ */
 export function CheckoutPage() {
-  const [params] = useSearchParams()
+  const [params, setParams] = useSearchParams()
   const buildId = Number(params.get('build')) || null
   const { user } = useAuth()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  usePageTitle('Checkout')
 
   const cart = useCart({ enabled: buildId === null })
   const build = useQuery({ ...buildQuery(buildId ?? 0), enabled: buildId !== null })
@@ -74,11 +85,39 @@ export function CheckoutPage() {
   const [address, setAddress] = useState<AddressValues>(() =>
     emptyAddress(user ? `${user.first_name} ${user.last_name}` : ''),
   )
+  const [localErrors, setLocalErrors] = useState<Record<string, string>>({})
   const [saveAddress, setSaveAddress] = useState(true)
+  const headingRef = useRef<HTMLHeadingElement>(null)
 
   const saved = addresses.data?.items ?? []
   const preferred = saved.find((a) => a.type === 'shipping' && a.is_default) ?? saved[0]
   const selected = choice ?? (preferred ? String(preferred.id) : NEW)
+  const newAddressReady = Object.keys(validateAddress(address)).length === 0
+  // A reload on the review step keeps a saved address but not unsaved form values.
+  const step =
+    params.get('step') === 'review' && (selected !== NEW || newAddressReady) ? 'review' : 'delivery'
+
+  const goTo = (next: 'delivery' | 'review') => {
+    setParams(
+      (current) => {
+        const updated = new URLSearchParams(current)
+        if (next === 'review') updated.set('step', 'review')
+        else updated.delete('step')
+        return updated
+      },
+      { replace: false },
+    )
+  }
+
+  // Move focus to the new step's heading, so keyboard and screen-reader users land on it.
+  const firstRender = useRef(true)
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false
+      return
+    }
+    headingRef.current?.focus()
+  }, [step])
 
   const submit = useMutation({
     mutationFn: async () => {
@@ -96,218 +135,384 @@ export function CheckoutPage() {
       void queryClient.invalidateQueries({ queryKey: ['builds'] })
       void navigate(`/orders/${order.order_number}/pay`, { replace: true })
     },
+    onError: (error) => {
+      if (Object.keys(addressErrors(error)).length) goTo('delivery') // fix the address where it was typed
+    },
   })
 
   const source = buildId === null ? cart : build
-  if (source.isPending || addresses.isPending) return <p className="text-sm text-ink-muted">Loading</p>
-  if (source.isError) return <ErrorMessage error={source.error} />
-  if (addresses.isError) return <ErrorMessage error={addresses.error} />
-
-  const lines: Line[] =
-    buildId === null
-      ? (cart.data?.items ?? []).map((line) => ({
-          key: line.id,
-          productId: line.product.id,
-          name: line.product.name,
-          quantity: line.quantity,
-          lineTotal: line.line_total,
-        }))
-      : (build.data?.items ?? []).map((item) => ({
-          key: item.id,
-          productId: item.product.id,
-          name: item.product.name,
-          quantity: item.quantity,
-          lineTotal: item.line_total,
-        }))
-
-  if (!lines.length) {
+  if (source.isPending || addresses.isPending) {
     return (
-      <section className="py-16 text-center">
-        <h1 className="text-2xl font-semibold">Nothing to check out</h1>
-        <p className="mt-2 text-ink-muted">Your cart is empty.</p>
-        <Button asChild className="mt-6">
-          <Link to="/">Browse the catalog</Link>
-        </Button>
-      </section>
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_24rem]" aria-busy="true">
+        <div className="flex flex-col gap-4">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-40 w-full" />
+        </div>
+        <Skeleton className="h-72 w-full" />
+      </div>
     )
   }
+  if (source.isError) return <ErrorMessage error={source.error} onRetry={() => void source.refetch()} />
+  if (addresses.isError)
+    return <ErrorMessage error={addresses.error} onRetry={() => void addresses.refetch()} />
 
-  const notValidated = buildId !== null && build.data?.status !== 'validated'
   const error = submit.error instanceof ApiError ? submit.error : null
   const short = new Map(
     error?.code === 'insufficient_stock' && Array.isArray(error.details)
       ? (error.details as unknown[]).filter(isShortLine).map((s) => [s.product_id, s])
       : [],
   )
-  const fieldErrors = selected === NEW ? addressErrors(submit.error) : {}
+  const raw =
+    buildId === null
+      ? (cart.data?.items ?? []).map((line) => ({
+          key: line.id,
+          product: line.product,
+          quantity: line.quantity,
+          lineTotal: line.line_total,
+        }))
+      : (build.data?.items ?? []).map((item) => ({
+          key: item.id,
+          product: item.product,
+          quantity: item.quantity,
+          lineTotal: item.line_total,
+        }))
+  const lines: SummaryLine[] = raw.map((line) => {
+    const shortLine = short.get(line.product.id)
+    return {
+      key: line.key,
+      name: line.product.name,
+      kind: line.product.kind,
+      image: line.product.image,
+      quantity: line.quantity,
+      lineTotal: line.lineTotal,
+      note: shortLine ? (
+        <p className="text-danger-ink">
+          Only {shortLine.available} available, you asked for {shortLine.requested}.
+        </p>
+      ) : undefined,
+    }
+  })
 
+  if (!lines.length) {
+    return (
+      <div className="flex flex-col gap-6">
+        <h1 className="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">Checkout</h1>
+        <EmptyState
+          icon={ShoppingCart}
+          title="Nothing to check out"
+          action={
+            <Button asChild>
+              <Link to="/shop">Browse the catalog</Link>
+            </Button>
+          }
+        >
+          <p>Your cart is empty.</p>
+        </EmptyState>
+      </div>
+    )
+  }
+
+  const notValidated = buildId !== null && build.data?.status !== 'validated'
+  const fieldErrors = selected === NEW ? { ...addressErrors(submit.error), ...localErrors } : {}
   const goods = lines.reduce((sum, line) => sum + line.lineTotal.amount_cents, 0)
+  const freeOver = config.data?.shipping.free_threshold_cents
   const shipping = config.data
     ? goods >= config.data.shipping.free_threshold_cents
       ? 0
       : config.data.shipping.flat_cents
     : null
+  const holdMinutes = config.data ? Math.round(config.data.reservation_ttl_seconds / 60) : null
+  const chosen = saved.find((a) => String(a.id) === selected)
+  const shipTo = chosen ?? (selected === NEW ? toAddressIn(address) : null)
+  const totals =
+    buildId === null && cart.data ? (
+      <TotalsTable totals={cart.data.totals} />
+    ) : (
+      <>
+        <dl className="flex flex-col gap-2 text-sm">
+          <div className="flex justify-between">
+            <dt className="text-ink-muted">Parts</dt>
+            <dd className="tabular">{formatCents(goods)}</dd>
+          </div>
+          <div className="flex justify-between">
+            <dt className="text-ink-muted">Delivery</dt>
+            <dd className="tabular">
+              {shipping === null ? '' : shipping === 0 ? 'Free' : formatCents(shipping)}
+            </dd>
+          </div>
+          <div className="flex justify-between border-t border-border pt-2 text-base font-semibold">
+            <dt>Total</dt>
+            <dd className="tabular">{shipping === null ? '' : formatCents(goods + shipping)}</dd>
+          </div>
+        </dl>
+        <p className="mt-2 text-xs text-ink-subtle">VAT included.</p>
+      </>
+    )
+  const total =
+    buildId === null && cart.data
+      ? cart.data.totals.total
+      : shipping === null
+        ? null
+        : { amount_cents: goods + shipping, currency: lines[0]?.lineTotal.currency ?? 'nad' }
 
-  const onSubmit = (event: SyntheticEvent) => {
+  const continueToReview = (event: SyntheticEvent) => {
     event.preventDefault()
-    submit.mutate()
+    if (selected === NEW) {
+      const problems = validateAddress(address)
+      setLocalErrors(problems)
+      if (Object.keys(problems).length) {
+        const first = REQUIRED.find((key) => key in problems)
+        if (first) document.querySelector<HTMLInputElement>(`[name="${first}"]`)?.focus()
+        return
+      }
+    }
+    submit.reset()
+    goTo('review')
   }
 
   return (
-    <form onSubmit={onSubmit} className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_22rem]" noValidate>
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-2xl font-semibold">Checkout</h1>
-          <p className="mt-1 text-sm text-ink-muted">
-            {buildId === null ? 'Your cart' : `Build: ${build.data?.name ?? ''}`}
-          </p>
-        </div>
-
-        {notValidated ? (
-          <Alert tone="warning" title="This build is not validated">
-            Only a validated build can be checked out.{' '}
-            <Link to="/configurator" className="font-medium text-accent hover:underline">
-              Back to the configurator
-            </Link>
-          </Alert>
-        ) : null}
-
-        <section aria-labelledby="ship-heading" className="space-y-4">
-          <h2 id="ship-heading" className="text-lg font-semibold">
-            Shipping address
-          </h2>
-          <div role="radiogroup" aria-labelledby="ship-heading" className="space-y-2">
-            {saved.map((a) => (
-              <label
-                key={a.id}
-                className="flex cursor-pointer gap-3 rounded-md border border-border bg-surface p-3 has-[:checked]:border-accent"
-              >
-                <input
-                  type="radio"
-                  name="address"
-                  value={a.id}
-                  checked={selected === String(a.id)}
-                  onChange={() => {
-                    setChoice(String(a.id))
-                  }}
-                />
-                <span className="text-sm">
-                  <span className="font-medium">{a.recipient_name}</span>
-                  <span className="block text-ink-muted">{formatAddress(a)}</span>
-                </span>
-              </label>
-            ))}
-            <label className="flex cursor-pointer gap-3 rounded-md border border-border bg-surface p-3 has-[:checked]:border-accent">
-              <input
-                type="radio"
-                name="address"
-                value={NEW}
-                checked={selected === NEW}
-                onChange={() => {
-                  setChoice(NEW)
-                }}
-              />
-              <span className="text-sm font-medium">Use a new address</span>
-            </label>
-          </div>
-          {selected === NEW ? (
-            <div className="space-y-4 rounded-[var(--radius-card)] border border-border bg-surface p-5">
-              <AddressForm values={address} onChange={setAddress} errors={fieldErrors} />
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={saveAddress}
-                  onChange={(event) => {
-                    setSaveAddress(event.target.checked)
-                  }}
-                />
-                Save this address for next time
-              </label>
-            </div>
-          ) : null}
-        </section>
+    <div className="flex flex-col gap-6">
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">Checkout</h1>
+        <p className="mt-1 text-base text-ink-muted">
+          {buildId === null ? 'Your cart' : `Build: ${build.data?.name ?? ''}`}
+        </p>
+        <Stepper
+          className="mt-5"
+          label="Checkout progress"
+          steps={CHECKOUT_STEPS}
+          current={step}
+          onSelect={(id) => {
+            if (id === 'delivery') goTo('delivery')
+          }}
+        />
       </div>
 
-      <aside
-        aria-label="Order summary"
-        className="h-fit space-y-4 rounded-[var(--radius-card)] border border-border bg-surface p-5"
-      >
-        <h2 className="text-sm font-semibold">Order summary</h2>
-        <ul className="space-y-2 text-sm">
-          {lines.map((line) => {
-            const shortLine = short.get(line.productId)
-            return (
-              <li key={line.key}>
-                <div className="flex justify-between gap-3">
-                  <span>
-                    {line.quantity > 1 ? `${String(line.quantity)} x ` : ''}
-                    {line.name}
-                  </span>
-                  <span className="shrink-0 tabular">{formatPrice(line.lineTotal)}</span>
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_24rem]">
+        <div className="order-2 lg:order-1">
+          {notValidated ? (
+            <Alert tone="warning" title="This build is not validated" className="mb-6">
+              Only a validated build can be checked out.{' '}
+              <Link to="/configurator" className="font-medium text-accent hover:underline">
+                Back to the configurator
+              </Link>
+            </Alert>
+          ) : null}
+
+          {step === 'delivery' ? (
+            <form
+              onSubmit={continueToReview}
+              noValidate
+              aria-labelledby="step-heading"
+              className="flex flex-col gap-5"
+            >
+              <h2
+                id="step-heading"
+                ref={headingRef}
+                tabIndex={-1}
+                className="text-xl font-semibold text-ink focus:outline-none"
+              >
+                Where should we deliver?
+              </h2>
+              <fieldset>
+                <legend className="sr-only">Delivery address</legend>
+                <div className="flex flex-col gap-2">
+                  {saved.map((a) => (
+                    <AddressOption
+                      key={a.id}
+                      value={String(a.id)}
+                      checked={selected === String(a.id)}
+                      onSelect={setChoice}
+                      title={a.recipient_name}
+                      detail={formatAddress(a)}
+                      badge={a.is_default ? 'Default' : undefined}
+                    />
+                  ))}
+                  <AddressOption
+                    value={NEW}
+                    checked={selected === NEW}
+                    onSelect={setChoice}
+                    title={saved.length ? 'Use a new address' : 'New address'}
+                  />
                 </div>
-                {shortLine ? (
-                  <p className="text-xs text-danger">
-                    Only {shortLine.available} available, you asked for {shortLine.requested}.
-                  </p>
-                ) : null}
-              </li>
-            )
-          })}
-        </ul>
-        <div className="border-t border-border pt-4">
-          {buildId === null && cart.data ? (
-            <TotalsTable totals={cart.data.totals} />
+              </fieldset>
+              {selected === NEW ? (
+                <div className="flex flex-col gap-4 rounded-md border border-border bg-surface p-5">
+                  <AddressForm
+                    values={address}
+                    onChange={(values) => {
+                      setAddress(values)
+                      if (Object.keys(localErrors).length) setLocalErrors(validateAddress(values))
+                    }}
+                    errors={fieldErrors}
+                  />
+                  <Checkbox
+                    label="Save this address for next time"
+                    checked={saveAddress}
+                    onChange={(event) => {
+                      setSaveAddress(event.target.checked)
+                    }}
+                  />
+                </div>
+              ) : null}
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <Link
+                  to={buildId === null ? '/cart' : '/configurator'}
+                  className="text-sm font-medium text-accent hover:underline"
+                >
+                  {buildId === null ? 'Back to cart' : 'Back to the configurator'}
+                </Link>
+                <Button type="submit" size="lg" disabled={notValidated}>
+                  Continue to review
+                </Button>
+              </div>
+            </form>
           ) : (
-            <>
-              <dl className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <dt className="text-ink-muted">Parts</dt>
-                  <dd className="tabular">{formatCents(goods)}</dd>
+            <section aria-labelledby="step-heading" className="flex flex-col gap-5">
+              <h2
+                id="step-heading"
+                ref={headingRef}
+                tabIndex={-1}
+                className="text-xl font-semibold text-ink focus:outline-none"
+              >
+                Review and reserve
+              </h2>
+              <div className="divide-y divide-border rounded-md border border-border bg-surface">
+                <div className="flex items-start gap-3 p-4">
+                  <MapPin aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-ink-subtle" />
+                  <div className="min-w-0 flex-1 text-sm">
+                    <p className="font-medium text-ink">Deliver to {shipTo?.recipient_name}</p>
+                    <p className="text-ink-muted">{shipTo ? formatAddress(shipTo) : ''}</p>
+                  </div>
+                  <Button
+                    variant="link"
+                    size="sm"
+                    aria-label="Change delivery address"
+                    onClick={() => {
+                      goTo('delivery')
+                    }}
+                  >
+                    Change
+                  </Button>
                 </div>
-                <div className="flex justify-between">
-                  <dt className="text-ink-muted">Shipping</dt>
-                  <dd className="tabular">
-                    {shipping === null ? '' : shipping === 0 ? 'Free' : formatCents(shipping)}
-                  </dd>
+                <div className="flex items-start gap-3 p-4">
+                  <Truck aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-ink-subtle" />
+                  <div className="text-sm">
+                    <p className="font-medium text-ink">
+                      Courier from Windhoek,{' '}
+                      {shipping === null ? '' : shipping === 0 ? 'free' : formatCents(shipping)}
+                    </p>
+                    <p className="text-ink-muted">
+                      {shipping === 0 || freeOver === undefined
+                        ? 'Dispatched once your payment is confirmed.'
+                        : `Free on orders over ${formatCents(freeOver)}. Dispatched once your payment is confirmed.`}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex justify-between border-t border-border pt-2 text-base font-semibold">
-                  <dt>Total</dt>
-                  <dd className="tabular">{shipping === null ? '' : formatCents(goods + shipping)}</dd>
+                <div className="flex items-start gap-3 p-4">
+                  <Clock aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-ink-subtle" />
+                  <p className="text-sm text-ink-muted">
+                    Placing the order reserves every part for{' '}
+                    <span className="font-medium text-ink">
+                      {holdMinutes === null ? 'a while' : `${String(holdMinutes)} minutes`}
+                    </span>{' '}
+                    while you pay. Nothing is charged until you confirm the payment.
+                  </p>
                 </div>
-              </dl>
-              <p className="mt-2 text-xs text-ink-subtle">VAT included.</p>
-            </>
+              </div>
+
+              {short.size ? (
+                <Alert tone="danger" title="Some parts are no longer available in that quantity">
+                  {buildId === null ? (
+                    <Link to="/cart" className="font-medium text-accent hover:underline">
+                      Update your cart
+                    </Link>
+                  ) : (
+                    <Link to="/configurator" className="font-medium text-accent hover:underline">
+                      Change your build
+                    </Link>
+                  )}
+                </Alert>
+              ) : submit.error ? (
+                <ErrorMessage error={submit.error} />
+              ) : null}
+
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    goTo('delivery')
+                  }}
+                >
+                  Back
+                </Button>
+                <Button
+                  size="lg"
+                  busy={submit.isPending}
+                  disabled={notValidated}
+                  onClick={() => {
+                    submit.mutate()
+                  }}
+                >
+                  {submit.isPending ? 'Reserving your parts' : 'Place order and pay'}
+                </Button>
+              </div>
+            </section>
           )}
         </div>
-        {short.size ? (
-          <Alert tone="danger" title="Some parts are no longer available in that quantity">
-            {buildId === null ? (
-              <Link to="/cart" className="font-medium text-accent hover:underline">
-                Update your cart
-              </Link>
-            ) : (
-              <Link to="/configurator" className="font-medium text-accent hover:underline">
-                Change your build
-              </Link>
-            )}
-          </Alert>
-        ) : error && error.status !== 422 ? (
-          <ErrorMessage error={error} />
-        ) : submit.error && !(submit.error instanceof ApiError) ? (
-          <ErrorMessage error={submit.error} />
-        ) : null}
-        {error?.status === 422 && !Object.keys(fieldErrors).length ? <ErrorMessage error={error} /> : null}
-        <Button type="submit" className="w-full" busy={submit.isPending} disabled={notValidated}>
-          {submit.isPending ? 'Reserving your parts' : 'Place order and pay'}
-        </Button>
-        <p className="text-xs text-ink-subtle">
-          Your parts are held for{' '}
-          {config.data
-            ? `${String(Math.round(config.data.reservation_ttl_seconds / 60))} minutes`
-            : 'a while'}{' '}
-          while you pay.
-        </p>
-      </aside>
-    </form>
+
+        <div className="order-1 lg:order-2">
+          <OrderSummary lines={lines} total={total} totals={totals} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function AddressOption({
+  value,
+  checked,
+  onSelect,
+  title,
+  detail,
+  badge,
+}: {
+  value: string
+  checked: boolean
+  onSelect: (value: string) => void
+  title: string
+  detail?: string
+  badge?: string | undefined
+}) {
+  return (
+    <label
+      className={cn(
+        'flex cursor-pointer items-start gap-3 rounded-md border bg-surface p-4',
+        'has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent',
+        checked ? 'border-accent ring-1 ring-accent' : 'border-border hover:border-ink-subtle',
+      )}
+    >
+      <input
+        type="radio"
+        name="address"
+        value={value}
+        checked={checked}
+        onChange={() => {
+          onSelect(value)
+        }}
+        className="mt-0.5 h-4 w-4 shrink-0 accent-accent"
+      />
+      <span className="min-w-0 flex-1 text-sm">
+        <span className="flex items-center gap-2 font-medium text-ink">
+          {title}
+          {badge ? (
+            <span className="rounded-sm bg-surface-muted px-1.5 py-0.5 text-xs font-normal text-ink-muted">
+              {badge}
+            </span>
+          ) : null}
+        </span>
+        {detail ? <span className="block text-ink-muted">{detail}</span> : null}
+      </span>
+    </label>
   )
 }

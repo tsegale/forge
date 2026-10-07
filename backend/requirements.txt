@@ -92,6 +92,8 @@ packaging==26.3
     # via
     #   kombu
     #   limits
+pillow==12.3.0
+    # via -r requirements.in
 prompt-toolkit==3.0.53
     # via click-repl
 psycopg==3.3.6

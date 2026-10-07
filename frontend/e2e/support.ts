@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright'
-import { expect, type Page } from '@playwright/test'
+import { expect, request, type Page } from '@playwright/test'
 
 /**
  * The demo customer from `flask seed demo`. These credentials are public demo-only values
@@ -17,11 +17,51 @@ export const admin = {
 
 export const PSU = { slug: 'seasonic-focus-gx-750-atx-3', name: 'Seasonic FOCUS GX-750 ATX 3' }
 
+/** The CPU the demo path builds around. */
+export const CPU = { search: 'x3d', name: 'AMD Ryzen 7 7800X3D', slug: 'amd-ryzen-7-7800x3d' }
+
+/** Enough units for any number of repeated runs between two `flask seed demo` resets. */
+const STOCK_FLOOR = 50
+
+/**
+ * Specs that buy a fixed part (the demo path's CPU, the checkout specs' PSU) use up its stock: each
+ * paid order sells a unit and each abandoned one holds a unit until its reservation expires. Without
+ * a top-up, repeated runs fail once the seeded stock runs out ("Only 0 available", or no "Add to
+ * cart" button at all). Raises stock on hand through the admin API, as a store admin would. Called
+ * once per test run from global-setup.ts: Playwright starts a new worker for every --repeat-each
+ * pass, and a sign-in per pass would trip the login rate limit.
+ */
+export async function ensureStock(baseURL: string, slugs: readonly string[]): Promise<void> {
+  const api = await request.newContext({ baseURL })
+  try {
+    const login = await api.post('/api/v1/auth/login', { data: admin })
+    if (!login.ok()) throw new Error(`Admin sign-in for the stock top-up failed: ${String(login.status())}`)
+    const { access_token: token } = (await login.json()) as { access_token: string }
+    const headers = { Authorization: `Bearer ${token}` }
+    for (const slug of slugs) {
+      const product = await api.get(`/api/v1/products/${slug}`)
+      if (!product.ok()) throw new Error(`Product ${slug}: ${String(product.status())}`)
+      const { id } = (await product.json()) as { id: number }
+      const inventory = await api.get(`/api/v1/admin/inventory/${String(id)}`, { headers })
+      if (!inventory.ok()) throw new Error(`Inventory of ${slug}: ${String(inventory.status())}`)
+      const stock = (await inventory.json()) as { quantity_available: number; quantity_reserved: number }
+      if (stock.quantity_available >= STOCK_FLOOR) continue
+      const update = await api.patch(`/api/v1/admin/inventory/${String(id)}`, {
+        headers: { ...headers, 'If-Match': inventory.headers().etag ?? '' },
+        data: { quantity_on_hand: stock.quantity_reserved + STOCK_FLOOR },
+      })
+      if (!update.ok()) throw new Error(`Restocking ${slug}: ${String(update.status())}`)
+    }
+  } finally {
+    await api.dispose()
+  }
+}
+
 export async function signIn(page: Page, next = '/', account = customer): Promise<void> {
   await page.goto(`/login?next=${encodeURIComponent(next)}`)
   const form = page.getByRole('main')
   await form.getByLabel('Email').fill(account.email)
-  await form.getByLabel('Password').fill(account.password)
+  await form.getByLabel('Password', { exact: true }).fill(account.password)
   await form.getByRole('button', { name: 'Sign in' }).click()
   await page.waitForURL((url) => url.pathname === new URL(next, url).pathname)
 }
@@ -40,13 +80,18 @@ export async function cartWithOnly(page: Page, slug: string): Promise<void> {
     await expect(remove).toHaveCount(before - 1)
   }
   await page.goto(`/products/${slug}`)
+  // Wait for the API, not the mini-cart it opens: specs that install a fake clock pause the
+  // timers the UI uses to report a finished request.
+  const added = page.waitForResponse(
+    (response) => response.url().endsWith('/api/v1/cart/items') && response.request().method() === 'POST',
+  )
   await page.getByRole('button', { name: 'Add to cart' }).click()
-  await expect(page.getByText('Added to your cart')).toBeVisible()
+  expect((await added).ok()).toBe(true)
 }
 
 /** From a cart with items, place the order to the default saved address; returns its number. */
 export async function placeOrder(page: Page): Promise<string> {
-  await page.goto('/checkout')
+  await page.goto('/checkout?step=review') // the saved default address is already chosen
   await page.getByRole('button', { name: 'Place order and pay' }).click()
   await page.waitForURL(/\/orders\/FRG-\d+\/pay$/)
   const number = /FRG-\d+/.exec(page.url())?.[0]

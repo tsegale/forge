@@ -2,7 +2,8 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    # Feature branches too, so a long-lived branch (feat/redesign) is checked before its pull request.
+    branches: [main, "feat/**"]
   pull_request:
   # Run by hand to also exercise real Stripe test mode (job e2e-stripe).
   workflow_dispatch:
@@ -38,6 +39,8 @@ jobs:
       TEST_DATABASE_URL: postgresql+psycopg://forge:forge@localhost:5432/forge_test
       REDIS_URL: redis://localhost:6379/0
       TEST_REDIS_URL: redis://localhost:6379/15
+      # `flask db upgrade` and `flask db check` start the app, which requires a webhook secret.
+      STRIPE_WEBHOOK_SECRET: whsec_ci_only_fake_gateway
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -116,14 +119,21 @@ jobs:
       REDIS_URL: redis://localhost:6379/0
       E2E_BASE_URL: http://127.0.0.1:4173
       E2E_LOG_DIR: ${{ github.workspace }}/e2e-logs
+      # Every spec signs in from 127.0.0.1; production keeps 5 per minute.
+      LOGIN_LIMIT_PER_IP: 100 per minute
       PAYMENT_GATEWAY: fake
+      # The simulator signs its webhook events with this; any whsec_ value works for the fake gateway.
+      STRIPE_WEBHOOK_SECRET: whsec_ci_only_fake_gateway
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/e2e-setup
       - name: Start the stack (API, demo data, production build)
         run: scripts/ci/start-e2e-stack.sh
-      - name: End-to-end tests, with axe checks on every demo screen
+      - name: End-to-end tests (demo path, keyboard-only checkout, axe on every page, visual once baselined)
         working-directory: frontend
+        env:
+          # Visual comparison starts once the baselines from "Visual baselines" are committed.
+          VISUAL: ${{ hashFiles('frontend/e2e/visual.spec.ts-snapshots/**') != '' && '1' || '' }}
         run: npx playwright test
       - name: Keep the report and server logs
         if: failure()
@@ -167,6 +177,8 @@ jobs:
       REDIS_URL: redis://localhost:6379/0
       E2E_BASE_URL: http://127.0.0.1:4173
       E2E_LOG_DIR: ${{ github.workspace }}/e2e-logs
+      # Every spec signs in from 127.0.0.1; production keeps 5 per minute.
+      LOGIN_LIMIT_PER_IP: 100 per minute
       PAYMENT_GATEWAY: stripe
       STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
       STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}

@@ -113,8 +113,27 @@ export async function logout(): Promise<void> {
   }
 }
 
-/** Restore a session after a reload. Resolves to the user, or null if signed out. */
+/** End every session of the account, on every device; this tab and its siblings sign out too. */
+export async function logoutEverywhere(): Promise<void> {
+  await withSession(() => unwrap(api.POST('/api/v1/auth/logout-all')))
+  endSession()
+  channel?.postMessage({ type: 'logout' } satisfies Broadcast)
+}
+
+/** The API sets this readable, secret-free cookie beside the HttpOnly refresh cookie. */
+const SESSION_HINT = 'forge_session'
+
+/** Whether a session may exist. False means there is certainly none, so there is nothing to restore. */
+export function hasSessionHint(): boolean {
+  return document.cookie.split(';').some((part) => part.trim().startsWith(`${SESSION_HINT}=`))
+}
+
+/**
+ * Restore a session after a reload. Resolves to the user, or null if signed out. Visitors who
+ * never signed in skip the refresh call entirely, so they cause no failed request (or console error).
+ */
 export async function restore(): Promise<User | null> {
+  if (!hasSessionHint()) return null
   return (await refresh()) ? me() : null
 }
 
@@ -123,6 +142,11 @@ export async function restore(): Promise<User | null> {
  * a thunk so it can be re-issued (a request body can only be sent once).
  */
 export async function withSession<T>(call: () => Promise<T>): Promise<T> {
+  // A refresh in flight (restoring the session after a reload, or rotating an expired token) is
+  // about to supply the token. Without waiting, the call would go out anonymously: an early
+  // "Add to cart" landed in a guest cart and the signed-in customer's cart stayed empty. A failed
+  // refresh ends the session, and the call then runs as a guest, as it should.
+  if (inFlight) await inFlight.catch(() => false)
   try {
     return await call()
   } catch (error) {

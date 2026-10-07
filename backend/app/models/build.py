@@ -32,12 +32,20 @@ class Build(TimestampMixin, db.Model):
     )
     is_public: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
     share_slug: Mapped[str | None] = mapped_column(String(32), unique=True)
+    # Shown on the home page. Featuring requires being public (CHECK); being validated is checked by the
+    # featured query instead, because any edit returns a build to draft.
+    is_featured: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
+    featured_blurb: Mapped[str | None] = mapped_column(String(200))
 
     items: Mapped[list[BuildItem]] = relationship(
         back_populates="build", cascade="all, delete-orphan", passive_deletes=True
     )
 
-    __table_args__ = (CheckConstraint("NOT is_public OR share_slug IS NOT NULL", name="public_requires_slug"),)
+    __table_args__ = (
+        CheckConstraint("NOT is_public OR share_slug IS NOT NULL", name="public_requires_slug"),
+        CheckConstraint("NOT is_featured OR is_public", name="featured_requires_public"),
+        Index("ix_builds_featured", "id", postgresql_where=text("is_featured")),
+    )
 
 
 class BuildItem(db.Model):

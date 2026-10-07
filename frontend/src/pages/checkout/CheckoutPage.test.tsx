@@ -47,6 +47,11 @@ describe('CheckoutPage', () => {
     )
     const router = renderApp('/checkout')
     expect(await screen.findByRole('radio', { name: /Ada Lovelace/ })).toBeChecked()
+    await userEvent.click(screen.getByRole('button', { name: 'Continue to review' }))
+    const review = await screen.findByRole('heading', { name: 'Review and reserve' })
+    expect(review).toHaveFocus()
+    expect(screen.getByText('Deliver to Ada Lovelace')).toBeInTheDocument()
+    expect(router.state.location.search).toBe('?step=review')
     await userEvent.click(screen.getByRole('button', { name: 'Place order and pay' }))
     await waitFor(() => {
       expect(router.state.location.pathname).toBe('/orders/FRG-000042/pay')
@@ -86,17 +91,31 @@ describe('CheckoutPage', () => {
     expect(await screen.findByText('Build: Demo gaming rig')).toBeInTheDocument()
     await userEvent.type(screen.getByLabelText('Street address'), '5 Robert Mugabe Avenue')
     await userEvent.click(screen.getByLabelText('Save this address for next time')) // one-off
-    await userEvent.click(screen.getByRole('button', { name: 'Place order and pay' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Continue to review' }))
 
+    // Checked before review: the city is required.
+    expect(await screen.findByText('Enter a city or town.')).toBeInTheDocument()
+    expect(screen.getByLabelText('City or town')).toHaveFocus()
+    await userEvent.type(screen.getByLabelText('City or town'), 'Windhoek')
+    await userEvent.click(screen.getByRole('button', { name: 'Continue to review' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Place order and pay' }))
+
+    // The API's own field errors send the customer back to the form, next to the field.
     expect(await screen.findByText('Enter a city.')).toBeInTheDocument()
+    expect(router.state.location.search).toBe('?build=9')
     expect(checkoutBody).toMatchObject({
       source: { build_id: 9 },
       address_id: null,
-      address: { recipient_name: 'Ada L', line1: '5 Robert Mugabe Avenue', country_code: 'NA' },
+      address: {
+        recipient_name: 'Ada L',
+        line1: '5 Robert Mugabe Avenue',
+        city: 'Windhoek',
+        country_code: 'NA',
+      },
     })
 
-    await userEvent.type(screen.getByLabelText('City or town'), 'Windhoek')
-    await userEvent.click(screen.getByRole('button', { name: 'Place order and pay' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Continue to review' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Place order and pay' }))
     await waitFor(() => {
       expect(router.state.location.pathname).toBe('/orders/FRG-000042/pay')
     })
@@ -114,7 +133,7 @@ describe('CheckoutPage', () => {
         ),
       ),
     )
-    renderApp('/checkout')
+    renderApp('/checkout?step=review')
     await userEvent.click(await screen.findByRole('button', { name: 'Place order and pay' }))
     expect(await screen.findByText('Only 0 available, you asked for 1.')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Update your cart' })).toHaveAttribute('href', '/cart')

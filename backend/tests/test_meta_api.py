@@ -35,6 +35,7 @@ def test_public_config(client):
 def env(monkeypatch):
     for name in ("PAYMENT_GATEWAY", "STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET", "STRIPE_PUBLISHABLE_KEY"):
         monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", "whsec_local")
     return monkeypatch
 
 

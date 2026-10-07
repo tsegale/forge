@@ -8,7 +8,7 @@ from sqlalchemy.orm import selectinload
 
 from ..errors import Conflict, NotFound
 from ..extensions import db
-from ..models import Order, OrderStatusHistory, Payment, User
+from ..models import Order, OrderStatusHistory, Payment, Product, User
 from ..models.enums import AddressType, OrderStatus, ReservationStatus
 from ..schemas.cart import Totals
 from ..schemas.catalog import Price
@@ -23,6 +23,7 @@ from ..schemas.orders import (
     StatusChange,
 )
 from .cancellation import cancel_intents, cancel_locked_order
+from .media import image_response
 
 
 def _price(cents: int, currency: str) -> Price:
@@ -32,6 +33,10 @@ def _price(cents: int, currency: str) -> Price:
 def to_response(order: Order) -> OrderResponse:
     currency = order.currency or current_app.config["STORE_CURRENCY"]
     shipping = next((a for a in order.addresses if a.type is AddressType.SHIPPING), None)
+    # Presentation only (kind and photo), in one query; the line itself is the purchase snapshot.
+    products = {
+        p.id: p for p in db.session.scalars(select(Product).where(Product.id.in_([i.product_id for i in order.items])))
+    }
     return OrderResponse(
         order_number=order.order_number,
         status=order.status,
@@ -43,6 +48,8 @@ def to_response(order: Order) -> OrderResponse:
                 quantity=i.quantity,
                 unit_price=_price(i.unit_price_cents, currency),
                 line_total=_price(i.line_total_cents, currency),
+                kind=products[i.product_id].kind_code,
+                image=image_response(products[i.product_id].images[0]) if products[i.product_id].images else None,
             )
             for i in sorted(order.items, key=lambda i: i.id)
         ],

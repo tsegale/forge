@@ -39,10 +39,7 @@ export function AdminOrderPage() {
         </p>
       </div>
 
-      <section
-        aria-labelledby="actions-heading"
-        className="rounded-[var(--radius-card)] border border-border bg-surface p-5"
-      >
+      <section aria-labelledby="actions-heading" className="rounded-md border border-border bg-surface p-5">
         <h2 id="actions-heading" className="mb-3 text-sm font-semibold">
           Next step
         </h2>
@@ -60,7 +57,7 @@ export function AdminOrderPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_20rem]">
         <section
           aria-labelledby="admin-items-heading"
-          className="rounded-[var(--radius-card)] border border-border bg-surface p-5"
+          className="rounded-md border border-border bg-surface p-5"
         >
           <h2 id="admin-items-heading" className="text-sm font-semibold">
             Parts
@@ -88,7 +85,7 @@ export function AdminOrderPage() {
         <div className="space-y-6">
           <section
             aria-labelledby="admin-progress-heading"
-            className="rounded-[var(--radius-card)] border border-border bg-surface p-5"
+            className="rounded-md border border-border bg-surface p-5"
           >
             <h2 id="admin-progress-heading" className="mb-4 text-sm font-semibold">
               Progress
@@ -98,7 +95,7 @@ export function AdminOrderPage() {
           {address ? (
             <section
               aria-labelledby="ship-to-heading"
-              className="rounded-[var(--radius-card)] border border-border bg-surface p-5 text-sm"
+              className="rounded-md border border-border bg-surface p-5 text-sm"
             >
               <h2 id="ship-to-heading" className="font-semibold">
                 Ship to

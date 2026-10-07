@@ -8,6 +8,7 @@ from typing import Any
 
 from sqlalchemy import (
     CHAR,
+    Boolean,
     CheckConstraint,
     DateTime,
     ForeignKey,
@@ -54,6 +55,8 @@ class CartItem(TimestampMixin, db.Model):
     cart_id: Mapped[int] = mapped_column(ForeignKey("carts.id", ondelete="CASCADE"), nullable=False)
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id", ondelete="CASCADE"), nullable=False)
     quantity: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+    # Kept in the cart but out of the order: excluded from totals, the item count and checkout.
+    saved_for_later: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
 
     cart: Mapped[Cart] = relationship(back_populates="items")
     product: Mapped[Product] = relationship()

@@ -1,13 +1,19 @@
 import { useState, type SyntheticEvent } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router'
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router'
 import { ApiError } from '@/api/errors'
 import { useAuth } from '@/auth/context'
 import { Button } from '@/components/ui/Button'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
+import { Alert } from '@/components/ui/Alert'
 import { Field } from '@/components/ui/Field'
+import { PasswordField } from '@/components/ui/PasswordField'
 import { safeNext } from '@/lib/navigation'
+import { usePageTitle } from '@/lib/usePageTitle'
+import { AuthLayout } from './AuthLayout'
 
 export function LoginPage() {
+  usePageTitle('Sign in')
+  const reset = (useLocation().state as { passwordReset?: boolean } | null)?.passwordReset === true
   const { login } = useAuth()
   const navigate = useNavigate()
   const [params] = useSearchParams()
@@ -32,19 +38,25 @@ export function LoginPage() {
   }
 
   const fields = error instanceof ApiError ? error.fieldErrors() : {}
+  const registerHref = next ? `/register?next=${encodeURIComponent(next)}` : '/register'
   return (
-    <section className="mx-auto max-w-sm">
-      <h1 className="text-2xl font-semibold">Sign in</h1>
-      <p className="mt-1 text-sm text-ink-muted">
-        New to Forge?{' '}
-        <Link
-          to={next ? `/register?next=${encodeURIComponent(next)}` : '/register'}
-          className="font-medium text-accent hover:text-accent-hover"
-        >
-          Create an account
-        </Link>
-      </p>
-      <form onSubmit={(e) => void submit(e)} className="mt-6 flex flex-col gap-4" noValidate>
+    <AuthLayout
+      title="Sign in"
+      intro={
+        <>
+          New to Forge?{' '}
+          <Link to={registerHref} className="font-medium text-accent hover:underline">
+            Create an account
+          </Link>
+        </>
+      }
+    >
+      <form onSubmit={(e) => void submit(e)} className="flex flex-col gap-5" noValidate>
+        {reset ? (
+          <Alert tone="success" title="Password changed">
+            Every device was signed out. Sign in with your new password.
+          </Alert>
+        ) : null}
         {error && !Object.keys(fields).length ? <ErrorMessage error={error} /> : null}
         <Field
           label="Email"
@@ -57,21 +69,25 @@ export function LoginPage() {
           }}
           error={fields.email}
         />
-        <Field
-          label="Password"
-          type="password"
-          autoComplete="current-password"
-          required
-          value={password}
-          onChange={(e) => {
-            setPassword(e.target.value)
-          }}
-          error={fields.password}
-        />
-        <Button type="submit" busy={busy}>
+        <div className="flex flex-col gap-1.5">
+          <PasswordField
+            label="Password"
+            autoComplete="current-password"
+            required
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value)
+            }}
+            error={fields.password}
+          />
+          <Link to="/forgot-password" className="self-end text-sm font-medium text-accent hover:underline">
+            Forgot your password?
+          </Link>
+        </div>
+        <Button type="submit" size="lg" busy={busy}>
           {busy ? 'Signing in' : 'Sign in'}
         </Button>
       </form>
-    </section>
+    </AuthLayout>
   )
 }

@@ -14,9 +14,13 @@ x-backend-env: &backend-env
   MAIL_USERNAME: ${MAIL_USERNAME:-}
   MAIL_PASSWORD: ${MAIL_PASSWORD:-}
   MAIL_FROM: ${MAIL_FROM:-Forge <orders@forge.local>}
+  # Where links in emails point (password reset). Defaults to the local Nginx port.
+  PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://127.0.0.1:8080}
   STORE_CURRENCY: ${STORE_CURRENCY:-nad}
   FORGE_ENV: ${FORGE_ENV:-production}
   TRUSTED_PROXY_COUNT: 1   # nginx; makes per-IP rate limits see the real client address
+  # End-to-end runs only (repeated Playwright sign-ins); production refuses it at startup.
+  LOGIN_LIMIT_PER_IP: ${LOGIN_LIMIT_PER_IP:-}
 
 services:
   db:
@@ -62,6 +66,10 @@ services:
     build: ./backend
     restart: unless-stopped
     environment: *backend-env
+    volumes:
+      # WebP photos written by `flask seed images`, served by nginx. The sources stay on the host.
+      - media:/app/media
+      - ./backend/seed/images:/app/seed/images:ro
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -117,6 +125,8 @@ services:
     restart: unless-stopped
     ports:
       - "${HTTP_PORT:-8080}:80"
+    volumes:
+      - media:/usr/share/nginx/media:ro
     depends_on:
       api:
         condition: service_healthy
@@ -125,6 +135,7 @@ services:
 volumes:
   pgdata:
   redisdata:
+  media:
 
 networks:
   backend:

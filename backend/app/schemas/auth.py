@@ -45,3 +45,36 @@ class UserResponse(BaseModel):
     last_name: str
     role: UserRole
     created_at: datetime
+
+
+class PasswordResetRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    email: EmailStr = Field(max_length=254)
+
+
+class PasswordResetAccepted(BaseModel):
+    message: str = Field(
+        description="The same for every address, so the response never reveals whether an account exists."
+    )
+
+
+class PasswordResetConfirm(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    token: str = Field(min_length=20, max_length=200, description="From the emailed link's #token= fragment.")
+    password: Password
+
+
+class ProfileUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    first_name: Name | None = None
+    last_name: Name | None = None
+
+
+class PasswordChange(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    current_password: str = Field(min_length=1, max_length=128)
+    new_password: Password

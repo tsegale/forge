@@ -12,6 +12,7 @@ export function AddressForm({
   errors: Record<string, string>
 }) {
   const field = (key: keyof AddressValues) => ({
+    name: key,
     value: values[key],
     error: errors[key],
     onChange: (event: { target: { value: string } }) => {

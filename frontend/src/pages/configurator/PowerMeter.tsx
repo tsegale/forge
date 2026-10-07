@@ -1,3 +1,4 @@
+import { useId } from 'react'
 import { clsx } from 'clsx'
 import type { CompatibilityReport } from '@/builds/api'
 
@@ -22,11 +23,12 @@ export function PowerMeter({
           ? 'bg-warning'
           : 'bg-success'
 
+  const headingId = useId()
   return (
-    <section aria-labelledby="power-heading">
-      <h3 id="power-heading" className="text-sm font-semibold">
+    <section aria-labelledby={headingId}>
+      <h2 id={headingId} className="text-base font-semibold text-ink">
         Power
-      </h3>
+      </h2>
       <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
         <dt className="text-ink-muted">Sustained</dt>
         <dd className="text-right tabular">{power.sustained_w} W</dd>
@@ -39,7 +41,7 @@ export function PowerMeter({
       </dl>
       {psuWatts ? (
         <div
-          className="mt-3 h-2 overflow-hidden rounded-full bg-canvas"
+          className="mt-3 h-2 overflow-hidden rounded-full bg-surface-muted"
           role="meter"
           aria-label="Peak draw as a share of the power supply rating"
           aria-valuemin={0}

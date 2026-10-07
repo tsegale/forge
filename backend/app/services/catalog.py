@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
+
 from flask import current_app
-from sqlalchemy import Select, select
+from sqlalchemy import Select, func, select
 from sqlalchemy.orm import selectin_polymorphic, selectinload
 
 from ..errors import NotFound
@@ -18,8 +20,10 @@ from ..models import (
     GpuProduct,
     MemoryProduct,
     MotherboardProduct,
+    PriceHistory,
     Product,
     PsuProduct,
+    Review,
     StorageProduct,
 )
 from ..schemas.catalog import (
@@ -30,9 +34,13 @@ from ..schemas.catalog import (
     CategoryNode,
     CategoryRef,
     Price,
+    PriceHistoryResponse,
+    PricePoint,
     ProductDetail,
     ProductSummary,
+    RatingSummary,
 )
+from .media import image_response
 
 SUBTYPES = [
     CpuProduct,
@@ -92,17 +100,67 @@ def to_summary(product: Product) -> ProductSummary:
         price=Price(amount_cents=product.price_cents, currency=current_app.config["STORE_CURRENCY"]),
         availability=Availability(in_stock=available > 0, quantity_available=max(available, 0)),
         specs=_specs(product),
+        image=image_response(product.images[0]) if product.images else None,
     )
 
 
-def get_product(slug: str) -> ProductDetail:
+def get_active(slug: str) -> Product:
     product = db.session.scalar(product_query().where(Product.slug == slug).options(selectinload(Product.category)))
     if product is None:
         raise NotFound("Product not found.")
+    return product
+
+
+def rating_summary(product_id: int) -> RatingSummary:
+    average, count = db.session.execute(
+        select(func.round(func.avg(Review.rating), 1), func.count()).where(Review.product_id == product_id)
+    ).one()
+    return RatingSummary(average=float(average) if average is not None else None, count=count)
+
+
+def get_product(slug: str) -> ProductDetail:
+    product = get_active(slug)
     summary = to_summary(product)
     return ProductDetail(
-        **summary.model_dump(exclude={"specs"}),
+        **summary.model_dump(exclude={"specs", "image"}),
         specs=summary.specs,
+        image=summary.image,
         description=product.description,
         category=CategoryRef.model_validate(product.category),
+        images=[image_response(image) for image in product.images],
+        rating=rating_summary(product.id),
+    )
+
+
+def price_history(slug: str, days: int) -> PriceHistoryResponse:
+    """The prices in effect over the last ``days``, as a step series. The price at the start of
+    the window is the last change recorded before it (partition pruning keeps that lookup cheap
+    on the indexed (product_id, recorded_at) pair)."""
+    product = get_active(slug)
+    now = datetime.now(UTC)
+    start = now - timedelta(days=days)
+    opening = db.session.scalar(
+        select(PriceHistory.price_cents)
+        .where(PriceHistory.product_id == product.id, PriceHistory.recorded_at < start)
+        .order_by(PriceHistory.recorded_at.desc())
+        .limit(1)
+    )
+    rows = db.session.execute(
+        select(PriceHistory.recorded_at, PriceHistory.price_cents)
+        .where(PriceHistory.product_id == product.id, PriceHistory.recorded_at >= start)
+        .order_by(PriceHistory.recorded_at)
+    ).all()
+    points = [PricePoint(at=start, price_cents=opening)] if opening is not None else []
+    points += [PricePoint(at=at, price_cents=cents) for at, cents in rows]
+    if not points:  # no history at all (a row predating the trigger): the current price is the history
+        points = [PricePoint(at=start, price_cents=product.price_cents)]
+    prices = [p.price_cents for p in points]
+    return PriceHistoryResponse(
+        currency=current_app.config["STORE_CURRENCY"],
+        days=days,
+        points=points,
+        current_cents=product.price_cents,
+        lowest_cents=min(prices),
+        highest_cents=max(prices),
+        change_cents=product.price_cents - points[0].price_cents,
     )

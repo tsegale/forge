@@ -36,3 +36,24 @@ export function toAddressIn(values: AddressValues): AddressIn {
     country_code: values.country_code.trim().toUpperCase() || 'NA',
   }
 }
+
+/** One line for a shipping address: "12 Independence Avenue, Windhoek, NA". */
+export function formatAddress(address: {
+  line1: string
+  line2?: string | null
+  city: string
+  region?: string | null
+  postal_code?: string | null
+  country_code: string
+}): string {
+  return [
+    address.line1,
+    address.line2,
+    address.city,
+    address.region,
+    address.postal_code,
+    address.country_code,
+  ]
+    .filter(Boolean)
+    .join(', ')
+}

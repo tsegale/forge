@@ -12,10 +12,21 @@ from flask_limiter.util import get_remote_address
 
 from ...errors import Unauthorized
 from ...extensions import limiter
-from ...schemas.auth import LoginRequest, RegisterRequest, TokenResponse, UserResponse
+from ...schemas.auth import (
+    LoginRequest,
+    PasswordChange,
+    PasswordResetAccepted,
+    PasswordResetConfirm,
+    PasswordResetRequest,
+    ProfileUpdate,
+    RegisterRequest,
+    TokenResponse,
+    UserResponse,
+)
 from ...security.guards import current_user, require_auth
 from ...services import auth as auth_service
 from ...services import cart as cart_service
+from ...services import password_reset
 from ...services.auth import IssuedSession
 from ..spec import api, responses
 from . import bp
@@ -50,6 +61,15 @@ def _set_refresh_cookie(session: IssuedSession) -> None:
             httponly=True,
             samesite="Strict",
         )
+        response.set_cookie(
+            cfg["SESSION_HINT_COOKIE_NAME"],
+            "1",
+            expires=session.refresh_expires_at,
+            path="/",
+            secure=cfg["REFRESH_COOKIE_SECURE"],
+            httponly=False,  # read by the app; holds no secret
+            samesite="Strict",
+        )
         # Token responses must never be cached (RFC 6749, section 5.1).
         response.headers["Cache-Control"] = "no-store"
         return response
@@ -65,6 +85,9 @@ def _clear_refresh_cookie() -> None:
             secure=cfg["REFRESH_COOKIE_SECURE"],
             httponly=True,
             samesite="Strict",
+        )
+        response.delete_cookie(
+            cfg["SESSION_HINT_COOKIE_NAME"], path="/", secure=cfg["REFRESH_COOKIE_SECURE"], samesite="Strict"
         )
         return response
 
@@ -133,6 +156,33 @@ def me():
     return UserResponse.model_validate(current_user())
 
 
+@bp.patch("/auth/me")
+@require_auth
+@api.validate(
+    json=ProfileUpdate, resp=responses(401, 422, HTTP_200=UserResponse), tags=[TAG], security={"bearerAuth": []}
+)
+def update_me():
+    """Change the account's name. Email changes are not offered (the address is the login)."""
+    body: ProfileUpdate = request.context.json
+    return UserResponse.model_validate(auth_service.update_profile(current_user(), body.first_name, body.last_name))
+
+
+@bp.post("/auth/me/password")
+@require_auth
+@limiter.limit(_limit("LOGIN_FAILURE_LIMIT_PER_ACCOUNT"), key_func=lambda: f"user:{current_user().id}")
+@api.validate(
+    json=PasswordChange, resp=responses(400, 401, 422, 429, HTTP_204=None), tags=[TAG], security={"bearerAuth": []}
+)
+def change_password():
+    """Change the password, given the current one. Every other session is signed out; this one stays."""
+    body: PasswordChange = request.context.json
+    auth_service.change_password(current_user(), body.current_password, body.new_password, _refresh_cookie())
+    from ...tasks import send_password_changed
+
+    send_password_changed.delay(current_user().id)
+    return "", 204
+
+
 @bp.post("/auth/refresh")
 @api.validate(resp=responses(401, HTTP_200=TokenResponse), tags=[TAG])
 def refresh():
@@ -164,5 +214,34 @@ def logout():
 def logout_all():
     """End every session for the authenticated user, on every device."""
     auth_service.end_all_sessions(current_user())
+    _clear_refresh_cookie()
+    return "", 204
+
+
+RESET_ACCEPTED = (
+    "If an account exists for that address, we have emailed a link to reset its password. "
+    "It expires soon and works once."
+)
+
+
+@bp.post("/auth/password-reset")
+@limiter.limit(_limit("PASSWORD_RESET_LIMIT_PER_IP"))
+@limiter.limit(_limit("PASSWORD_RESET_LIMIT_PER_EMAIL"), key_func=_login_account_key)
+@api.validate(json=PasswordResetRequest, resp=responses(422, 429, HTTP_202=PasswordResetAccepted), tags=[TAG])
+def request_password_reset():
+    """Email a single-use reset link. The answer is the same whether or not the address has an
+    account (no enumeration), and requests are limited per address and per client."""
+    password_reset.request_reset(str(request.context.json.email))
+    return PasswordResetAccepted(message=RESET_ACCEPTED), 202
+
+
+@bp.post("/auth/password-reset/confirm")
+@limiter.limit(_limit("PASSWORD_RESET_LIMIT_PER_IP"))
+@api.validate(json=PasswordResetConfirm, resp=responses(400, 422, 429, HTTP_204=None), tags=[TAG])
+def confirm_password_reset():
+    """Set a new password with the emailed token. The token works once; every session of the
+    account is signed out, and the account owner is told by email."""
+    body: PasswordResetConfirm = request.context.json
+    password_reset.complete_reset(body.token, body.password)
     _clear_refresh_cookie()
     return "", 204

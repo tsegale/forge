@@ -10,10 +10,12 @@ from .catalog import (
     CpuProduct,
     GpuProduct,
     Inventory,
+    InventoryEvent,
     MemoryProduct,
     MotherboardProduct,
     PriceHistory,
     Product,
+    ProductImage,
     PsuProduct,
     Socket,
     StorageProduct,
@@ -32,7 +34,7 @@ from .commerce import (
     StockReservation,
 )
 from .engagement import PriceAlert, Review
-from .user import Address, RefreshToken, User
+from .user import Address, PasswordResetToken, RefreshToken, User
 
 __all__ = [
     "AccessoryProduct",
@@ -50,6 +52,7 @@ __all__ = [
     "CpuProduct",
     "GpuProduct",
     "Inventory",
+    "InventoryEvent",
     "MemoryProduct",
     "MotherboardProduct",
     "Order",
@@ -57,10 +60,12 @@ __all__ = [
     "OrderItem",
     "OrderStatusHistory",
     "OrderStatusTransition",
+    "PasswordResetToken",
     "Payment",
     "PaymentEvent",
     "PriceAlert",
     "PriceHistory",
+    "ProductImage",
     "ProcessedWebhookEvent",
     "Product",
     "PsuProduct",

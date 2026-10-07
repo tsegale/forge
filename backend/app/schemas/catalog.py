@@ -6,6 +6,7 @@ fields of each component kind. Money is integer minor units plus an ISO 4217 cur
 
 from __future__ import annotations
 
+from datetime import datetime
 from decimal import Decimal
 from typing import Annotated, Any, Literal
 
@@ -22,6 +23,7 @@ from ..models.enums import (
     StorageFormFactor,
     StorageInterface,
 )
+from .findings import FindingResponse
 
 # Physical dimensions (not money) stored as NUMERIC: emit as JSON numbers rather than strings.
 Millimetres = Annotated[Decimal, PlainSerializer(float, return_type=float, when_used="json")]
@@ -190,6 +192,20 @@ class Availability(BaseModel):
     quantity_available: int
 
 
+class ProductImageResponse(BaseModel):
+    thumb: str = Field(description="WebP, 320 px wide.")
+    card: str = Field(description="WebP, 640 px wide.")
+    full: str = Field(description="WebP, 1280 px wide (or the original width, if smaller).")
+    alt: str
+    width: int = Field(description="Intrinsic width of the full image, for layout without shift.")
+    height: int
+
+
+class RatingSummary(BaseModel):
+    average: float | None = Field(description="Mean rating to one decimal place; null with no reviews.")
+    count: int
+
+
 class ProductSummary(BaseModel):
     id: int
     sku: str
@@ -200,15 +216,57 @@ class ProductSummary(BaseModel):
     price: Price
     availability: Availability
     specs: Specs
+    image: ProductImageResponse | None = Field(default=None, description="The first photo, if any.")
     compatibility_warnings: list[str] | None = Field(
         default=None,
         description="With compatible_with: warning codes this part would add to that build. Null otherwise.",
     )
+    compatibility: CandidateCompatibility | None = Field(
+        default=None,
+        description="With compatible_with: how this part would fit that build, with the measured reasons. "
+        "Null otherwise.",
+    )
+
+
+class CandidateCompatibility(BaseModel):
+    compatible: bool = Field(
+        description="Adding the part (or swapping it in, for a single-slot kind) adds no conflict."
+    )
+    conflicts: list[FindingResponse] = Field(
+        description="Conflicts this part would cause; only listed with include_incompatible."
+    )
+    warnings: list[FindingResponse]
 
 
 class ProductDetail(ProductSummary):
     description: str | None
     category: CategoryRef
+    images: list[ProductImageResponse] = Field(description="Every photo, in display order.")
+    rating: RatingSummary
+
+
+class PriceHistoryQuery(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    days: int = Field(default=90, ge=7, le=365, description="How far back to look.")
+
+
+class PricePoint(BaseModel):
+    at: datetime
+    price_cents: int
+
+
+class PriceHistoryResponse(BaseModel):
+    currency: str
+    days: int
+    points: list[PricePoint] = Field(
+        description="Each price in effect during the window, oldest first. The first point is the price "
+        "at the start of the window; the price holds until the next point (a step series)."
+    )
+    current_cents: int
+    lowest_cents: int
+    highest_cents: int
+    change_cents: int = Field(description="Current price minus the price at the start of the window.")
 
 
 class CategoryList(BaseModel):
@@ -224,9 +282,10 @@ class BrandList(BaseModel):
 SortOrder = Literal["relevance", "price", "-price", "name", "-name", "newest"]
 
 
-class ProductQuery(BaseModel):
-    """Query string for GET /products. Unknown parameters are rejected rather than ignored, so a
-    misspelled filter fails loudly instead of silently returning unfiltered results."""
+class ProductFilters(BaseModel):
+    """What selects products, shared by GET /products and GET /products/facets. Unknown parameters
+    are rejected rather than ignored, so a misspelled filter fails loudly instead of silently
+    returning unfiltered results."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -241,9 +300,6 @@ class ProductQuery(BaseModel):
     min_price: int | None = Field(default=None, ge=0, description="Inclusive, in minor units.")
     max_price: int | None = Field(default=None, ge=0, description="Inclusive, in minor units.")
     in_stock: bool | None = None
-    sort: SortOrder | None = Field(default=None, description="Defaults to relevance with q, otherwise name.")
-    limit: int = Field(default=24, ge=1, le=100)
-    cursor: str | None = Field(default=None, description="Opaque; from next_cursor of the previous page.")
     compatible_with: list[int] | None = Field(
         default=None,
         max_length=50,
@@ -294,6 +350,76 @@ class ProductQuery(BaseModel):
         return self
 
 
+class ProductQuery(ProductFilters):
+    """Query string for GET /products."""
+
+    sort: SortOrder | None = Field(default=None, description="Defaults to relevance with q, otherwise name.")
+    limit: int = Field(default=24, ge=1, le=100)
+    cursor: str | None = Field(default=None, description="Opaque; from next_cursor of the previous page.")
+    include_incompatible: bool = Field(
+        default=False,
+        description="With compatible_with: list conflicting parts too, each with `compatibility.conflicts` "
+        "saying why, instead of leaving them out.",
+    )
+
+    @model_validator(mode="after")
+    def _include_incompatible_needs_a_build(self) -> ProductQuery:
+        if self.include_incompatible and self.compatible_with is None:
+            raise ValueError("include_incompatible requires compatible_with.")
+        return self
+
+
 class ProductPage(BaseModel):
     items: list[ProductSummary]
     next_cursor: str | None = Field(description="Pass as `cursor` to fetch the next page; null on the last page.")
+
+
+class BrandFacet(BaseModel):
+    slug: str
+    name: str
+    count: int = Field(description="Matches with this brand, counting every other filter except brand.")
+
+
+class KindFacet(BaseModel):
+    kind: str
+    count: int = Field(description="Matches of this kind, ignoring the kind and spec filters.")
+
+
+class PriceRange(BaseModel):
+    min_cents: int
+    max_cents: int
+
+
+class ProductFacets(BaseModel):
+    total: int = Field(description="Products the same filters list (with compatible_with: the compatible ones).")
+    incompatible: int | None = Field(
+        description="With compatible_with: matching parts left out because they would conflict. Null otherwise."
+    )
+    in_stock: int = Field(description="Of the matches, how many are in stock (ignoring the in_stock filter).")
+    kinds: list[KindFacet] = Field(description="Component kinds among the matches, most products first.")
+    brands: list[BrandFacet] = Field(description="Brands among the matches, most products first.")
+    price: PriceRange | None = Field(description="Price span of the matches, ignoring the price filters.")
+
+
+class SuggestQuery(BaseModel):
+    """Query string for GET /search/suggest."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    q: str = Field(min_length=1, max_length=100, description="What the shopper has typed so far.")
+    per_kind: int = Field(default=4, ge=1, le=8, description="Most products to return for each kind.")
+
+
+class SuggestionGroup(BaseModel):
+    kind: str
+    total: int = Field(description="Matches of this kind; the group shows the best `per_kind` of them.")
+    items: list[ProductSummary]
+
+
+class SearchSuggestions(BaseModel):
+    query: str
+    total: int = Field(description="All matching products, across kinds.")
+    groups: list[SuggestionGroup] = Field(description="Best matches per kind, most relevant kind first.")
+    did_you_mean: str | None = Field(
+        description="A corrected query built from catalog words when nothing matches, e.g. 'ryzen' for 'rizen'."
+    )

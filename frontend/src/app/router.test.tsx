@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import { http, HttpResponse } from 'msw'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { server } from '@/test/server'
@@ -18,8 +18,10 @@ beforeEach(() => {
 describe('app shell', () => {
   it('renders navigation, the active page, and a sign-in link when signed out', async () => {
     renderApp('/configurator')
-    expect(screen.getByRole('navigation', { name: 'Main' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Build a PC' })).toHaveClass('text-accent')
+    const shop = screen.getByRole('navigation', { name: 'Shop' })
+    expect(within(shop).getByRole('button', { name: /Shop by category/ })).toBeInTheDocument()
+    expect(within(shop).getByRole('link', { name: 'Build a PC' })).toHaveClass('text-accent')
+    expect(screen.getAllByRole('search').length).toBeGreaterThan(0) // desktop and phone rows; CSS shows one
     expect(screen.getByRole('heading', { name: 'Build a PC' })).toBeInTheDocument()
     expect(await screen.findByRole('link', { name: 'Sign in' })).toBeInTheDocument()
   })

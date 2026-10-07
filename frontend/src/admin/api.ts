@@ -125,3 +125,45 @@ export const updateProduct = (product_id: number, body: { price_cents?: number; 
       }),
     ),
   )
+
+export type Metrics = components['schemas']['Metrics']
+export type AuditKind = NonNullable<components['schemas']['AuditQuery']['kind']>
+
+export const metricsQuery = (days: number) =>
+  queryOptions({
+    queryKey: ['admin', 'metrics', days],
+    queryFn: () =>
+      withSession(() => unwrap(api.GET('/api/v1/admin/metrics', { params: { query: { days } } }))),
+    refetchInterval: 60_000,
+  })
+
+export const auditQuery = (kind: AuditKind | null) =>
+  infiniteQueryOptions({
+    queryKey: ['admin', 'audit', kind],
+    queryFn: ({ pageParam }) =>
+      withSession(() =>
+        unwrap(
+          api.GET('/api/v1/admin/audit', {
+            params: {
+              query: { limit: 50, ...(kind ? { kind } : {}), ...(pageParam ? { before: pageParam } : {}) },
+            },
+          }),
+        ),
+      ),
+    initialPageParam: null as string | null,
+    getNextPageParam: (page) => page.next_before ?? null,
+  })
+
+export const webhooksQuery = infiniteQueryOptions({
+  queryKey: ['admin', 'webhooks'],
+  queryFn: ({ pageParam }) =>
+    withSession(() =>
+      unwrap(
+        api.GET('/api/v1/admin/webhooks', {
+          params: { query: { limit: 50, ...(pageParam ? { before: pageParam } : {}) } },
+        }),
+      ),
+    ),
+  initialPageParam: null as string | null,
+  getNextPageParam: (page) => page.next_before ?? null,
+})

@@ -41,7 +41,18 @@ export const setCartQuantity = (item_id: number, quantity: number) =>
     unwrap(
       api.PATCH('/api/v1/cart/items/{item_id}', {
         params: { path: { item_id } },
-        body: { quantity },
+        body: { quantity, saved_for_later: null },
+      }),
+    ),
+  )
+
+/** Move a line to "saved for later" (out of the order, kept in the cart) or back. */
+export const setSavedForLater = (item_id: number, saved: boolean) =>
+  withSession(() =>
+    unwrap(
+      api.PATCH('/api/v1/cart/items/{item_id}', {
+        params: { path: { item_id } },
+        body: { quantity: null, saved_for_later: saved },
       }),
     ),
   )

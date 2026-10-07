@@ -81,7 +81,7 @@ export function InventoryPage() {
         <p className="py-8 text-center text-ink-muted">No products match.</p>
       ) : null}
       {rows.length ? (
-        <div className="overflow-x-auto rounded-[var(--radius-card)] border border-border bg-surface">
+        <div className="relative overflow-x-auto rounded-md border border-border bg-surface">
           <table className="w-full text-sm">
             <thead className="bg-canvas text-left text-ink-muted">
               <tr>
@@ -124,7 +124,7 @@ export function InventoryPage() {
                   <td className="px-4 py-3 text-right tabular">{product.quantity_reserved}</td>
                   <td
                     className={`px-4 py-3 text-right font-medium tabular ${
-                      product.quantity_available <= LOW_STOCK ? 'text-warning' : ''
+                      product.quantity_available <= LOW_STOCK ? 'text-warning-ink' : ''
                     }`}
                   >
                     {product.quantity_available}

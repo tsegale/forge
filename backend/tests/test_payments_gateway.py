@@ -64,7 +64,23 @@ def env(monkeypatch):
 
 
 def test_without_keys_development_uses_the_fake_gateway(env):
+    env.setenv("STRIPE_WEBHOOK_SECRET", "whsec_local")
     assert DevelopmentConfig().PAYMENT_GATEWAY == "fake"
+
+
+@pytest.mark.parametrize("value", [None, "", "  "])
+def test_fake_gateway_refuses_to_start_without_a_webhook_secret(env, value):
+    # Compose passes an unset variable as "": the simulator used to fail every payment with a 500.
+    if value is not None:
+        env.setenv("STRIPE_WEBHOOK_SECRET", value)
+    with pytest.raises(RuntimeError, match="Missing required environment variable: STRIPE_WEBHOOK_SECRET"):
+        DevelopmentConfig()
+
+
+def test_webhook_secret_must_be_a_signing_secret(env):
+    env.setenv("STRIPE_WEBHOOK_SECRET", "not-a-secret")
+    with pytest.raises(RuntimeError, match="whsec_"):
+        DevelopmentConfig()
 
 
 def test_test_key_selects_stripe_and_requires_a_webhook_secret(env):

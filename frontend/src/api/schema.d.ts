@@ -41,6 +41,23 @@ export interface paths {
         patch: operations["patch__api_v1_addresses_{address_id}"];
         trace?: never;
     };
+    "/api/v1/admin/audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One trail over order status changes, stock events, price changes and payment events (all written by the database itself), newest first, with who did it. */
+        get: operations["get__api_v1_admin_audit"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/inventory/{product_id}": {
         parameters: {
             query?: never;
@@ -57,6 +74,23 @@ export interface paths {
         head?: never;
         /** Set stock on hand. Requires If-Match with the current ETag (optimistic concurrency): 412 if the stock changed since it was read, 428 if If-Match is missing, 409 if the new level would fall below stock already reserved by checkouts. */
         patch: operations["patch__api_v1_admin_inventory_{product_id}"];
+        trace?: never;
+    };
+    "/api/v1/admin/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Sales over the last `days` (revenue, orders, units, refunds, a zero-filled daily series in the store's time zone), orders by status, low stock and best sellers. */
+        get: operations["get__api_v1_admin_metrics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/admin/orders": {
@@ -161,6 +195,58 @@ export interface paths {
         patch: operations["patch__api_v1_admin_products_{product_id}"];
         trace?: never;
     };
+    "/api/v1/admin/webhooks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The payment provider's events as applied (the idempotency ledger), newest first. */
+        get: operations["get__api_v1_admin_webhooks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The customer's price alerts, newest first, with each product's current price. */
+        get: operations["get__api_v1_alerts"];
+        put?: never;
+        /** Watch a product for a price at or below the target (below today's price). One alert per product: setting it again changes the target and re-arms it. One email when it fires. */
+        post: operations["post__api_v1_alerts"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/alerts/{alert_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Stop watching. */
+        delete: operations["delete__api_v1_alerts_{alert_id}"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/login": {
         parameters: {
             query?: never;
@@ -223,6 +309,58 @@ export interface paths {
         get: operations["get__api_v1_auth_me"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Change the account's name. Email changes are not offered (the address is the login). */
+        patch: operations["patch__api_v1_auth_me"];
+        trace?: never;
+    };
+    "/api/v1/auth/me/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Change the password, given the current one. Every other session is signed out; this one stays. */
+        post: operations["post__api_v1_auth_me_password"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/password-reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Email a single-use reset link. The answer is the same whether or not the address has an account (no enumeration), and requests are limited per address and per client. */
+        post: operations["post__api_v1_auth_password-reset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/password-reset/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Set a new password with the emailed token. The token works once; every session of the account is signed out, and the account owner is told by email. */
+        post: operations["post__api_v1_auth_password-reset_confirm"];
         delete?: never;
         options?: never;
         head?: never;
@@ -292,6 +430,23 @@ export interface paths {
         put?: never;
         /** Start a new, empty build. */
         post: operations["post__api_v1_builds"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/builds/featured": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Builds the store recommends (public, featured and validated), with parts and totals. No sign-in needed. */
+        get: operations["get__api_v1_builds_featured"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -380,7 +535,7 @@ export interface paths {
         get: operations["get__api_v1_cart"];
         put?: never;
         post?: never;
-        /** Empty the cart. */
+        /** Empty the cart. Lines saved for later stay saved. */
         delete: operations["delete__api_v1_cart"];
         options?: never;
         head?: never;
@@ -418,7 +573,7 @@ export interface paths {
         delete: operations["delete__api_v1_cart_items_{item_id}"];
         options?: never;
         head?: never;
-        /** Set a line's quantity. */
+        /** Set a line's quantity, or move it to saved for later and back. Saved lines stay in the cart but are left out of the totals, the item count and checkout. */
         patch: operations["patch__api_v1_cart_items_{item_id}"];
         trace?: never;
     };
@@ -649,6 +804,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/products/back-in-stock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Parts that went from none available to some within `days`, most recent first. From the trigger-fed inventory_events. */
+        get: operations["get__api_v1_products_back-in-stock"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/products/facets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Counts for a filter sidebar, from the same filters as GET /products: the total, brands, price span and stock. Each facet ignores its own filter, so the alternatives stay visible. With compatible_with, also how many matches were left out as incompatible. */
+        get: operations["get__api_v1_products_facets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/products/price-drops": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Parts whose latest price change was a cut within `days`, still at the lower price and in stock, biggest percentage first. From the trigger-fed price history. */
+        get: operations["get__api_v1_products_price-drops"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/products/{slug}": {
         parameters: {
             query?: never;
@@ -658,6 +864,93 @@ export interface paths {
         };
         /** A single active product with its full specifications and availability. */
         get: operations["get__api_v1_products_{slug}"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/products/{slug}/price-history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Prices over the last `days` (7 to 365, default 90) as a step series, with the lowest, highest and the change over the window. Fed by a trigger on every price change. */
+        get: operations["get__api_v1_products_{slug}_price-history"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/products/{slug}/reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A product's reviews with the rating distribution. Newest first by default; sort by rating or show verified purchases only. Keyset-paginated like the product list. */
+        get: operations["get__api_v1_products_{slug}_reviews"];
+        put?: never;
+        /** Review a product. One per customer per product (409 review_exists). The verified-purchase badge is set by the database from the customer's paid orders, not by the request. */
+        post: operations["post__api_v1_products_{slug}_reviews"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/products/{slug}/reviews/mine": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The signed-in customer's review of this product, or null. Not having reviewed is a normal state, not an error (404 is only for an unknown product). */
+        get: operations["get__api_v1_products_{slug}_reviews_mine"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reviews/{review_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete your own review. Administrators may delete any review (moderation). */
+        delete: operations["delete__api_v1_reviews_{review_id}"];
+        options?: never;
+        head?: never;
+        /** Edit your own review. */
+        patch: operations["patch__api_v1_reviews_{review_id}"];
+        trace?: never;
+    };
+    "/api/v1/search/suggest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search as you type: the best matches per component kind (by name or SKU fragment), and a spelling correction built from catalog words when nothing matches. */
+        get: operations["get__api_v1_search_suggest"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1027,12 +1320,94 @@ export interface components {
              */
             to: "fulfilling" | "shipped" | "delivered";
         };
+        /** AuditEntry */
+        AuditEntry: {
+            /**
+             * Actor
+             * @description Who did it (an administrator); null for the system or the customer.
+             */
+            actor: string | null;
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /** Details */
+            details: {
+                [key: string]: unknown;
+            };
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "orders" | "stock" | "prices" | "payments";
+            /**
+             * Subject
+             * @description The order number, or the product's SKU.
+             */
+            subject: string;
+            /** Summary */
+            summary: string;
+        };
+        /** AuditLog */
+        AuditLog: {
+            /** Items */
+            items: components["schemas"]["AuditEntry"][];
+            /** Next Before */
+            next_before: string | null;
+        };
+        /** AuditQuery */
+        AuditQuery: {
+            /**
+             * Before
+             * @description Only entries before this time (from next_before).
+             * @default null
+             */
+            before: string | null;
+            /**
+             * Kind
+             * @description One source only; all of them by default.
+             * @default null
+             */
+            kind: ("orders" | "stock" | "prices" | "payments") | null;
+            /**
+             * Limit
+             * @default 50
+             */
+            limit: number;
+        };
         /** Availability */
         Availability: {
             /** In Stock */
             in_stock: boolean;
             /** Quantity Available */
             quantity_available: number;
+        };
+        /** BackInStock */
+        BackInStock: {
+            product: components["schemas"]["ProductSummary"];
+            /**
+             * Restocked At
+             * Format: date-time
+             */
+            restocked_at: string;
+        };
+        /** BackInStockList */
+        BackInStockList: {
+            /** Items */
+            items: components["schemas"]["BackInStock"][];
+        };
+        /** BrandFacet */
+        BrandFacet: {
+            /**
+             * Count
+             * @description Matches with this brand, counting every other filter except brand.
+             */
+            count: number;
+            /** Name */
+            name: string;
+            /** Slug */
+            slug: string;
         };
         /** BrandList */
         BrandList: {
@@ -1162,6 +1537,21 @@ export interface components {
             /** Warnings */
             warnings: components["schemas"]["FindingResponse"][];
         };
+        /** CandidateCompatibility */
+        CandidateCompatibility: {
+            /**
+             * Compatible
+             * @description Adding the part (or swapping it in, for a single-slot kind) adds no conflict.
+             */
+            compatible: boolean;
+            /**
+             * Conflicts
+             * @description Conflicts this part would cause; only listed with include_incompatible.
+             */
+            conflicts: components["schemas"]["FindingResponse"][];
+            /** Warnings */
+            warnings: components["schemas"]["FindingResponse"][];
+        };
         /** CartItemCreate */
         CartItemCreate: {
             /** Product Id */
@@ -1174,8 +1564,17 @@ export interface components {
         };
         /** CartItemUpdate */
         CartItemUpdate: {
-            /** Quantity */
-            quantity: number;
+            /**
+             * Quantity
+             * @default null
+             */
+            quantity: number | null;
+            /**
+             * Saved For Later
+             * @description Move the line to saved for later (true) or back to the cart.
+             * @default null
+             */
+            saved_for_later: boolean | null;
         };
         /** CartLine */
         CartLine: {
@@ -1196,8 +1595,16 @@ export interface components {
         CartResponse: {
             /** Item Count */
             item_count: number;
-            /** Items */
+            /**
+             * Items
+             * @description Lines being bought; totals and item_count cover these only.
+             */
             items: components["schemas"]["CartLine"][];
+            /**
+             * Saved
+             * @description Lines saved for later: kept, but not in the order.
+             */
+            saved: components["schemas"]["CartLine"][];
             totals: components["schemas"]["Totals"];
         };
         /** CaseSpecs */
@@ -1302,6 +1709,20 @@ export interface components {
             status: components["schemas"]["OrderStatus"];
             totals: components["schemas"]["Totals"];
         };
+        /** CollectionQuery */
+        CollectionQuery: {
+            /**
+             * Days
+             * @description How recent the change must be.
+             * @default 30
+             */
+            days: number;
+            /**
+             * Limit
+             * @default 8
+             */
+            limit: number;
+        };
         /** CompatibilityCheckRequest */
         CompatibilityCheckRequest: {
             /** Items */
@@ -1399,6 +1820,18 @@ export interface components {
             /** Threads */
             threads: number;
         };
+        /** DailySales */
+        DailySales: {
+            /**
+             * Day
+             * Format: date
+             * @description Calendar day in the store's time zone.
+             */
+            day: string;
+            /** Orders */
+            orders: number;
+            revenue: components["schemas"]["Price"];
+        };
         /** ErrorBody */
         ErrorBody: {
             /**
@@ -1430,6 +1863,41 @@ export interface components {
          */
         ErrorResponse: {
             error: components["schemas"]["ErrorBody"];
+        };
+        /** FeaturedBuild */
+        FeaturedBuild: {
+            /** Blurb */
+            blurb: string | null;
+            /**
+             * Compatible
+             * @description Always true: only validated builds are featured.
+             */
+            compatible: boolean;
+            /** Id */
+            id: number;
+            /**
+             * Item Count
+             * @description Total parts, counting quantities.
+             */
+            item_count: number;
+            /** Items */
+            items: components["schemas"]["BuildItemResponse"][];
+            /** Name */
+            name: string;
+            /** Share Slug */
+            share_slug: string;
+            status: components["schemas"]["BuildStatus"];
+            subtotal: components["schemas"]["Price"];
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** FeaturedBuildList */
+        FeaturedBuildList: {
+            /** Items */
+            items: components["schemas"]["FeaturedBuild"][];
         };
         /** FindingResponse */
         FindingResponse: {
@@ -1504,6 +1972,16 @@ export interface components {
          * @enum {string}
          */
         KindCode: "cpu" | "motherboard" | "memory" | "gpu" | "storage" | "psu" | "case" | "cooler" | "accessory";
+        /** KindFacet */
+        KindFacet: {
+            /**
+             * Count
+             * @description Matches of this kind, ignoring the kind and spec filters.
+             */
+            count: number;
+            /** Kind */
+            kind: string;
+        };
         /** Liveness */
         Liveness: {
             /**
@@ -1511,6 +1989,20 @@ export interface components {
              * @constant
              */
             status: "ok";
+        };
+        /** LogQuery */
+        LogQuery: {
+            /**
+             * Before
+             * @description Only entries before this time (from next_before).
+             * @default null
+             */
+            before: string | null;
+            /**
+             * Limit
+             * @default 50
+             */
+            limit: number;
         };
         /** LoginRequest */
         LoginRequest: {
@@ -1521,6 +2013,17 @@ export interface components {
             email: string;
             /** Password */
             password: string;
+        };
+        /** LowStock */
+        LowStock: {
+            /** Available */
+            available: number;
+            /** Name */
+            name: string;
+            /** Product Id */
+            product_id: number;
+            /** Sku */
+            sku: string;
         };
         /** MemorySpecs */
         MemorySpecs: {
@@ -1548,6 +2051,53 @@ export interface components {
          * @enum {string}
          */
         MemoryType: "ddr4" | "ddr5";
+        /** Metrics */
+        Metrics: {
+            average_order: components["schemas"]["Price"] | null;
+            /**
+             * Awaiting Payment
+             * @description Orders holding stock until they are paid or expire.
+             */
+            awaiting_payment: number;
+            /**
+             * By Status
+             * @description Orders placed in the window, per current status.
+             */
+            by_status: components["schemas"]["StatusCount"][];
+            /**
+             * Daily
+             * @description One entry per day of the window, oldest first, zeros included.
+             */
+            daily: components["schemas"]["DailySales"][];
+            /** Days */
+            days: number;
+            /**
+             * Low Stock
+             * @description Active products with three or fewer available.
+             */
+            low_stock: components["schemas"]["LowStock"][];
+            /** Orders */
+            orders: number;
+            /** @description Orders placed in the window and since refunded. */
+            refunded: components["schemas"]["Price"];
+            /** @description Paid orders placed in the window (paid through delivered), VAT included. */
+            revenue: components["schemas"]["Price"];
+            /**
+             * Top Products
+             * @description Best sellers in the window by revenue.
+             */
+            top_products: components["schemas"]["TopProduct"][];
+            /** Units */
+            units: number;
+        };
+        /** MetricsQuery */
+        MetricsQuery: {
+            /**
+             * Days
+             * @default 30
+             */
+            days: number;
+        };
         /** MotherboardSpecs */
         MotherboardSpecs: {
             /** Chipset */
@@ -1570,6 +2120,11 @@ export interface components {
             sata_ports: number;
             /** Socket Code */
             socket_code: string;
+        };
+        /** MyReview */
+        MyReview: {
+            /** @description Null when the customer has not reviewed this product. */
+            review: components["schemas"]["ReviewResponse"] | null;
         };
         /** OrderDetail */
         OrderDetail: {
@@ -1602,6 +2157,13 @@ export interface components {
         };
         /** OrderLine */
         OrderLine: {
+            /** @description The product's current first photo. Name, SKU and prices above are the purchase snapshot. */
+            image: components["schemas"]["ProductImageResponse"] | null;
+            /**
+             * Kind
+             * @description The product's component kind (for its drawing when there is no photo).
+             */
+            kind: string;
             line_total: components["schemas"]["Price"];
             /** Name */
             name: string;
@@ -1658,6 +2220,39 @@ export interface components {
             status: components["schemas"]["OrderStatus"];
             total: components["schemas"]["Price"];
         };
+        /** PasswordChange */
+        PasswordChange: {
+            /** Current Password */
+            current_password: string;
+            /** New Password */
+            new_password: string;
+        };
+        /** PasswordResetAccepted */
+        PasswordResetAccepted: {
+            /**
+             * Message
+             * @description The same for every address, so the response never reveals whether an account exists.
+             */
+            message: string;
+        };
+        /** PasswordResetConfirm */
+        PasswordResetConfirm: {
+            /** Password */
+            password: string;
+            /**
+             * Token
+             * @description From the emailed link's #token= fragment.
+             */
+            token: string;
+        };
+        /** PasswordResetRequest */
+        PasswordResetRequest: {
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+        };
         /** PaymentInfo */
         PaymentInfo: {
             /**
@@ -1699,11 +2294,120 @@ export interface components {
              */
             currency: string;
         };
+        /** PriceAlertCreate */
+        PriceAlertCreate: {
+            /** Product Id */
+            product_id: number;
+            /**
+             * Target Price Cents
+             * @description Email when the price is at or below this.
+             */
+            target_price_cents: number;
+        };
+        /** PriceAlertList */
+        PriceAlertList: {
+            /** Items */
+            items: components["schemas"]["PriceAlertResponse"][];
+        };
+        /** PriceAlertResponse */
+        PriceAlertResponse: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Id */
+            id: number;
+            product: components["schemas"]["ProductSummary"];
+            target: components["schemas"]["Price"];
+            /**
+             * Triggered At
+             * @description When the drop email went out; null while waiting.
+             */
+            triggered_at: string | null;
+        };
+        /** PriceDrop */
+        PriceDrop: {
+            /**
+             * Dropped At
+             * Format: date-time
+             */
+            dropped_at: string;
+            /**
+             * Percent Off
+             * @description Whole percent, rounded down.
+             */
+            percent_off: number;
+            product: components["schemas"]["ProductSummary"];
+            /** Saving Cents */
+            saving_cents: number;
+            /** @description The price before the latest change. */
+            was: components["schemas"]["Price"];
+        };
+        /** PriceDropList */
+        PriceDropList: {
+            /** Items */
+            items: components["schemas"]["PriceDrop"][];
+        };
+        /** PriceHistoryQuery */
+        PriceHistoryQuery: {
+            /**
+             * Days
+             * @description How far back to look.
+             * @default 90
+             */
+            days: number;
+        };
+        /** PriceHistoryResponse */
+        PriceHistoryResponse: {
+            /**
+             * Change Cents
+             * @description Current price minus the price at the start of the window.
+             */
+            change_cents: number;
+            /** Currency */
+            currency: string;
+            /** Current Cents */
+            current_cents: number;
+            /** Days */
+            days: number;
+            /** Highest Cents */
+            highest_cents: number;
+            /** Lowest Cents */
+            lowest_cents: number;
+            /**
+             * Points
+             * @description Each price in effect during the window, oldest first. The first point is the price at the start of the window; the price holds until the next point (a step series).
+             */
+            points: components["schemas"]["PricePoint"][];
+        };
+        /** PricePoint */
+        PricePoint: {
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /** Price Cents */
+            price_cents: number;
+        };
+        /** PriceRange */
+        PriceRange: {
+            /** Max Cents */
+            max_cents: number;
+            /** Min Cents */
+            min_cents: number;
+        };
         /** ProductDetail */
         ProductDetail: {
             availability: components["schemas"]["Availability"];
             brand: components["schemas"]["BrandResponse"];
             category: components["schemas"]["CategoryRef"];
+            /**
+             * @description With compatible_with: how this part would fit that build, with the measured reasons. Null otherwise.
+             * @default null
+             */
+            compatibility: components["schemas"]["CandidateCompatibility"] | null;
             /**
              * Compatibility Warnings
              * @description With compatible_with: warning codes this part would add to that build. Null otherwise.
@@ -1714,17 +2418,239 @@ export interface components {
             description: string | null;
             /** Id */
             id: number;
+            /**
+             * @description The first photo, if any.
+             * @default null
+             */
+            image: components["schemas"]["ProductImageResponse"] | null;
+            /**
+             * Images
+             * @description Every photo, in display order.
+             */
+            images: components["schemas"]["ProductImageResponse"][];
             /** Kind */
             kind: string;
             /** Name */
             name: string;
             price: components["schemas"]["Price"];
+            rating: components["schemas"]["RatingSummary"];
             /** Sku */
             sku: string;
             /** Slug */
             slug: string;
             /** Specs */
             specs: components["schemas"]["CpuSpecs"] | components["schemas"]["MotherboardSpecs"] | components["schemas"]["MemorySpecs"] | components["schemas"]["GpuSpecs"] | components["schemas"]["StorageSpecs"] | components["schemas"]["PsuSpecs"] | components["schemas"]["CaseSpecs"] | components["schemas"]["CoolerSpecs"] | components["schemas"]["AccessorySpecs"];
+        };
+        /** ProductFacets */
+        ProductFacets: {
+            /**
+             * Brands
+             * @description Brands among the matches, most products first.
+             */
+            brands: components["schemas"]["BrandFacet"][];
+            /**
+             * In Stock
+             * @description Of the matches, how many are in stock (ignoring the in_stock filter).
+             */
+            in_stock: number;
+            /**
+             * Incompatible
+             * @description With compatible_with: matching parts left out because they would conflict. Null otherwise.
+             */
+            incompatible: number | null;
+            /**
+             * Kinds
+             * @description Component kinds among the matches, most products first.
+             */
+            kinds: components["schemas"]["KindFacet"][];
+            /** @description Price span of the matches, ignoring the price filters. */
+            price: components["schemas"]["PriceRange"] | null;
+            /**
+             * Total
+             * @description Products the same filters list (with compatible_with: the compatible ones).
+             */
+            total: number;
+        };
+        /**
+         * ProductFilters
+         * @description What selects products, shared by GET /products and GET /products/facets. Unknown parameters
+         *     are rejected rather than ignored, so a misspelled filter fails loudly instead of silently
+         *     returning unfiltered results.
+         */
+        ProductFilters: {
+            /**
+             * Brand
+             * @description Brand slugs, comma-separated or repeated (brand=amd,intel or brand=amd&brand=intel).
+             * @default null
+             */
+            brand: string[] | null;
+            /**
+             * Capacity Min Gb
+             * @description memory (kit total), storage.
+             * @default null
+             */
+            capacity_min_gb: number | null;
+            /**
+             * Category
+             * @description Category slug; includes its subcategories.
+             * @default null
+             */
+            category: string | null;
+            /**
+             * Chipset
+             * @description motherboard, gpu; substring match.
+             * @default null
+             */
+            chipset: string | null;
+            /**
+             * Compatible With
+             * @description Product ids of a build (comma-separated or repeated). Lists only parts of `kind` that would not conflict with it; a part of a single-slot kind (cpu, motherboard, psu, case, cooler) is judged as a replacement for the build's current one. Requires `kind`.
+             * @default null
+             */
+            compatible_with: number[] | null;
+            /**
+             * @description cooler.
+             * @default null
+             */
+            cooler_type: components["schemas"]["CoolerType"] | null;
+            /**
+             * Cores Min
+             * @description cpu.
+             * @default null
+             */
+            cores_min: number | null;
+            /**
+             * @description psu.
+             * @default null
+             */
+            efficiency: components["schemas"]["PsuEfficiency"] | null;
+            /**
+             * Fits Cooler Height Mm
+             * @description case: cooler clearance at least this.
+             * @default null
+             */
+            fits_cooler_height_mm: number | null;
+            /**
+             * Fits Gpu Length Mm
+             * @description case: GPU clearance at least this.
+             * @default null
+             */
+            fits_gpu_length_mm: number | null;
+            /**
+             * Form Factor
+             * @description motherboard (board), case (supported board), psu, storage.
+             * @default null
+             */
+            form_factor: string | null;
+            /**
+             * Has Integrated Graphics
+             * @description cpu.
+             * @default null
+             */
+            has_integrated_graphics: boolean | null;
+            /**
+             * Height Max Mm
+             * @description cooler.
+             * @default null
+             */
+            height_max_mm: number | null;
+            /**
+             * In Stock
+             * @default null
+             */
+            in_stock: boolean | null;
+            /**
+             * @description storage.
+             * @default null
+             */
+            interface: components["schemas"]["StorageInterface"] | null;
+            /** @default null */
+            kind: components["schemas"]["KindCode"] | null;
+            /**
+             * Length Max Mm
+             * @description gpu.
+             * @default null
+             */
+            length_max_mm: number | null;
+            /**
+             * Max Price
+             * @description Inclusive, in minor units.
+             * @default null
+             */
+            max_price: number | null;
+            /**
+             * @description motherboard, memory.
+             * @default null
+             */
+            memory_type: components["schemas"]["MemoryType"] | null;
+            /**
+             * Min Price
+             * @description Inclusive, in minor units.
+             * @default null
+             */
+            min_price: number | null;
+            /**
+             * @description psu.
+             * @default null
+             */
+            modularity: components["schemas"]["PsuModularity"] | null;
+            /**
+             * Q
+             * @description Search: words, model fragments (x3d) and typos.
+             * @default null
+             */
+            q: string | null;
+            /**
+             * Socket
+             * @description cpu, motherboard, cooler (supported socket).
+             * @default null
+             */
+            socket: string | null;
+            /**
+             * Speed Min Mts
+             * @description memory.
+             * @default null
+             */
+            speed_min_mts: number | null;
+            /**
+             * Vram Min Gb
+             * @description gpu.
+             * @default null
+             */
+            vram_min_gb: number | null;
+            /**
+             * Wattage Min W
+             * @description psu.
+             * @default null
+             */
+            wattage_min_w: number | null;
+        };
+        /** ProductImageResponse */
+        ProductImageResponse: {
+            /** Alt */
+            alt: string;
+            /**
+             * Card
+             * @description WebP, 640 px wide.
+             */
+            card: string;
+            /**
+             * Full
+             * @description WebP, 1280 px wide (or the original width, if smaller).
+             */
+            full: string;
+            /** Height */
+            height: number;
+            /**
+             * Thumb
+             * @description WebP, 320 px wide.
+             */
+            thumb: string;
+            /**
+             * Width
+             * @description Intrinsic width of the full image, for layout without shift.
+             */
+            width: number;
         };
         /** ProductPage */
         ProductPage: {
@@ -1738,8 +2664,7 @@ export interface components {
         };
         /**
          * ProductQuery
-         * @description Query string for GET /products. Unknown parameters are rejected rather than ignored, so a
-         *     misspelled filter fails loudly instead of silently returning unfiltered results.
+         * @description Query string for GET /products.
          */
         ProductQuery: {
             /**
@@ -1830,6 +2755,12 @@ export interface components {
              */
             in_stock: boolean | null;
             /**
+             * Include Incompatible
+             * @description With compatible_with: list conflicting parts too, each with `compatibility.conflicts` saying why, instead of leaving them out.
+             * @default false
+             */
+            include_incompatible: boolean;
+            /**
              * @description storage.
              * @default null
              */
@@ -1911,6 +2842,11 @@ export interface components {
             availability: components["schemas"]["Availability"];
             brand: components["schemas"]["BrandResponse"];
             /**
+             * @description With compatible_with: how this part would fit that build, with the measured reasons. Null otherwise.
+             * @default null
+             */
+            compatibility: components["schemas"]["CandidateCompatibility"] | null;
+            /**
              * Compatibility Warnings
              * @description With compatible_with: warning codes this part would add to that build. Null otherwise.
              * @default null
@@ -1918,6 +2854,11 @@ export interface components {
             compatibility_warnings: string[] | null;
             /** Id */
             id: number;
+            /**
+             * @description The first photo, if any.
+             * @default null
+             */
+            image: components["schemas"]["ProductImageResponse"] | null;
             /** Kind */
             kind: string;
             /** Name */
@@ -1943,6 +2884,19 @@ export interface components {
              * @default null
              */
             price_cents: number | null;
+        };
+        /** ProfileUpdate */
+        ProfileUpdate: {
+            /**
+             * First Name
+             * @default null
+             */
+            first_name: string | null;
+            /**
+             * Last Name
+             * @default null
+             */
+            last_name: string | null;
         };
         /**
          * PsuAtxVersion
@@ -2010,6 +2964,33 @@ export interface components {
              */
             vat_rate_bps: number;
         };
+        /** RatingDistribution */
+        RatingDistribution: {
+            /**
+             * Average
+             * @description Mean rating to one decimal place; null with no reviews.
+             */
+            average: number | null;
+            /** Count */
+            count: number;
+            /**
+             * Counts
+             * @description Reviews per star rating, keys '1' to '5'.
+             */
+            counts: {
+                [key: string]: number;
+            };
+        };
+        /** RatingSummary */
+        RatingSummary: {
+            /**
+             * Average
+             * @description Mean rating to one decimal place; null with no reviews.
+             */
+            average: number | null;
+            /** Count */
+            count: number;
+        };
         /** Readiness */
         Readiness: {
             /** Checks */
@@ -2048,14 +3029,137 @@ export interface components {
         ReorderResponse: {
             /** Item Count */
             item_count: number;
-            /** Items */
+            /**
+             * Items
+             * @description Lines being bought; totals and item_count cover these only.
+             */
             items: components["schemas"]["CartLine"][];
+            /**
+             * Saved
+             * @description Lines saved for later: kept, but not in the order.
+             */
+            saved: components["schemas"]["CartLine"][];
             totals: components["schemas"]["Totals"];
             /**
              * Unavailable Product Ids
              * @description Products from the order that are no longer sold and were not added.
              */
             unavailable_product_ids: number[];
+        };
+        /** ReviewCreate */
+        ReviewCreate: {
+            /** Body */
+            body: string;
+            /** Rating */
+            rating: number;
+            /**
+             * Title
+             * @default null
+             */
+            title: string | null;
+        };
+        /** ReviewPage */
+        ReviewPage: {
+            /** Items */
+            items: components["schemas"]["ReviewResponse"][];
+            /** Next Cursor */
+            next_cursor: string | null;
+            /** @description Across all of the product's reviews, whatever the filter. */
+            summary: components["schemas"]["RatingDistribution"];
+        };
+        /** ReviewQuery */
+        ReviewQuery: {
+            /**
+             * Cursor
+             * @description Opaque; from next_cursor of the previous page.
+             * @default null
+             */
+            cursor: string | null;
+            /**
+             * Limit
+             * @default 10
+             */
+            limit: number;
+            /**
+             * Sort
+             * @default newest
+             * @enum {string}
+             */
+            sort: "newest" | "highest" | "lowest";
+            /**
+             * Verified Only
+             * @default false
+             */
+            verified_only: boolean;
+        };
+        /** ReviewResponse */
+        ReviewResponse: {
+            /**
+             * Author
+             * @description First name and last initial, never the full name or email.
+             */
+            author: string;
+            /** Body */
+            body: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Id */
+            id: number;
+            /**
+             * Is Verified Purchase
+             * @description Set by the database from the author's paid orders.
+             */
+            is_verified_purchase: boolean;
+            /** Rating */
+            rating: number;
+            /** Title */
+            title: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** ReviewUpdate */
+        ReviewUpdate: {
+            /**
+             * Body
+             * @default null
+             */
+            body: string | null;
+            /**
+             * Rating
+             * @default null
+             */
+            rating: number | null;
+            /**
+             * Title
+             * @default null
+             */
+            title: string | null;
+        };
+        /** SearchSuggestions */
+        SearchSuggestions: {
+            /**
+             * Did You Mean
+             * @description A corrected query built from catalog words when nothing matches, e.g. 'ryzen' for 'rizen'.
+             */
+            did_you_mean: string | null;
+            /**
+             * Groups
+             * @description Best matches per kind, most relevant kind first.
+             */
+            groups: components["schemas"]["SuggestionGroup"][];
+            /** Query */
+            query: string;
+            /**
+             * Total
+             * @description All matching products, across kinds.
+             */
+            total: number;
         };
         /** ShippingAddress */
         ShippingAddress: {
@@ -2099,6 +3203,12 @@ export interface components {
             from_status: components["schemas"]["OrderStatus"] | null;
             to_status: components["schemas"]["OrderStatus"];
         };
+        /** StatusCount */
+        StatusCount: {
+            /** Count */
+            count: number;
+            status: components["schemas"]["OrderStatus"];
+        };
         /**
          * StockUpdate
          * @description Only stock on hand is editable. Reserved stock belongs to checkout and changes only through it.
@@ -2131,6 +3241,35 @@ export interface components {
             /** Pcie Gen */
             pcie_gen: number | null;
         };
+        /**
+         * SuggestQuery
+         * @description Query string for GET /search/suggest.
+         */
+        SuggestQuery: {
+            /**
+             * Per Kind
+             * @description Most products to return for each kind.
+             * @default 4
+             */
+            per_kind: number;
+            /**
+             * Q
+             * @description What the shopper has typed so far.
+             */
+            q: string;
+        };
+        /** SuggestionGroup */
+        SuggestionGroup: {
+            /** Items */
+            items: components["schemas"]["ProductSummary"][];
+            /** Kind */
+            kind: string;
+            /**
+             * Total
+             * @description Matches of this kind; the group shows the best `per_kind` of them.
+             */
+            total: number;
+        };
         /** TokenResponse */
         TokenResponse: {
             /** Access Token */
@@ -2146,6 +3285,18 @@ export interface components {
              * @constant
              */
             token_type: "Bearer";
+        };
+        /** TopProduct */
+        TopProduct: {
+            /** Name */
+            name: string;
+            /** Product Id */
+            product_id: number;
+            revenue: components["schemas"]["Price"];
+            /** Sku */
+            sku: string;
+            /** Units */
+            units: number;
         };
         /**
          * Totals
@@ -2189,6 +3340,32 @@ export interface components {
             duplicate: boolean;
             /** Received */
             received: boolean;
+        };
+        /** WebhookEntry */
+        WebhookEntry: {
+            /** Event Id */
+            event_id: string;
+            /** Event Type */
+            event_type: string;
+            /**
+             * Order Number
+             * @description From the event's metadata, when it names an order.
+             */
+            order_number: string | null;
+            /**
+             * Processed At
+             * Format: date-time
+             */
+            processed_at: string;
+            /** Provider */
+            provider: string;
+        };
+        /** WebhookLog */
+        WebhookLog: {
+            /** Items */
+            items: components["schemas"]["WebhookEntry"][];
+            /** Next Before */
+            next_before: string | null;
         };
     };
     responses: never;
@@ -2446,6 +3623,59 @@ export interface operations {
             };
         };
     };
+    get__api_v1_admin_audit: {
+        parameters: {
+            query?: {
+                limit?: number;
+                /** @description Only entries before this time (from next_before). */
+                before?: string | null;
+                /** @description One source only; all of them by default. */
+                kind?: ("orders" | "stock" | "prices" | "payments") | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditLog"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     "get__api_v1_admin_inventory_{product_id}": {
         parameters: {
             query?: never;
@@ -2584,6 +3814,55 @@ export interface operations {
             };
             /** @description Precondition Required */
             428: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get__api_v1_admin_metrics: {
+        parameters: {
+            query?: {
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Metrics"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2969,6 +4248,184 @@ export interface operations {
             };
         };
     };
+    get__api_v1_admin_webhooks: {
+        parameters: {
+            query?: {
+                limit?: number;
+                /** @description Only entries before this time (from next_before). */
+                before?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookLog"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get__api_v1_alerts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriceAlertList"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    post__api_v1_alerts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PriceAlertCreate"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriceAlertResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    "delete__api_v1_alerts_{alert_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                alert_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     post__api_v1_auth_login: {
         parameters: {
             query?: never;
@@ -3121,6 +4578,197 @@ export interface operations {
             };
             /** @description Unprocessable Content */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    patch__api_v1_auth_me: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileUpdate"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    post__api_v1_auth_me_password: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordChange"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    "post__api_v1_auth_password-reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetRequest"];
+            };
+        };
+        responses: {
+            /** @description Accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PasswordResetAccepted"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    "post__api_v1_auth_password-reset_confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetConfirm"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3315,6 +4963,35 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get__api_v1_builds_featured: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeaturedBuildList"];
                 };
             };
             /** @description Unprocessable Content */
@@ -4466,11 +6143,135 @@ export interface operations {
                 /** @description Inclusive, in minor units. */
                 max_price?: number | null;
                 in_stock?: boolean | null;
+                /** @description Product ids of a build (comma-separated or repeated). Lists only parts of `kind` that would not conflict with it; a part of a single-slot kind (cpu, motherboard, psu, case, cooler) is judged as a replacement for the build's current one. Requires `kind`. */
+                compatible_with?: number[] | null;
+                /** @description cpu, motherboard, cooler (supported socket). */
+                socket?: string | null;
+                /** @description motherboard, memory. */
+                memory_type?: components["schemas"]["MemoryType"] | null;
+                /** @description motherboard (board), case (supported board), psu, storage. */
+                form_factor?: string | null;
+                /** @description motherboard, gpu; substring match. */
+                chipset?: string | null;
+                /** @description cpu. */
+                cores_min?: number | null;
+                /** @description cpu. */
+                has_integrated_graphics?: boolean | null;
+                /** @description memory (kit total), storage. */
+                capacity_min_gb?: number | null;
+                /** @description memory. */
+                speed_min_mts?: number | null;
+                /** @description gpu. */
+                vram_min_gb?: number | null;
+                /** @description gpu. */
+                length_max_mm?: number | null;
+                /** @description case: GPU clearance at least this. */
+                fits_gpu_length_mm?: number | null;
+                /** @description case: cooler clearance at least this. */
+                fits_cooler_height_mm?: number | null;
+                /** @description cooler. */
+                height_max_mm?: number | null;
+                /** @description cooler. */
+                cooler_type?: components["schemas"]["CoolerType"] | null;
+                /** @description psu. */
+                wattage_min_w?: number | null;
+                /** @description psu. */
+                efficiency?: components["schemas"]["PsuEfficiency"] | null;
+                /** @description psu. */
+                modularity?: components["schemas"]["PsuModularity"] | null;
+                /** @description storage. */
+                interface?: components["schemas"]["StorageInterface"] | null;
                 /** @description Defaults to relevance with q, otherwise name. */
                 sort?: ("relevance" | "price" | "-price" | "name" | "-name" | "newest") | null;
                 limit?: number;
                 /** @description Opaque; from next_cursor of the previous page. */
                 cursor?: string | null;
+                /** @description With compatible_with: list conflicting parts too, each with `compatibility.conflicts` saying why, instead of leaving them out. */
+                include_incompatible?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductPage"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    "get__api_v1_products_back-in-stock": {
+        parameters: {
+            query?: {
+                limit?: number;
+                /** @description How recent the change must be. */
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackInStockList"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get__api_v1_products_facets: {
+        parameters: {
+            query?: {
+                /** @description Search: words, model fragments (x3d) and typos. */
+                q?: string | null;
+                kind?: components["schemas"]["KindCode"] | null;
+                /** @description Category slug; includes its subcategories. */
+                category?: string | null;
+                /** @description Brand slugs, comma-separated or repeated (brand=amd,intel or brand=amd&brand=intel). */
+                brand?: string[] | null;
+                /** @description Inclusive, in minor units. */
+                min_price?: number | null;
+                /** @description Inclusive, in minor units. */
+                max_price?: number | null;
+                in_stock?: boolean | null;
                 /** @description Product ids of a build (comma-separated or repeated). Lists only parts of `kind` that would not conflict with it; a part of a single-slot kind (cpu, motherboard, psu, case, cooler) is judged as a replacement for the build's current one. Requires `kind`. */
                 compatible_with?: number[] | null;
                 /** @description cpu, motherboard, cooler (supported socket). */
@@ -4522,16 +6323,40 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProductPage"];
+                    "application/json": components["schemas"]["ProductFacets"];
                 };
             };
-            /** @description Bad Request */
-            400: {
+            /** @description Unprocessable Content */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    "get__api_v1_products_price-drops": {
+        parameters: {
+            query?: {
+                limit?: number;
+                /** @description How recent the change must be. */
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriceDropList"];
                 };
             };
             /** @description Unprocessable Content */
@@ -4572,6 +6397,376 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    "get__api_v1_products_{slug}_price-history": {
+        parameters: {
+            query?: {
+                /** @description How far back to look. */
+                days?: number;
+            };
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriceHistoryResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    "get__api_v1_products_{slug}_reviews": {
+        parameters: {
+            query?: {
+                sort?: "newest" | "highest" | "lowest";
+                verified_only?: boolean;
+                limit?: number;
+                /** @description Opaque; from next_cursor of the previous page. */
+                cursor?: string | null;
+            };
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewPage"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    "post__api_v1_products_{slug}_reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewCreate"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    "get__api_v1_products_{slug}_reviews_mine": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyReview"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    "delete__api_v1_reviews_{review_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                review_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    "patch__api_v1_reviews_{review_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                review_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewUpdate"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get__api_v1_search_suggest: {
+        parameters: {
+            query: {
+                /** @description What the shopper has typed so far. */
+                q: string;
+                /** @description Most products to return for each kind. */
+                per_kind?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchSuggestions"];
                 };
             };
             /** @description Unprocessable Content */

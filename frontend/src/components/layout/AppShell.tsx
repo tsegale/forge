@@ -1,56 +1,71 @@
-import { NavLink, Outlet } from 'react-router'
+import { Layers } from 'lucide-react'
+import { Link, Outlet } from 'react-router'
+import { useAuth } from '@/auth/context'
+import { ApiInspector, InspectorToggle } from '@/components/inspector/ApiInspector'
 import { Logo } from '@/components/ui/Logo'
+import { Toaster } from '@/components/ui/Toast'
 import { AccountMenu } from './AccountMenu'
+import { AnnouncementBar } from './AnnouncementBar'
 import { CartLink } from './CartLink'
+import { MegaMenu } from './MegaMenu'
+import { MiniCart } from './MiniCart'
+import { MobileMenu } from './MobileMenu'
+import { SearchBox } from './SearchBox'
+import { SiteFooter } from './SiteFooter'
 
-const NAV = [
-  { to: '/', label: 'Catalog', end: true },
-  { to: '/configurator', label: 'Build a PC', end: false },
-  { to: '/orders', label: 'Orders', end: false },
-] as const
+export const CONTAINER = 'mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8'
 
-function navClass({ isActive }: { isActive: boolean }) {
-  return `rounded-md px-3 py-2 text-sm font-medium ${
-    isActive ? 'bg-accent-soft text-accent' : 'text-ink-muted hover:bg-canvas hover:text-ink'
-  }`
-}
-
+/** The store frame: announcement bar, header (search, account, cart), page, footer. */
 export function AppShell() {
+  const { user } = useAuth()
   return (
     <div className="flex min-h-screen flex-col">
       <a
         href="#main"
-        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:rounded focus:bg-surface focus:px-3 focus:py-2"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[70] focus:rounded-md focus:bg-surface focus:px-4 focus:py-2 focus:shadow-md"
       >
         Skip to content
       </a>
-      <header className="border-b border-border bg-surface">
-        <div className="mx-auto flex h-16 max-w-7xl items-center gap-8 px-6">
-          <NavLink to="/" className="flex items-center gap-2 text-accent" aria-label="Forge home">
+      <AnnouncementBar />
+      <header className="sticky top-0 z-30 border-b border-border bg-surface">
+        <div className={`${CONTAINER} flex h-16 items-center gap-3 lg:gap-6`}>
+          <MobileMenu />
+          <Link to="/" className="flex shrink-0 items-center gap-2 text-accent" aria-label="Forge home">
             <Logo />
-            <span className="text-lg font-semibold tracking-tight text-ink">Forge</span>
-          </NavLink>
-          <nav aria-label="Main" className="flex items-center gap-1">
-            {NAV.map((item) => (
-              <NavLink key={item.to} to={item.to} end={item.end} className={navClass}>
-                {item.label}
-              </NavLink>
-            ))}
-          </nav>
-          <div className="ml-auto flex items-center gap-2">
-            <CartLink />
+            <span className="text-xl font-semibold tracking-tight text-ink">Forge</span>
+          </Link>
+          <SearchBox className="hidden flex-1 md:block lg:max-w-xl" />
+          <div className="ml-auto flex items-center gap-1">
+            {user ? (
+              <Link
+                to="/builds"
+                aria-label="Saved builds"
+                title="Saved builds"
+                className="hidden h-10 w-10 items-center justify-center rounded-md text-ink-muted hover:bg-surface-muted hover:text-ink sm:inline-flex"
+              >
+                <Layers aria-hidden="true" className="h-5 w-5" />
+              </Link>
+            ) : null}
             <AccountMenu />
+            <CartLink />
+          </div>
+        </div>
+        <div className={`${CONTAINER} pb-3 md:hidden`}>
+          <SearchBox />
+        </div>
+        <div className="hidden border-t border-border lg:block">
+          <div className={`${CONTAINER} flex h-12 items-center`}>
+            <MegaMenu />
           </div>
         </div>
       </header>
-      <main id="main" className="mx-auto w-full max-w-7xl flex-1 px-6 py-8">
+      <main id="main" tabIndex={-1} className={`${CONTAINER} flex-1 py-8 focus:outline-none`}>
         <Outlet />
       </main>
-      <footer className="border-t border-border bg-surface">
-        <div className="mx-auto max-w-7xl px-6 py-4 text-xs text-ink-subtle">
-          Forge. Prices in Namibian dollars, VAT included.
-        </div>
-      </footer>
+      <SiteFooter inspector={<InspectorToggle />} />
+      <MiniCart />
+      <ApiInspector />
+      <Toaster />
     </div>
   )
 }

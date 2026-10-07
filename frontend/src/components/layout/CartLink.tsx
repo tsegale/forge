@@ -1,24 +1,29 @@
 import { ShoppingCart } from 'lucide-react'
-import { NavLink } from 'react-router'
 import { useCart } from '@/cart/api'
+import { setMiniCartOpen } from '@/cart/miniCart'
 
+/** Header cart button with the item count; opens the mini-cart drawer. */
 export function CartLink() {
   const cart = useCart()
   const count = cart.data?.item_count ?? 0
   return (
-    <NavLink
-      to="/cart"
-      aria-label={count ? `Cart, ${String(count)} items` : 'Cart'}
-      className={({ isActive }) =>
-        `relative rounded-md p-2 ${isActive ? 'bg-accent-soft text-accent' : 'text-ink-muted hover:bg-canvas hover:text-ink'}`
-      }
+    <button
+      type="button"
+      onClick={() => {
+        setMiniCartOpen(true)
+      }}
+      aria-label={count ? `Cart, ${String(count)} ${count === 1 ? 'item' : 'items'}` : 'Cart, empty'}
+      className="relative inline-flex h-10 w-10 items-center justify-center rounded-md text-ink-muted hover:bg-surface-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-accent"
     >
       <ShoppingCart aria-hidden="true" className="h-5 w-5" />
       {count ? (
-        <span className="absolute -top-0.5 -right-0.5 min-w-4 rounded-full bg-accent px-1 text-center text-[0.625rem] leading-4 font-semibold text-white tabular">
+        <span
+          aria-hidden="true"
+          className="absolute top-1 right-0.5 min-w-4.5 rounded-full bg-accent px-1 text-center text-[0.6875rem] leading-4.5 font-semibold text-white tabular"
+        >
           {count > 99 ? '99+' : count}
         </span>
       ) : null}
-    </NavLink>
+    </button>
   )
 }

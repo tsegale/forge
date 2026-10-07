@@ -19,10 +19,13 @@ RUN groupadd --system forge && useradd --system --gid forge --home /app forge
 COPY --from=builder /wheels /wheels
 RUN pip install --no-cache-dir /wheels/* && rm -rf /wheels
 COPY --chown=forge:forge . .
+# Generated product photos; a named volume mounted here starts with this ownership.
+RUN mkdir -p /app/media && chown forge:forge /app/media
 
 USER forge
 EXPOSE 8000
 HEALTHCHECK --interval=15s --timeout=3s --retries=5 \
   CMD python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health/live', timeout=2).status == 200 else 1)"
 
-CMD ["gunicorn", "wsgi:app", "--bind", "0.0.0.0:8000", "--workers", "3", "--access-logfile", "-", "--forwarded-allow-ips", "*"]
+# No gunicorn access log: the app writes one line per request with its request id (forge.access).
+CMD ["gunicorn", "wsgi:app", "--bind", "0.0.0.0:8000", "--workers", "3", "--forwarded-allow-ips", "*"]

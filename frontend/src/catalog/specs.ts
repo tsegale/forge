@@ -105,3 +105,129 @@ export function specRows(specs: Specs): { label: string; value: string }[] {
     .filter(([key]) => key !== 'kind')
     .map(([key, value]) => ({ label: LABELS[key] ?? key, value: formatValue(key, value) }))
 }
+
+type SpecRecord = Record<string, unknown>
+
+function fieldsOf(specs: Specs): SpecRecord {
+  return specs.kind === 'accessory' ? specs.attributes : specs
+}
+
+/** The three or four facts that decide a part, for cards and pickers: "AM5 / 8 cores / 5.0 GHz". */
+const KEY_FIELDS: Record<string, string[]> = {
+  cpu: ['socket_code', 'cores', 'boost_clock_mhz', 'tdp_w'],
+  motherboard: ['socket_code', 'form_factor_code', 'chipset', 'memory_type'],
+  memory: ['memory_type', 'total_capacity_gb', 'speed_mts', 'cas_latency'],
+  gpu: ['vram_gb', 'length_mm', 'tdp_w', 'recommended_psu_w'],
+  storage: ['capacity_gb', 'interface', 'form_factor', 'pcie_gen'],
+  psu: ['wattage_w', 'efficiency', 'modularity', 'form_factor'],
+  case: ['supported_form_factors', 'max_gpu_length_mm', 'max_cooler_height_mm'],
+  cooler: ['cooler_type', 'height_mm', 'radiator_mm', 'supported_sockets'],
+}
+
+function keyValue(key: string, value: unknown): string | null {
+  if (value === null || value === undefined) return null
+  if (Array.isArray(value)) return value.map(String).join(', ')
+  if (typeof value !== 'number' && typeof value !== 'string') return formatValue(key, value)
+  const v = String(value)
+  switch (key) {
+    case 'cores':
+      return `${v} cores`
+    case 'boost_clock_mhz':
+      return typeof value === 'number' ? `${(value / 1000).toFixed(1)} GHz boost` : v
+    case 'cas_latency':
+      return `CL${v}`
+    case 'pcie_gen':
+      return `PCIe ${v}.0`
+    case 'capacity_gb':
+      return typeof value === 'number' && value >= 1000 ? `${String(value / 1000)} TB` : `${v} GB`
+    case 'total_capacity_gb':
+      return `${v} GB`
+    case 'length_mm':
+      return `${v} mm long`
+    case 'max_gpu_length_mm':
+      return `GPU up to ${v} mm`
+    case 'max_cooler_height_mm':
+      return `cooler up to ${v} mm`
+    case 'height_mm':
+      return `${v} mm tall`
+    case 'radiator_mm':
+      return `${v} mm radiator`
+    case 'recommended_psu_w':
+      return `${v} W PSU`
+    case 'tdp_w':
+      return `${v} W`
+    default:
+      return formatValue(key, value)
+  }
+}
+
+export function keySpecs(specs: Specs): string[] {
+  const fields = fieldsOf(specs)
+  const keys = KEY_FIELDS[specs.kind] ?? Object.keys(fields).slice(0, 3)
+  return keys.map((key) => keyValue(key, fields[key])).filter((v): v is string => Boolean(v))
+}
+
+/** Grouped specification rows for the product page. Fields not listed fall into "Other". */
+const GROUPS: Record<string, [string, string[]][]> = {
+  cpu: [
+    ['Platform', ['socket_code', 'has_integrated_graphics', 'includes_cooler']],
+    ['Performance', ['cores', 'threads', 'base_clock_mhz', 'boost_clock_mhz']],
+    ['Power', ['tdp_w', 'max_power_w']],
+  ],
+  motherboard: [
+    ['Platform', ['socket_code', 'chipset', 'form_factor_code']],
+    ['Memory', ['memory_type', 'memory_slots', 'max_memory_gb']],
+    ['Storage', ['m2_slots', 'sata_ports']],
+  ],
+  memory: [
+    ['Kit', ['memory_type', 'modules', 'module_capacity_gb', 'total_capacity_gb']],
+    ['Performance', ['speed_mts', 'cas_latency']],
+    ['Fit', ['height_mm']],
+  ],
+  gpu: [
+    ['Graphics', ['chipset', 'vram_gb']],
+    ['Fit', ['length_mm', 'slot_width']],
+    ['Power', ['tdp_w', 'power_connectors', 'recommended_psu_w']],
+  ],
+  storage: [['Drive', ['capacity_gb', 'interface', 'form_factor', 'pcie_gen']]],
+  psu: [
+    ['Output', ['wattage_w', 'efficiency', 'atx_version', 'has_12v_2x6']],
+    ['Build', ['modularity', 'form_factor']],
+  ],
+  case: [
+    ['Motherboards', ['supported_form_factors']],
+    ['Clearances', ['max_gpu_length_mm', 'max_cooler_height_mm', 'max_radiator_mm']],
+    ['Power supply', ['psu_form_factor']],
+  ],
+  cooler: [
+    ['Cooler', ['cooler_type', 'tdp_rating_w']],
+    ['Fit', ['height_mm', 'radiator_mm', 'supported_sockets']],
+  ],
+}
+
+export function specGroups(specs: Specs): { title: string; rows: { label: string; value: string }[] }[] {
+  const rows = specRows(specs)
+  const fields = fieldsOf(specs)
+  const groups = GROUPS[specs.kind]
+  if (!groups) return [{ title: 'Specifications', rows }]
+  const used = new Set<string>()
+  const result = groups
+    .map(([title, keys]) => ({
+      title,
+      rows: keys
+        .filter((key) => key in fields)
+        .map((key) => {
+          used.add(key)
+          return { label: LABELS[key] ?? key, value: formatValue(key, fields[key]) }
+        }),
+    }))
+    .filter((group) => group.rows.length > 0)
+  const rest = Object.keys(fields).filter((key) => key !== 'kind' && !used.has(key))
+  if (rest.length) {
+    result.push({
+      title: 'Other',
+      rows: rest.map((key) => ({ label: LABELS[key] ?? key, value: formatValue(key, fields[key]) })),
+    })
+  }
+  return result
+}

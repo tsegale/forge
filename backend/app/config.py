@@ -2,10 +2,15 @@
 
 import os
 from datetime import timedelta
+from pathlib import Path
 
 from celery.schedules import crontab
+from limits import parse_many
 
 TEST_WEBHOOK_SECRET = "whsec_forge_test_signing_secret"
+
+# Sign-in attempts per client IP. Production always uses this value.
+LOGIN_LIMIT_PER_IP = "5 per minute"
 
 # HS256 keys must be at least as long as the hash output (RFC 7518, section 3.2).
 MIN_JWT_KEY_BYTES = 32
@@ -15,6 +20,22 @@ def _require(name: str) -> str:
     value = os.environ.get(name)
     if not value:
         raise RuntimeError(f"Missing required environment variable: {name}")
+    return value
+
+
+def _login_limit(production: bool) -> str:
+    """The end-to-end stack raises the per-IP sign-in limit with LOGIN_LIMIT_PER_IP: repeated
+    Playwright runs sign in from one address far more often than 5 times a minute. Production
+    refuses the override, so the deployed limit cannot be loosened by an environment variable."""
+    value = os.environ.get("LOGIN_LIMIT_PER_IP", "").strip()  # compose passes unset as ""
+    if not value:
+        return LOGIN_LIMIT_PER_IP
+    if production:
+        raise RuntimeError("LOGIN_LIMIT_PER_IP is for the end-to-end stack and cannot be set in production")
+    try:
+        parse_many(value)
+    except ValueError as exc:
+        raise RuntimeError(f"LOGIN_LIMIT_PER_IP is not a rate limit such as '100 per minute': {value!r}") from exc
     return value
 
 
@@ -33,9 +54,15 @@ def _payment_settings(production: bool) -> dict[str, str]:
             raise RuntimeError("STRIPE_SECRET_KEY is not a Stripe secret key")
         if "_live_" in secret and not production:
             raise RuntimeError("Refusing a live Stripe key outside production")
-        webhook_secret = _require("STRIPE_WEBHOOK_SECRET").strip()
-    else:
-        webhook_secret = os.environ.get("STRIPE_WEBHOOK_SECRET", "whsec_local_fake_gateway").strip()
+    # Both gateways verify every webhook signature, the fake one included (the payment simulator
+    # signs its events with this secret). Checked here so a missing secret stops startup instead
+    # of failing each webhook. Compose passes an unset variable as an empty string.
+    webhook_secret = os.environ.get("STRIPE_WEBHOOK_SECRET", "").strip()
+    if not webhook_secret:
+        hint = "from `stripe listen` or the Stripe Dashboard" if gateway == "stripe" else "any whsec_ value"
+        raise RuntimeError(f"Missing required environment variable: STRIPE_WEBHOOK_SECRET ({hint})")
+    if not webhook_secret.startswith("whsec_"):
+        raise RuntimeError("STRIPE_WEBHOOK_SECRET is not a Stripe webhook signing secret (whsec_...)")
     # The publishable key is public by design (Stripe.js uses it in the browser).
     publishable = os.environ.get("STRIPE_PUBLISHABLE_KEY", "").strip()
     if publishable and not publishable.startswith(("pk_test_", "pk_live_")):
@@ -55,6 +82,8 @@ def _payment_settings(production: bool) -> dict[str, str]:
 # Periodic jobs for Celery beat, by task name (defined in app/tasks.py).
 BEAT_SCHEDULE: dict[str, dict] = {
     "sweep-expired-reservations": {"task": "forge.sweep_expired_reservations", "schedule": 60.0},
+    # A safety net: price changes made through the admin API also check their product's alerts at once.
+    "check-price-alerts": {"task": "forge.check_price_alerts", "schedule": 900.0},
     # On the 25th, so next month's partition exists days before the month begins.
     "price-history-partitions": {
         "task": "forge.maintain_price_history_partitions",
@@ -86,6 +115,9 @@ class BaseConfig:
     REFRESH_COOKIE_NAME = "forge_refresh"
     REFRESH_COOKIE_PATH = "/api/v1/auth"
     REFRESH_COOKIE_SECURE = True
+    # A readable companion to the HttpOnly refresh cookie: it holds no secret, only "a session may
+    # exist", so the browser app skips the refresh call (and its 401) for visitors who never signed in.
+    SESSION_HINT_COOKIE_NAME = "forge_session"
     CART_COOKIE_NAME = "forge_cart"
     CART_COOKIE_PATH = "/api/v1"
     CART_COOKIE_MAX_AGE = timedelta(days=30)
@@ -102,9 +134,11 @@ class BaseConfig:
     # Commerce. Prices include VAT; amounts are integer cents in STORE_CURRENCY.
     VAT_RATE_BPS = 1500  # Namibian VAT, 15%
 
-    LOGIN_LIMIT_PER_IP = "5 per minute"
     LOGIN_FAILURE_LIMIT_PER_ACCOUNT = "10 per 15 minutes"
     REGISTER_LIMIT_PER_IP = "10 per hour"
+    REVIEW_LIMIT_PER_USER = "10 per hour"
+    PASSWORD_RESET_LIMIT_PER_IP = "5 per 15 minutes"
+    PASSWORD_RESET_LIMIT_PER_EMAIL = "3 per hour"
 
     def __init__(self) -> None:
         self.FORGE_ENV_NAME = {
@@ -116,19 +150,36 @@ class BaseConfig:
         self.JWT_SECRET_KEY = _jwt_key()
         for key, value in _payment_settings(production=isinstance(self, ProductionConfig)).items():
             setattr(self, key, value)
+        self.LOGIN_LIMIT_PER_IP = _login_limit(production=isinstance(self, ProductionConfig))
         self.SQLALCHEMY_DATABASE_URI = _require("DATABASE_URL")
         self.SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True, "pool_size": 10, "max_overflow": 20}
         self.REDIS_URL = os.environ.get("REDIS_URL", "redis://redis:6379/0")
+        production = isinstance(self, ProductionConfig)
+        self.LOG_FORMAT = os.environ.get("LOG_FORMAT", "json" if production else "text")
+        self.LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
+        # Server-Timing on API responses (app and database time, statement count).
+        self.SERVER_TIMING = os.environ.get("SERVER_TIMING", "true").lower() == "true"
         # Number of reverse proxies in front of the app whose X-Forwarded-* headers are trusted.
         self.TRUSTED_PROXY_COUNT = int(os.environ.get("TRUSTED_PROXY_COUNT", "0"))
         # A rotated refresh token presented again within this window (two tabs, a retried request)
         # gets its existing successor back instead of triggering family revocation.
         self.REFRESH_REUSE_GRACE = timedelta(seconds=int(os.environ.get("REFRESH_REUSE_GRACE_SECONDS", "10")))
         self.STORE_CURRENCY = os.environ.get("STORE_CURRENCY", "nad")
+        # Day boundaries for sales reports.
+        self.STORE_TIMEZONE = os.environ.get("STORE_TIMEZONE", "Africa/Windhoek")
+        # Where product photos are served from (nginx in production, Flask in development).
+        self.MEDIA_URL = os.environ.get("MEDIA_URL", "/media").rstrip("/")
+        backend_dir = Path(__file__).resolve().parent.parent
+        # Generated WebP files (a volume shared with nginx in production) and the photos they come from.
+        self.MEDIA_ROOT = os.environ.get("MEDIA_ROOT", str(backend_dir / "media"))
+        self.IMAGE_SOURCE_DIR = os.environ.get("IMAGE_SOURCE_DIR", str(backend_dir / "seed" / "images"))
+        # Flask serves /media itself outside production; nginx does in production.
+        self.SERVE_MEDIA = (
+            os.environ.get("SERVE_MEDIA", "false" if isinstance(self, ProductionConfig) else "true") == "true"
+        )
         self.SHIPPING_FLAT_CENTS = int(os.environ.get("SHIPPING_FLAT_CENTS", "15000"))
         self.FREE_SHIPPING_THRESHOLD_CENTS = int(os.environ.get("FREE_SHIPPING_THRESHOLD_CENTS", "500000"))
         self.RESERVATION_TTL = timedelta(minutes=int(os.environ.get("RESERVATION_TTL_MINUTES", "15")))
-        production = isinstance(self, ProductionConfig)
         self.MAIL_BACKEND = os.environ.get("MAIL_BACKEND", "smtp")
         self.MAIL_SERVER = _require("MAIL_SERVER") if production else os.environ.get("MAIL_SERVER", "127.0.0.1")
         self.MAIL_PORT = int(os.environ.get("MAIL_PORT", "587" if production else "1025"))
@@ -136,6 +187,11 @@ class BaseConfig:
         self.MAIL_USERNAME = os.environ.get("MAIL_USERNAME", "")
         self.MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD", "")
         self.MAIL_FROM = os.environ.get("MAIL_FROM", "Forge <orders@forge.local>")
+        # The store's public address, for links in emails. The Vite dev server outside production.
+        self.PUBLIC_BASE_URL = (
+            _require("PUBLIC_BASE_URL") if production else os.environ.get("PUBLIC_BASE_URL", "http://127.0.0.1:5173")
+        ).rstrip("/")
+        self.PASSWORD_RESET_TTL = timedelta(minutes=int(os.environ.get("PASSWORD_RESET_TTL_MINUTES", "30")))
         self.CELERY = {
             "broker_url": os.environ.get("CELERY_BROKER_URL", self.REDIS_URL.rsplit("/", 1)[0] + "/1"),
             "task_ignore_result": True,
@@ -166,6 +222,8 @@ class TestingConfig(BaseConfig):
         # Tests never reach Stripe: the fake gateway, with a fixed secret for signed test webhooks.
         os.environ["PAYMENT_GATEWAY"] = "fake"
         os.environ["STRIPE_WEBHOOK_SECRET"] = TEST_WEBHOOK_SECRET
+        # Limit tests assert the production values, even in a shell set up for the e2e stack.
+        os.environ.pop("LOGIN_LIMIT_PER_IP", None)
         os.environ.setdefault("DATABASE_URL", _require("TEST_DATABASE_URL"))
         super().__init__()
         self.SQLALCHEMY_DATABASE_URI = _require("TEST_DATABASE_URL")

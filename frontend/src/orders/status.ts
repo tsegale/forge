@@ -14,11 +14,11 @@ export const STATUS_LABELS: Record<OrderStatus, string> = {
 }
 
 export const STATUS_TONES: Record<OrderStatus, string> = {
-  pending_payment: 'bg-warning-soft text-warning',
+  pending_payment: 'bg-warning-soft text-warning-ink',
   paid: 'bg-accent-soft text-accent',
   fulfilling: 'bg-accent-soft text-accent',
   shipped: 'bg-accent-soft text-accent',
-  delivered: 'bg-success-soft text-success',
+  delivered: 'bg-success-soft text-success-ink',
   cancelled: 'bg-canvas text-ink-muted',
   refunded: 'bg-canvas text-ink-muted',
 }

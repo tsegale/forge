@@ -5,6 +5,9 @@ import { RouterProvider } from 'react-router'
 import { queryClient } from '@/app/queryClient'
 import { router } from '@/app/router'
 import { AuthProvider } from '@/auth/AuthProvider'
+// Self-hosted variable fonts (weight axis only); served from this origin, so the CSP stays 'self'.
+import '@fontsource-variable/inter/wght.css'
+import '@fontsource-variable/jetbrains-mono/wght.css'
 import './index.css'
 
 const root = document.getElementById('root')

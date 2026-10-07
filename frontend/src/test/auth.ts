@@ -2,19 +2,29 @@
 import { http, HttpResponse } from 'msw'
 import { customer } from './fixtures'
 
-export const signedOut = () =>
-  http.post('/api/v1/auth/refresh', () =>
+/** The readable cookie the API sets beside the refresh cookie (see session.restore). */
+function setSessionHint(present: boolean): void {
+  document.cookie = present ? 'forge_session=1; path=/' : 'forge_session=; path=/; max-age=0'
+}
+
+export const signedOut = () => {
+  setSessionHint(false)
+  return http.post('/api/v1/auth/refresh', () =>
     HttpResponse.json(
       { error: { code: 'missing_refresh_token', message: 'x', details: null, request_id: null } },
       { status: 401 },
     ),
   )
+}
 
-export const signedIn = (user: typeof customer = customer) => [
-  http.post('/api/v1/auth/refresh', () =>
-    HttpResponse.json({ access_token: 'access', token_type: 'Bearer', expires_in: 900 }),
-  ),
-  http.get('/api/v1/auth/me', () => HttpResponse.json(user)),
-]
+export const signedIn = (user: typeof customer = customer) => {
+  setSessionHint(true)
+  return [
+    http.post('/api/v1/auth/refresh', () =>
+      HttpResponse.json({ access_token: 'access', token_type: 'Bearer', expires_in: 900 }),
+    ),
+    http.get('/api/v1/auth/me', () => HttpResponse.json(user)),
+  ]
+}
 
 export const signedInAsAdmin = () => signedIn({ ...customer, id: 2, role: 'admin', first_name: 'Admin' })

@@ -1,12 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { Link, useLocation, useParams } from 'react-router'
-import { Alert } from '@/components/ui/Alert'
+import { Link, useParams } from 'react-router'
+import { Breadcrumbs } from '@/components/ui/Breadcrumbs'
 import { Button } from '@/components/ui/Button'
 import { Dialog } from '@/components/ui/Dialog'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import { OrderStatusBadge } from '@/components/ui/OrderStatusBadge'
+import { Skeleton } from '@/components/ui/Skeleton'
 import { formatPrice } from '@/lib/money'
+import { usePageTitle } from '@/lib/usePageTitle'
 import { cancelOrder, orderQuery } from '@/orders/api'
 import { paymentLabel } from '@/orders/status'
 import { useBuyAgain } from '@/orders/useBuyAgain'
@@ -18,7 +20,7 @@ const PLACED = new Intl.DateTimeFormat('en-NA', { dateStyle: 'long', timeStyle: 
 /** One of the customer's orders: progress, parts, totals, address and what they can do next. */
 export function OrderPage() {
   const { orderNumber = '' } = useParams()
-  const justPaid = (useLocation().state as { justPaid?: boolean } | null)?.justPaid === true
+  usePageTitle(`Order ${orderNumber}`)
   const order = useQuery(orderQuery(orderNumber))
   const buyAgain = useBuyAgain()
   const queryClient = useQueryClient()
@@ -33,23 +35,24 @@ export function OrderPage() {
     },
   })
 
-  if (order.isPending) return <p className="text-sm text-ink-muted">Loading</p>
+  if (order.isPending) return <Skeleton className="h-64 w-full" />
   if (order.isError) return <ErrorMessage error={order.error} />
   const o = order.data
   const address = o.shipping_address
 
   return (
     <div className="space-y-6">
-      <nav aria-label="Breadcrumb" className="text-sm text-ink-subtle">
-        <Link to="/orders" className="hover:text-accent">
-          Orders
-        </Link>{' '}
-        / {o.order_number}
-      </nav>
+      <Breadcrumbs
+        items={[
+          { label: 'Account', to: '/account' },
+          { label: 'Orders', to: '/orders' },
+          { label: o.order_number },
+        ]}
+      />
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="flex items-center gap-3 text-2xl font-semibold">
+          <h1 className="flex flex-wrap items-center gap-3 text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
             Order {o.order_number} <OrderStatusBadge status={o.status} />
           </h1>
           <p className="mt-1 text-sm text-ink-muted">
@@ -84,18 +87,10 @@ export function OrderPage() {
         </div>
       </div>
 
-      {justPaid && o.status === 'paid' ? (
-        <Alert tone="success" title="Payment received">
-          Thank you. A confirmation has been emailed to you, and we will let you know when your order ships.
-        </Alert>
-      ) : null}
       <ErrorMessage error={buyAgain.error} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_20rem]">
-        <section
-          aria-labelledby="items-heading"
-          className="rounded-[var(--radius-card)] border border-border bg-surface p-5"
-        >
+        <section aria-labelledby="items-heading" className="rounded-md border border-border bg-surface p-5">
           <h2 id="items-heading" className="text-sm font-semibold">
             Parts
           </h2>
@@ -124,7 +119,7 @@ export function OrderPage() {
         <div className="space-y-6">
           <section
             aria-labelledby="progress-heading"
-            className="rounded-[var(--radius-card)] border border-border bg-surface p-5"
+            className="rounded-md border border-border bg-surface p-5"
           >
             <h2 id="progress-heading" className="mb-4 text-sm font-semibold">
               Progress
@@ -133,7 +128,7 @@ export function OrderPage() {
           </section>
           <section
             aria-labelledby="delivery-heading"
-            className="space-y-3 rounded-[var(--radius-card)] border border-border bg-surface p-5 text-sm"
+            className="space-y-3 rounded-md border border-border bg-surface p-5 text-sm"
           >
             <h2 id="delivery-heading" className="font-semibold">
               Delivery and payment

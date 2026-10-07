@@ -75,6 +75,24 @@ describe('withSession', () => {
     expect(seen).toEqual(['Bearer old', 'Bearer new'])
   })
 
+  it('waits for a refresh in flight, so a call made while the session restores is not anonymous', async () => {
+    const seen: (string | null)[] = []
+    server.use(
+      http.post('/api/v1/auth/refresh', async () => {
+        await delay(20)
+        return HttpResponse.json(tokens('restored'))
+      }),
+      http.get('/api/v1/auth/me', ({ request }) => {
+        seen.push(request.headers.get('Authorization'))
+        return HttpResponse.json(user)
+      }),
+    )
+    const restoring = refresh()
+    await withSession(me)
+    await restoring
+    expect(seen).toEqual(['Bearer restored'])
+  })
+
   it('does not retry other errors', async () => {
     let refreshed = false
     server.use(
@@ -117,5 +135,32 @@ describe('cross-tab messages', () => {
       expect(getAccessToken()).toBe('from-other-tab')
     })
     otherTab.close()
+  })
+})
+
+describe('restore', () => {
+  it('does not call the API at all for a visitor who never signed in', async () => {
+    let calls = 0
+    server.use(
+      http.post('/api/v1/auth/refresh', () => {
+        calls += 1
+        return HttpResponse.json(expired, { status: 401 })
+      }),
+    )
+    document.cookie = 'forge_session=; path=/; max-age=0'
+    const { restore } = await import('./session')
+    expect(await restore()).toBeNull()
+    expect(calls).toBe(0)
+  })
+
+  it('restores the session when the hint says one may exist', async () => {
+    server.use(
+      http.post('/api/v1/auth/refresh', () => HttpResponse.json(tokens('restored'))),
+      http.get('/api/v1/auth/me', () => HttpResponse.json(user)),
+    )
+    document.cookie = 'forge_session=1; path=/'
+    const { restore } = await import('./session')
+    expect(await restore()).toEqual(user)
+    expect(getAccessToken()).toBe('restored')
   })
 })

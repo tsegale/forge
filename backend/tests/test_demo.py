@@ -1,13 +1,25 @@
 """flask seed demo: an idempotent reset that gives every demo screen data."""
 
 import json
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from sqlalchemy import func, select
 
 from app.cli import DEFAULT_SEED
-from app.demo import ADMIN, CUSTOMER, DEMO_BUILD, PAST_ORDERS, reset
-from app.models import Build, Inventory, Order, OrderStatusHistory, Payment, Product, StockReservation, User
+from app.demo import ADMIN, CUSTOMER, DEMO_BUILD, FEATURED_BUILDS, PAST_ORDERS, RESTOCKED, REVIEWS, reset
+from app.models import (
+    Build,
+    Inventory,
+    Order,
+    OrderStatusHistory,
+    Payment,
+    PriceHistory,
+    Product,
+    Review,
+    StockReservation,
+    User,
+)
 from app.models.enums import BuildStatus, OrderStatus, PaymentStatus, ReservationStatus
 
 EXPECTED_STATUSES = sorted(status.value for _, status, _ in PAST_ORDERS)
@@ -76,7 +88,8 @@ def test_fulfilment_history_is_attributed_to_the_admin(demo):
 
 def test_demo_build_really_is_compatible_and_complete(client, demo):
     """The reset marks it validated; prove that by running the engine through the API."""
-    build = demo.scalar(select(Build))
+    customer_id = demo.scalar(select(User.id).where(User.email == CUSTOMER.email))
+    build = demo.scalar(select(Build).where(Build.user_id == customer_id))
     assert build.status is BuildStatus.VALIDATED and len(build.items) == len(DEMO_BUILD)
     login = client.post("/api/v1/auth/login", json={"email": CUSTOMER.email, "password": CUSTOMER.password}).get_json()
     report = client.post(
@@ -89,3 +102,49 @@ def test_production_requires_confirmation(app, demo, monkeypatch):
     monkeypatch.setitem(app.config, "FORGE_ENV_NAME", "production")
     result = app.test_cli_runner().invoke(args=["seed", "demo"])
     assert result.exit_code != 0 and "--yes" in result.output
+
+
+def test_price_history_ends_at_the_current_price_and_some_parts_just_dropped(client, demo):
+    drops = 0
+    for product in demo.scalars(select(Product)):
+        rows = demo.execute(
+            select(PriceHistory.recorded_at, PriceHistory.price_cents)
+            .where(PriceHistory.product_id == product.id)
+            .order_by(PriceHistory.recorded_at)
+        ).all()
+        assert len(rows) >= 3, product.sku
+        assert rows[-1].price_cents == product.price_cents, product.sku
+        recent = rows[-1].recorded_at > datetime.now(UTC) - timedelta(days=14)
+        drops += recent and rows[-2].price_cents > rows[-1].price_cents
+    assert drops >= 10
+
+
+def test_reviews_mix_verified_and_unverified(demo):
+    reviews = demo.scalars(select(Review)).all()
+    assert len(reviews) == len(REVIEWS)
+    customer = demo.scalar(select(User.id).where(User.email == CUSTOMER.email))
+    verified = {r.product_id for r in reviews if r.is_verified_purchase}
+    bought = {r.product_id for r in reviews if r.user_id == customer}
+    refunded = demo.scalar(select(Product.id).where(Product.sku == "FRG-PSU-CR-RM850E"))
+    assert verified and verified <= bought  # only the customer bought anything
+    assert refunded not in verified
+
+
+def test_featured_builds_are_validated_by_the_engine(client, demo):
+    items = client.get("/api/v1/builds/featured").get_json()["items"]
+    assert [b["share_slug"] for b in items] == [slug for slug, *_ in FEATURED_BUILDS]
+    for build in items:
+        ids = [(line["product"]["id"], line["quantity"]) for line in build["items"]]
+        report = client.post(
+            "/api/v1/compatibility/check", json={"items": [{"product_id": i, "quantity": q} for i, q in ids]}
+        ).get_json()
+        assert report["compatible"] and report["complete"], (
+            build["name"],
+            report["conflicts"],
+            report["missing_kinds"],
+        )
+
+
+def test_the_reset_leaves_parts_back_in_stock(client, demo):
+    restocked = {i["product"]["sku"] for i in client.get("/api/v1/products/back-in-stock?limit=24").get_json()["items"]}
+    assert set(RESTOCKED) <= restocked

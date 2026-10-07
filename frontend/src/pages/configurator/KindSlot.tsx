@@ -1,20 +1,28 @@
-import { clsx } from 'clsx'
 import { Minus, Plus, Trash2 } from 'lucide-react'
 import { Link } from 'react-router'
 import type { components } from '@/api/schema'
 import type { FreshItem } from '@/builds/useFreshItems'
 import { KindIcon } from '@/catalog/kinds'
 import { inSentence } from '@/catalog/labels'
-import { Button } from '@/components/ui/Button'
+import { keySpecs } from '@/catalog/specs'
+import { ProductImage } from '@/components/catalog/ProductImage'
+import { Badge } from '@/components/ui/Badge'
+import { Button, IconButton } from '@/components/ui/Button'
+import { StockIndicator } from '@/components/ui/StockIndicator'
+import { cn } from '@/lib/cn'
 import { formatCents } from '@/lib/money'
+import { FindingItem, type Finding } from './FindingItem'
 
 type ComponentKind = components['schemas']['ComponentKindResponse']
 
-/** One row of the configurator: a component kind and the parts chosen for it. */
+/**
+ * One component kind in the build: the parts chosen for it, each with the findings that involve
+ * it (measured values included), or an empty slot that says what goes there.
+ */
 export function KindSlot({
   kind,
   items,
-  conflictIds,
+  findingsFor,
   missing,
   editable,
   onChoose,
@@ -23,7 +31,7 @@ export function KindSlot({
 }: {
   kind: ComponentKind
   items: FreshItem[]
-  conflictIds: Set<number>
+  findingsFor: (productId: number) => Finding[]
   missing: boolean
   editable: boolean
   onChoose: () => void
@@ -34,115 +42,165 @@ export function KindSlot({
   const single = kind.max_per_build === 1
   const full = count >= kind.max_per_build
   const chooseLabel = items.length === 0 ? 'Choose' : single ? 'Change' : 'Add another'
+  const label = inSentence(kind.label)
+  const headingId = `slot-${kind.code}`
+  const hasConflict = items.some((item) =>
+    findingsFor(item.product.id).some((f) => f.severity === 'conflict'),
+  )
 
   return (
-    <li
-      className={clsx(
-        'rounded-[var(--radius-card)] border bg-surface p-4',
-        missing ? 'border-dashed border-border-strong' : 'border-border',
-      )}
-    >
-      <div className="flex items-center gap-3">
-        <span className="rounded-md bg-accent-soft p-2 text-accent">
-          <KindIcon kind={kind.code} />
-        </span>
-        <div className="flex-1">
-          <h2 className="text-sm font-semibold">{kind.label}</h2>
-          <p className="text-xs text-ink-subtle">
-            {kind.required_in_build ? 'Required' : 'Optional'}
-            {single ? '' : `, up to ${String(kind.max_per_build)}`}
-          </p>
-        </div>
-        {editable ? (
-          <Button
-            variant={items.length ? 'secondary' : 'primary'}
-            disabled={!single && full}
-            onClick={onChoose}
-            aria-label={`${chooseLabel} ${inSentence(kind.label)}`}
-          >
-            {chooseLabel}
-          </Button>
-        ) : null}
-      </div>
+    <li>
+      <section
+        aria-labelledby={headingId}
+        className={cn(
+          'rounded-md border bg-surface',
+          hasConflict ? 'border-danger/50' : missing ? 'border-dashed border-border-strong' : 'border-border',
+        )}
+      >
+        <header className="flex items-center gap-3 px-4 py-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-surface-muted text-ink-muted">
+            <KindIcon kind={kind.code} className="h-4.5 w-4.5" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <h2 id={headingId} className="text-base font-semibold text-ink">
+              {kind.label}
+            </h2>
+            <p className="text-sm text-ink-subtle">
+              {single ? 'One' : `Up to ${String(kind.max_per_build)}`}
+              {!single && count ? `, ${String(count)} chosen` : ''}
+            </p>
+          </div>
+          {missing ? <Badge tone="warning">Required</Badge> : null}
+          {editable && items.length ? (
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={!single && full}
+              onClick={onChoose}
+              aria-label={`${chooseLabel} ${label}`}
+            >
+              {chooseLabel}
+            </Button>
+          ) : null}
+        </header>
 
-      {items.length ? (
-        <ul className="mt-3 space-y-2">
-          {items.map(({ product, quantity, withdrawn }) => {
-            const conflict = conflictIds.has(product.id)
-            return (
-              <li
-                key={product.id}
-                className={clsx(
-                  'flex flex-wrap items-center gap-3 rounded-md border px-3 py-2',
-                  conflict || withdrawn ? 'border-danger/40 bg-danger-soft' : 'border-border',
-                )}
-              >
-                <div className="min-w-0 flex-1">
-                  <Link to={`/products/${product.slug}`} className="text-sm font-medium hover:text-accent">
-                    {product.name}
-                  </Link>
-                  {withdrawn ? (
-                    <p className="text-xs text-danger">No longer sold. Remove it or choose another.</p>
-                  ) : !product.availability.in_stock ? (
-                    <p className="text-xs text-danger">Out of stock</p>
-                  ) : conflict ? (
-                    <p className="text-xs text-danger">Conflicts with another part</p>
-                  ) : null}
-                </div>
-                {!single && editable ? (
-                  <div
-                    className="flex items-center gap-1"
-                    role="group"
-                    aria-label={`Quantity of ${product.name}`}
-                  >
-                    <Button
-                      variant="ghost"
-                      className="px-2"
-                      aria-label="Decrease quantity"
-                      onClick={() => {
-                        onQuantity(product.id, quantity - 1)
-                      }}
-                    >
-                      <Minus aria-hidden="true" className="h-4 w-4" />
-                    </Button>
-                    <span className="w-6 text-center text-sm tabular" aria-live="polite">
-                      {quantity}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      className="px-2"
-                      aria-label="Increase quantity"
-                      disabled={full}
-                      onClick={() => {
-                        onQuantity(product.id, quantity + 1)
-                      }}
-                    >
-                      <Plus aria-hidden="true" className="h-4 w-4" />
-                    </Button>
+        {items.length ? (
+          <ul className="border-t border-border">
+            {items.map(({ product, quantity, withdrawn }) => {
+              const findings = findingsFor(product.id)
+              return (
+                <li key={product.id} className="border-b border-border px-4 py-3 last:border-0">
+                  <div className="grid grid-cols-[4.5rem_1fr] gap-x-4 gap-y-2 sm:grid-cols-[5.5rem_1fr_auto]">
+                    <ProductImage
+                      image={product.image}
+                      kind={product.kind}
+                      name={product.name}
+                      variant="thumb"
+                      className="rounded-sm border border-border"
+                    />
+                    <div className="min-w-0">
+                      <Link
+                        to={`/products/${product.slug}`}
+                        className="text-base leading-snug font-medium text-ink hover:text-accent"
+                      >
+                        {product.name}
+                      </Link>
+                      <p className="mt-0.5 truncate font-tech text-xs text-ink-muted">
+                        {keySpecs(product.specs).join(' / ')}
+                      </p>
+                      <div className="mt-1">
+                        {withdrawn ? (
+                          <p className="text-sm text-danger-ink">
+                            No longer sold. Remove it or choose another.
+                          </p>
+                        ) : (
+                          <StockIndicator availability={product.availability} />
+                        )}
+                      </div>
+                    </div>
+                    <div className="col-span-2 flex items-center justify-between gap-3 sm:col-span-1 sm:flex-col sm:items-end sm:justify-start">
+                      <span className="text-base font-semibold text-ink tabular">
+                        {formatCents(product.price.amount_cents * quantity)}
+                      </span>
+                      {editable ? (
+                        <div className="flex items-center gap-1">
+                          {!single ? (
+                            <div
+                              className="flex items-center rounded-sm border border-control"
+                              role="group"
+                              aria-label={`Quantity of ${product.name}`}
+                            >
+                              <IconButton
+                                label="Decrease quantity"
+                                size="sm"
+                                onClick={() => {
+                                  onQuantity(product.id, quantity - 1)
+                                }}
+                              >
+                                <Minus aria-hidden="true" className="h-3.5 w-3.5" />
+                              </IconButton>
+                              <span className="w-6 text-center text-sm tabular" aria-live="polite">
+                                {quantity}
+                              </span>
+                              <IconButton
+                                label="Increase quantity"
+                                size="sm"
+                                disabled={full}
+                                onClick={() => {
+                                  onQuantity(product.id, quantity + 1)
+                                }}
+                              >
+                                <Plus aria-hidden="true" className="h-3.5 w-3.5" />
+                              </IconButton>
+                            </div>
+                          ) : null}
+                          <IconButton
+                            label={`Remove ${product.name}`}
+                            size="sm"
+                            onClick={() => {
+                              onRemove(product.id)
+                            }}
+                          >
+                            <Trash2 aria-hidden="true" className="h-4 w-4" />
+                          </IconButton>
+                        </div>
+                      ) : quantity > 1 ? (
+                        <span className="text-sm text-ink-muted tabular">x {quantity}</span>
+                      ) : null}
+                    </div>
                   </div>
-                ) : quantity > 1 ? (
-                  <span className="text-sm text-ink-muted tabular">x {quantity}</span>
-                ) : null}
-                <span className="w-28 text-right text-sm font-medium tabular">
-                  {formatCents(product.price.amount_cents * quantity)}
-                </span>
-                {editable ? (
-                  <Button
-                    variant="ghost"
-                    className="px-2"
-                    aria-label={`Remove ${product.name}`}
-                    onClick={() => {
-                      onRemove(product.id)
-                    }}
-                  >
-                    <Trash2 aria-hidden="true" className="h-4 w-4" />
-                  </Button>
-                ) : null}
-              </li>
-            )
-          })}
-        </ul>
-      ) : null}
+                  {findings.length ? (
+                    <ul className="mt-3 flex flex-col gap-2" aria-label={`Findings for ${product.name}`}>
+                      {findings.map((finding) => (
+                        <li key={`${finding.code}-${finding.product_ids.join('-')}`}>
+                          <FindingItem finding={finding} />
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </li>
+              )
+            })}
+          </ul>
+        ) : editable ? (
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-dashed border-border px-4 py-3">
+            <p className="text-sm text-ink-muted">
+              {kind.required_in_build
+                ? `Every build needs a ${label}.`
+                : `Optional. Add a ${label} if you need one.`}
+            </p>
+            <Button
+              size="sm"
+              variant={kind.required_in_build ? 'primary' : 'secondary'}
+              onClick={onChoose}
+              aria-label={`${chooseLabel} ${label}`}
+            >
+              <Plus aria-hidden="true" className="h-4 w-4" />
+              {chooseLabel}
+            </Button>
+          </div>
+        ) : null}
+      </section>
     </li>
   )
 }

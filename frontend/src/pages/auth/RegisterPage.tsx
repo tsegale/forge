@@ -6,9 +6,14 @@ import { register } from '@/auth/session'
 import { Button } from '@/components/ui/Button'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import { Field } from '@/components/ui/Field'
+import { PasswordField } from '@/components/ui/PasswordField'
 import { safeNext } from '@/lib/navigation'
+import { usePageTitle } from '@/lib/usePageTitle'
+import { AuthLayout } from './AuthLayout'
+import { PasswordRules } from './PasswordRules'
 
 export function RegisterPage() {
+  usePageTitle('Create an account')
   const { login } = useAuth()
   const navigate = useNavigate()
   const [params] = useSearchParams()
@@ -37,20 +42,23 @@ export function RegisterPage() {
     setForm({ ...form, [key]: e.target.value })
   }
   return (
-    <section className="mx-auto max-w-sm">
-      <h1 className="text-2xl font-semibold">Create an account</h1>
-      <p className="mt-1 text-sm text-ink-muted">
-        Already registered?{' '}
-        <Link
-          to={next ? `/login?next=${encodeURIComponent(next)}` : '/login'}
-          className="font-medium text-accent hover:text-accent-hover"
-        >
-          Sign in
-        </Link>
-      </p>
-      <form onSubmit={(e) => void submit(e)} className="mt-6 flex flex-col gap-4" noValidate>
+    <AuthLayout
+      title="Create an account"
+      intro={
+        <>
+          Already registered?{' '}
+          <Link
+            to={next ? `/login?next=${encodeURIComponent(next)}` : '/login'}
+            className="font-medium text-accent hover:underline"
+          >
+            Sign in
+          </Link>
+        </>
+      }
+    >
+      <form onSubmit={(e) => void submit(e)} className="flex flex-col gap-5" noValidate>
         {error && !Object.keys(fields).length ? <ErrorMessage error={error} /> : null}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field
             label="First name"
             autoComplete="given-name"
@@ -77,21 +85,20 @@ export function RegisterPage() {
           onChange={set('email')}
           error={fields.email}
         />
-        <Field
+        <PasswordField
           label="Password"
-          type="password"
           autoComplete="new-password"
           required
           minLength={12}
           value={form.password}
           onChange={set('password')}
           error={fields.password}
-          hint="At least 12 characters. A phrase of a few words works well."
+          hint={<PasswordRules password={form.password} />}
         />
-        <Button type="submit" busy={busy}>
+        <Button type="submit" size="lg" busy={busy}>
           {busy ? 'Creating account' : 'Create account'}
         </Button>
       </form>
-    </section>
+    </AuthLayout>
   )
 }

@@ -8,6 +8,8 @@ export interface AuthContextValue {
   user: User | null
   login: (email: string, password: string) => Promise<User>
   logout: () => Promise<void>
+  /** After a profile change: the API's updated copy of the signed-in user. */
+  replaceUser: (user: User) => void
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null)
