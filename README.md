@@ -277,6 +277,12 @@ flattens onto white, trims the margin and writes 320, 640 and 1280 px WebP varia
 hash of the photo, so their URLs change when the photo does and can be cached forever. Nginx serves
 them from the `media` volume. Products without a photo show a drawing of their kind.
 
+The storefront's other photography (home hero, category tiles, featured builds, sign-in, How Forge
+works and the empty cart and orders pages) is committed: Unsplash photos of real PC hardware, cropped
+to a fixed aspect ratio and saved as responsive WebP in `frontend/src/assets/photos/`, each credited
+with its source and licence in `docs/IMAGE_CREDITS.md`. Every image reserves its box before it loads
+and loads lazily below the fold; the home hero is preloaded at high priority.
+
 ### Builds and compatibility
 
 Customers save builds (`/builds`, with parts under `/builds/{id}/items`) and check them with the
@@ -630,3 +636,5 @@ scripts/ci/          starts the end-to-end stack in CI
 - [x] Redesign (v1.1.0): design system, every page redesigned; product images, reviews, price
   history and alerts, password reset, saved for later, home, admin dashboard and audit log,
   observability, keyboard, accessibility, visual and Lighthouse gates
+- [x] Imagery (v1.1.1): product photos from the manufacturers' pages (local only) and credited
+  lifestyle photography across the storefront
