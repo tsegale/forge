@@ -9,6 +9,7 @@ import { defineConfig, devices } from '@playwright/test'
  */
 export default defineConfig({
   testDir: './e2e',
+  globalSetup: './e2e/global-setup.ts',
   testIgnore: process.env.VISUAL ? [] : ['**/visual.spec.ts'],
   expect: {
     // Fonts are self-hosted and animations off; small anti-aliasing differences are tolerated.

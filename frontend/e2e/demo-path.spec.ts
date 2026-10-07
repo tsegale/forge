@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { admin, expectAccessible, payOnPayScreen, signIn } from './support'
+import { admin, CPU, expectAccessible, payOnPayScreen, signIn } from './support'
 
 /**
  * The presentation demo, end to end: browse and search, configure a build with live
@@ -7,7 +7,6 @@ import { admin, expectAccessible, payOnPayScreen, signIn } from './support'
  * Every screen on the way is checked with axe.
  */
 
-const CPU = { search: 'x3d', name: 'AMD Ryzen 7 7800X3D', slug: 'amd-ryzen-7-7800x3d' }
 // What a build around that CPU still needs (it has integrated graphics but no cooler in the box).
 const STILL_NEEDED = [
   'motherboard',
