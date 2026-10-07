@@ -44,6 +44,25 @@ specifications are in the seed catalog; where it matters, the note says how to t
   domain. Two products have no live product page any more, noted in their rows.
 - Regional versions of a page (us, uk, global) show the same photos; any of them is fine.
 
+## Coverage (8 October 2026)
+
+Photos were downloaded for 51 of the 62 SKUs (113 photos). The other 11 show their kind drawing,
+because the official page has no usable photo of that exact product:
+
+| SKU | Why there is no photo |
+| --- | --- |
+| FRG-CPU-I5-12400F, FRG-CPU-I5-13600K, FRG-CPU-I7-14700K, FRG-CPU-I9-14900K, FRG-CPU-U7-265K | Intel's specification pages carry no product images |
+| FRG-CPU-R7-5800X3D | AMD's page shows only the 10th-anniversary edition box |
+| FRG-SSD-CRU-P3P-1TB | The Crucial product page now returns an error page |
+| FRG-SSD-CRU-MX500-1TB | Product pages retired; the support page has no product shot |
+| FRG-HDD-SEA-BC-2TB | Seagate's BarraCuda page shows only 12 to 24 TB drives, whose labels would be wrong |
+| FRG-CASE-NZ-H5FLOW | The 2022 model survives only as a PDF manual |
+| FRG-COOL-NZ-KRAKEN240 | NZXT's page now redirects to the Kraken Plus 240, a different product |
+
+Notes: the Corsair Vengeance DDR5 kits use the image Corsair shows on the black kit's own page
+(file name `VENGEANCE_DDR5_GREY_AMD`); Fractal Design and Sapphire photos keep their light grey
+studio background.
+
 ## CPUs
 
 | Priority | SKU | Product | Official page | Notes |
