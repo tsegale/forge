@@ -57,10 +57,12 @@ Table builds {
   status build_status [not null]
   is_public boolean [not null]
   share_slug varchar(32) [unique]
+  is_featured boolean [not null]
+  featured_blurb varchar(200)
   created_at timestamp_with_time_zone [not null]
   updated_at timestamp_with_time_zone [not null]
 
-  Note: 'CHECK: NOT is_public OR share_slug IS NOT NULL'
+  Note: 'CHECK: NOT is_featured OR is_public; NOT is_public OR share_slug IS NOT NULL'
 }
 
 Table cart_items {
@@ -68,6 +70,7 @@ Table cart_items {
   cart_id integer [not null]
   product_id integer [not null]
   quantity smallint [not null]
+  saved_for_later boolean [not null]
   created_at timestamp_with_time_zone [not null]
   updated_at timestamp_with_time_zone [not null]
 
@@ -187,6 +190,17 @@ Table inventory {
   Note: 'CHECK: quantity_on_hand >= 0; quantity_reserved <= quantity_on_hand; quantity_reserved >= 0'
 }
 
+Table inventory_events {
+  id bigint [pk]
+  product_id integer [not null]
+  occurred_at timestamp_with_time_zone [not null]
+  on_hand_before integer [not null]
+  on_hand_after integer [not null]
+  reserved_before integer [not null]
+  reserved_after integer [not null]
+  actor_id integer
+}
+
 Table memory_specs {
   product_id integer [pk]
   kind_code varchar(20) [not null]
@@ -281,6 +295,17 @@ Table orders {
   Note: 'CHECK: subtotal_cents >= 0 AND tax_cents >= 0 AND shipping_cents >= 0; total_cents = subtotal_cents + tax_cents + shipping_cents'
 }
 
+Table password_reset_tokens {
+  id integer [pk]
+  user_id integer [not null]
+  token_hash char(64) [unique, not null]
+  created_at timestamp_with_time_zone [not null]
+  expires_at timestamp_with_time_zone [not null]
+  used_at timestamp_with_time_zone
+
+  Note: 'CHECK: expires_at > created_at; token_hash ~ \'^[0-9a-f]{64}$\''
+}
+
 Table payment_events {
   id integer [pk]
   order_id integer [not null]
@@ -335,6 +360,24 @@ Table processed_webhook_events {
   event_type varchar(100) [not null]
   payload jsonb [not null]
   processed_at timestamp_with_time_zone [not null]
+}
+
+Table product_images {
+  id integer [pk]
+  product_id integer [not null]
+  position smallint [not null]
+  storage_key varchar(120) [unique, not null]
+  alt_text varchar(200) [not null]
+  width integer [not null]
+  height integer [not null]
+  source_url text
+  created_at timestamp_with_time_zone [not null]
+
+  indexes {
+    (product_id, position) [unique]
+  }
+
+  Note: 'CHECK: width > 0 AND height > 0; position >= 0; storage_key ~ \'^[A-Za-z0-9][A-Za-z0-9._-]*$\''
 }
 
 Table products {
@@ -392,7 +435,7 @@ Table reviews {
   user_id integer [not null]
   rating smallint [not null]
   title varchar(120)
-  body text
+  body text [not null]
   is_verified_purchase boolean [not null]
   created_at timestamp_with_time_zone [not null]
   updated_at timestamp_with_time_zone [not null]
@@ -401,7 +444,7 @@ Table reviews {
     (product_id, user_id) [unique]
   }
 
-  Note: 'CHECK: rating BETWEEN 1 AND 5'
+  Note: 'CHECK: char_length(btrim(body)) >= 10; rating BETWEEN 1 AND 5'
 }
 
 Table sockets {
@@ -474,6 +517,8 @@ Ref: cpu_specs.socket_code > sockets.code
 Ref: gpu_specs.product_id - products.id
 Ref: gpu_specs.(product_id, kind_code) > products.(id, kind_code)
 Ref: inventory.product_id - products.id
+Ref: inventory_events.actor_id > users.id
+Ref: inventory_events.product_id > products.id
 Ref: memory_specs.product_id - products.id
 Ref: memory_specs.(product_id, kind_code) > products.(id, kind_code)
 Ref: motherboard_specs.form_factor_code > board_form_factors.code
@@ -487,6 +532,7 @@ Ref: order_status_history.changed_by_user_id > users.id
 Ref: order_status_history.order_id > orders.id
 Ref: orders.build_id > builds.id
 Ref: orders.user_id > users.id
+Ref: password_reset_tokens.user_id > users.id
 Ref: payment_events.actor_user_id > users.id
 Ref: payment_events.order_id > orders.id
 Ref: payment_events.payment_id > payments.id
@@ -494,6 +540,7 @@ Ref: payments.order_id > orders.id
 Ref: price_alerts.product_id > products.id
 Ref: price_alerts.user_id > users.id
 Ref: price_history.product_id > products.id
+Ref: product_images.product_id > products.id
 Ref: products.brand_id > brands.id
 Ref: products.(category_id, kind_code) > categories.(id, kind_code)
 Ref: psu_specs.product_id - products.id
@@ -614,6 +661,7 @@ TableGroup Identity {
   users
   addresses
   refresh_tokens
+  password_reset_tokens
 }
 
 TableGroup Catalog {
@@ -634,7 +682,9 @@ TableGroup Catalog {
   cooler_specs
   cooler_supported_sockets
   inventory
+  inventory_events
   price_history
+  product_images
 }
 
 TableGroup Builds {
@@ -652,6 +702,7 @@ TableGroup Commerce {
   order_status_history
   stock_reservations
   payments
+  payment_events
   processed_webhook_events
 }
 
