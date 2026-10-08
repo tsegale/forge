@@ -30,6 +30,7 @@ def _hash(token: str) -> str:
 
 
 def reset_link(token: str) -> str:
+    """The reset page URL, with the token in the fragment so it never reaches logs."""
     return f"{current_app.config['PUBLIC_BASE_URL']}/reset-password#token={token}"
 
 
@@ -95,6 +96,7 @@ def _wrap(paragraphs: list[str]) -> str:
 
 
 def reset_mail(user: User, token: str) -> Mail:
+    """The password reset email."""
     link = reset_link(token)
     minutes = int(current_app.config["PASSWORD_RESET_TTL"].total_seconds() // 60)
     text = (
@@ -118,6 +120,7 @@ def reset_mail(user: User, token: str) -> Mail:
 
 
 def changed_mail(user: User) -> Mail:
+    """The email confirming a password change."""
     text = (
         f"Hi {user.first_name},\n\nThe password for your Forge account was just changed, and every device was "
         "signed out. If this was not you, reset your password now and contact us.\n\nForge"
@@ -134,6 +137,7 @@ def changed_mail(user: User) -> Mail:
 
 
 def send_reset(user_id: int, token: str) -> bool:
+    """Email a reset link (Celery task body). False if the user no longer exists."""
     user = db.session.get(User, user_id)
     if user is None:
         return False
@@ -142,6 +146,7 @@ def send_reset(user_id: int, token: str) -> bool:
 
 
 def send_changed(user_id: int) -> bool:
+    """Email a password-changed notice (Celery task body). False if the user is gone."""
     user = db.session.get(User, user_id)
     if user is None:
         return False

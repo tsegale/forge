@@ -15,6 +15,8 @@ TAG = "Webhooks"
 
 
 class WebhookAck(BaseModel):
+    """Acknowledgement for the provider; duplicate deliveries are acknowledged too."""
+
     received: bool
     duplicate: bool
 

@@ -36,6 +36,7 @@ def _response(alert: PriceAlert, product: Product) -> PriceAlertResponse:
 
 
 def list_alerts(user: User) -> list[PriceAlertResponse]:
+    """The user's price alerts, newest first, with their products."""
     alerts = db.session.scalars(
         select(PriceAlert).where(PriceAlert.user_id == user.id).order_by(PriceAlert.created_at.desc())
     ).all()
@@ -78,6 +79,7 @@ def set_alert(user: User, data: PriceAlertCreate) -> PriceAlertResponse:
 
 
 def delete_alert(user: User, alert_id: int) -> None:
+    """Delete one of the user's price alerts, or 404."""
     alert = db.session.get(PriceAlert, alert_id)
     if alert is None or alert.user_id != user.id:
         raise NotFound("Price alert not found.")
@@ -103,6 +105,7 @@ def due_alert_ids(product_id: int | None = None) -> list[int]:
 
 
 def drop_mail(user: User, product: Product, target_cents: int) -> Mail:
+    """The email sent when a product reaches an alert's target price."""
     currency = current_app.config["STORE_CURRENCY"]
     price, target = format_money(product.price_cents, currency), format_money(target_cents, currency)
     link = f"{current_app.config['PUBLIC_BASE_URL']}/products/{product.slug}"

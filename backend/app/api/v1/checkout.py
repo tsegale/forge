@@ -17,6 +17,8 @@ TAG = "Checkout"
 
 
 class ServiceUnavailable(APIError):
+    """503: the payment provider could not start a payment intent."""
+
     status, code, message = 503, "payment_unavailable", "Payments are temporarily unavailable. Try again shortly."
 
 

@@ -33,12 +33,16 @@ AfterCommit = Callable[[], None]
 
 @dataclass
 class Outcome:
+    """What processing an event did, and work to run once it has committed."""
+
     duplicate: bool = False
     handled: bool = False
     after_commit: list[AfterCommit] = field(default_factory=list)
 
 
 def process(payload: bytes, signature: str | None) -> Outcome:
+    """Verify and apply a webhook exactly once. The event id is recorded in the same transaction, so a redelivery is
+    acknowledged as a duplicate and changes nothing."""
     event = gateway().parse_webhook(payload, signature)  # raises InvalidWebhook
     outcome = Outcome()
     first_delivery = db.session.execute(
@@ -114,6 +118,8 @@ def _amount_matches(intent: Mapping[str, Any], order: Order) -> bool:
 
 
 def on_succeeded(event: WebhookEvent, outcome: Outcome) -> None:
+    """If amount and currency match, mark the payment succeeded, commit the stock and mark the order paid. A payment for
+    a cancelled order is handled as a late payment."""
     intent = event.object
     payment, order = _locked_payment(intent)
     if order is None:
@@ -145,6 +151,7 @@ def on_succeeded(event: WebhookEvent, outcome: Outcome) -> None:
 
 
 def on_failed(event: WebhookEvent, outcome: Outcome) -> None:
+    """Record a declined or failed payment; the order stays payable."""
     payment, order = _locked_payment(event.object)
     if payment is None or order is None or payment.status is not PaymentStatus.REQUIRES_PAYMENT:
         return
@@ -155,6 +162,7 @@ def on_failed(event: WebhookEvent, outcome: Outcome) -> None:
 
 
 def on_canceled(event: WebhookEvent, outcome: Outcome) -> None:
+    """Record a cancelled payment intent."""
     payment, order = _locked_payment(event.object)
     if payment is None or order is None or payment.status not in (PaymentStatus.REQUIRES_PAYMENT, PaymentStatus.FAILED):
         return

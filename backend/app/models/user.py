@@ -25,6 +25,9 @@ from .mixins import TimestampMixin
 
 
 class User(TimestampMixin, db.Model):
+    """An account. Email is CITEXT, so uniqueness is case-insensitive in the database; passwords are stored as Argon2id
+    hashes only."""
+
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -49,6 +52,8 @@ class User(TimestampMixin, db.Model):
 
 
 class Address(TimestampMixin, db.Model):
+    """An address book entry, at most one default per type (partial unique index)."""
+
     __tablename__ = "addresses"
 
     id: Mapped[int] = mapped_column(primary_key=True)

@@ -18,6 +18,8 @@ from .audit import set_actor
 
 
 class RefundFailed(APIError):
+    """502: the payment provider did not complete a refund."""
+
     status, code, message = (
         502,
         "refund_failed",
@@ -26,6 +28,7 @@ class RefundFailed(APIError):
 
 
 def get(order_number: str, *, lock: bool = False) -> Order:
+    """Any order by number, or 404. ``lock`` takes SELECT ... FOR UPDATE."""
     stmt = select(Order).where(Order.order_number == order_number)
     order = db.session.scalar(stmt.with_for_update() if lock else stmt)
     if order is None:
@@ -65,6 +68,7 @@ def actions(orders: list[Order]) -> dict[int, AdminActions]:
 
 
 def detail(order: Order) -> AdminOrderDetail:
+    """Order detail with the customer's email and the legal next actions."""
     email = db.session.scalar(select(User.email).where(User.id == order.user_id))
     return AdminOrderDetail(
         **order_service.detail(order).model_dump(), **actions([order])[order.id].model_dump(), customer_email=email
@@ -72,6 +76,7 @@ def detail(order: Order) -> AdminOrderDetail:
 
 
 def list_all(query: OrderListQuery) -> AdminOrderPage:
+    """Every customer's orders, paged, each with its email and legal next actions."""
     orders, next_cursor = order_service.page_rows(select(Order), query)
     emails = dict(db.session.execute(select(User.id, User.email).where(User.id.in_({o.user_id for o in orders}))).all())
     allowed = actions(orders)

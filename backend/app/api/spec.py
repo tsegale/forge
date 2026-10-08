@@ -33,6 +33,8 @@ def _after(req: Any, resp: Any, resp_validation_error: Exception | None, instanc
 
 
 class ErrorBody(BaseModel):
+    """The error envelope every 4xx and 5xx response carries."""
+
     code: str = Field(description="Stable, machine-readable error code.")
     message: str = Field(description="Human-readable explanation; may change.")
     details: object | None = Field(default=None, description="Per-field problems for validation errors.")

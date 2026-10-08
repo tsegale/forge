@@ -16,11 +16,15 @@ def pg_enum(enum_cls: type[enum.Enum], name: str) -> SAEnum:
 
 
 class UserRole(enum.StrEnum):
+    """Account role used by role-based access control."""
+
     CUSTOMER = "customer"
     ADMIN = "admin"
 
 
 class AddressType(enum.StrEnum):
+    """What an address book entry is used for."""
+
     SHIPPING = "shipping"
     BILLING = "billing"
 
@@ -40,11 +44,15 @@ class KindCode(enum.StrEnum):
 
 
 class MemoryType(enum.StrEnum):
+    """DDR generation shared by memory kits and motherboards."""
+
     DDR4 = "ddr4"
     DDR5 = "ddr5"
 
 
 class PsuEfficiency(enum.StrEnum):
+    """80 PLUS efficiency certification of a power supply."""
+
     WHITE = "80plus"
     BRONZE = "80plus_bronze"
     SILVER = "80plus_silver"
@@ -63,40 +71,54 @@ class PsuAtxVersion(enum.StrEnum):
 
 
 class PsuModularity(enum.StrEnum):
+    """How a power supply's cables attach."""
+
     NON_MODULAR = "non_modular"
     SEMI_MODULAR = "semi_modular"
     FULLY_MODULAR = "fully_modular"
 
 
 class PsuFormFactor(enum.StrEnum):
+    """Power supply size standard; cases accept one of these."""
+
     ATX = "atx"
     SFX = "sfx"
     SFX_L = "sfx_l"
 
 
 class CoolerType(enum.StrEnum):
+    """Air tower or all-in-one liquid cooler."""
+
     AIR = "air"
     AIO = "aio"
 
 
 class StorageInterface(enum.StrEnum):
+    """Drive interface."""
+
     NVME = "nvme"
     SATA = "sata"
 
 
 class StorageFormFactor(enum.StrEnum):
+    """Physical drive size."""
+
     M2_2280 = "m2_2280"
     INCH_2_5 = "2.5in"
     INCH_3_5 = "3.5in"
 
 
 class BuildStatus(enum.StrEnum):
+    """Build lifecycle: draft, validated by the engine, or locked by an order."""
+
     DRAFT = "draft"
     VALIDATED = "validated"
     ORDERED = "ordered"
 
 
 class OrderStatus(enum.StrEnum):
+    """Order lifecycle; legal transitions live in the order_status_transitions table."""
+
     PENDING_PAYMENT = "pending_payment"
     PAID = "paid"
     FULFILLING = "fulfilling"
@@ -107,6 +129,8 @@ class OrderStatus(enum.StrEnum):
 
 
 class ReservationStatus(enum.StrEnum):
+    """Stock hold lifecycle: active, committed on payment, released or expired."""
+
     ACTIVE = "active"
     COMMITTED = "committed"
     RELEASED = "released"
@@ -114,6 +138,8 @@ class ReservationStatus(enum.StrEnum):
 
 
 class PaymentStatus(enum.StrEnum):
+    """Payment status, mirroring the provider's payment intent states."""
+
     REQUIRES_PAYMENT = "requires_payment"
     PROCESSING = "processing"
     SUCCEEDED = "succeeded"

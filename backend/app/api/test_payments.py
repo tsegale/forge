@@ -32,6 +32,8 @@ def init_app(app: Flask) -> None:
 
 
 class SimulatedPayment(BaseModel):
+    """Body of a simulated payment: whether the card succeeds or is declined."""
+
     model_config = ConfigDict(extra="forbid")
 
     outcome: Literal["succeeded", "declined"]

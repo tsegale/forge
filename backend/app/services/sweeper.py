@@ -23,10 +23,14 @@ BATCH_SIZE = 100
 
 @dataclass(frozen=True, slots=True)
 class SweepResult:
+    """Order numbers cancelled by one sweep."""
+
     cancelled: list[str]
 
 
 def sweep(now: datetime | None = None, batch_size: int = BATCH_SIZE) -> SweepResult:
+    """Cancel pending orders whose stock hold has expired and release their stock. Rows locked by another worker are
+    skipped; payment intents are cancelled after the commit."""
     now = now or datetime.now(UTC)
     orders = db.session.scalars(
         select(Order)

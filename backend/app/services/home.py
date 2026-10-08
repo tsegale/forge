@@ -32,6 +32,7 @@ def _since(days: int) -> datetime:
 
 
 def price_drops(limit: int, days: int) -> list[PriceDrop]:
+    """Products whose latest price change in the window was a drop, biggest percentage first."""
     ranked = select(
         PriceHistory.product_id,
         PriceHistory.recorded_at,
@@ -79,6 +80,7 @@ def price_drops(limit: int, days: int) -> list[PriceDrop]:
 
 
 def back_in_stock(limit: int, days: int) -> list[BackInStock]:
+    """Products restocked in the window that are available now, most recent first."""
     latest = (
         select(InventoryEvent)
         .ext(distinct_on(InventoryEvent.product_id))
@@ -107,6 +109,7 @@ def back_in_stock(limit: int, days: int) -> list[BackInStock]:
 
 
 def featured_builds() -> list[FeaturedBuild]:
+    """Featured builds that are public and currently validated."""
     builds = db.session.scalars(
         select(Build)
         .where(Build.is_featured, Build.is_public, Build.status == BuildStatus.VALIDATED)

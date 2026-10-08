@@ -32,6 +32,8 @@ def included_vat(gross_cents: int, rate_bps: int) -> int:
 
 @dataclass(frozen=True, slots=True)
 class Totals:
+    """Order totals in cents. Prices and shipping are VAT-inclusive; tax is the VAT within."""
+
     goods_gross_cents: int
     shipping_gross_cents: int
     subtotal_cents: int  # goods, net of VAT
@@ -52,6 +54,7 @@ def shipping_for(goods_gross_cents: int, *, flat_cents: int, free_threshold_cent
 
 
 def compute(goods_gross_cents: int, *, vat_rate_bps: int, flat_cents: int, free_threshold_cents: int) -> Totals:
+    """Totals for a goods amount with explicit VAT and shipping settings."""
     shipping_gross = shipping_for(goods_gross_cents, flat_cents=flat_cents, free_threshold_cents=free_threshold_cents)
     gross = goods_gross_cents + shipping_gross
     tax = included_vat(gross, vat_rate_bps)
@@ -67,6 +70,7 @@ def compute(goods_gross_cents: int, *, vat_rate_bps: int, flat_cents: int, free_
 
 
 def totals(goods_gross_cents: int) -> Totals:
+    """Totals for a goods amount with the store's configured VAT and shipping."""
     cfg = current_app.config
     return compute(
         goods_gross_cents,

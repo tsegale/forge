@@ -70,6 +70,7 @@ def _window_start(days: int) -> Any:
 
 
 def metrics(days: int) -> Metrics:
+    """Dashboard figures for the last ``days`` days, bucketed by store-local day."""
     since = _window_start(days)
     in_window = Order.created_at >= since
     revenue, orders = db.session.execute(
@@ -128,6 +129,7 @@ def metrics(days: int) -> Metrics:
 
 
 def webhooks(limit: int, before: datetime | None) -> tuple[list[WebhookEntry], datetime | None]:
+    """Processed webhook events, newest first, paged by a ``before`` timestamp."""
     stmt = select(ProcessedWebhookEvent).order_by(ProcessedWebhookEvent.processed_at.desc())
     if before is not None:
         stmt = stmt.where(ProcessedWebhookEvent.processed_at < before)

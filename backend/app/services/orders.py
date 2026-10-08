@@ -31,6 +31,7 @@ def _price(cents: int, currency: str) -> Price:
 
 
 def to_response(order: Order) -> OrderResponse:
+    """An order as returned to its owner: lines, totals and shipping address."""
     currency = order.currency or current_app.config["STORE_CURRENCY"]
     shipping = next((a for a in order.addresses if a.type is AddressType.SHIPPING), None)
     # Presentation only (kind and photo), in one query; the line itself is the purchase snapshot.
@@ -67,6 +68,7 @@ def to_response(order: Order) -> OrderResponse:
 
 
 def detail(order: Order) -> OrderDetail:
+    """Order with its status history and the latest payment status."""
     history = db.session.scalars(
         select(OrderStatusHistory).where(OrderStatusHistory.order_id == order.id).order_by(OrderStatusHistory.id)
     )
@@ -81,6 +83,7 @@ def detail(order: Order) -> OrderDetail:
 
 
 def summary(order: Order) -> OrderSummary:
+    """One row of an order list."""
     return OrderSummary(
         order_number=order.order_number,
         status=order.status,
@@ -104,15 +107,18 @@ def page_rows(stmt, query: OrderListQuery) -> tuple[list[Order], int | None]:
 
 
 def page(stmt, query: OrderListQuery) -> OrderPage:
+    """One page of orders from ``stmt``, newest first."""
     items, next_cursor = page_rows(stmt, query)
     return OrderPage(items=[summary(o) for o in items], next_cursor=next_cursor)
 
 
 def list_for(user: User, query: OrderListQuery) -> OrderPage:
+    """One page of the user's orders."""
     return page(select(Order).where(Order.user_id == user.id), query)
 
 
 def get_owned(user: User, order_number: str, *, lock: bool = False) -> Order:
+    """The user's order by number, or 404. ``lock`` takes SELECT ... FOR UPDATE."""
     stmt = select(Order).where(Order.order_number == order_number, Order.user_id == user.id)
     order = db.session.scalar(stmt.with_for_update() if lock else stmt)
     if order is None:

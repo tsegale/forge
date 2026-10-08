@@ -22,6 +22,9 @@ from .mixins import TimestampMixin
 
 
 class Build(TimestampMixin, db.Model):
+    """A user's PC build. Status moves draft -> validated -> ordered; database triggers reset a validated build to draft
+    on any item change and refuse changes once it is ordered."""
+
     __tablename__ = "builds"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -49,6 +52,9 @@ class Build(TimestampMixin, db.Model):
 
 
 class BuildItem(db.Model):
+    """One part in a build. The composite FK to products(id, kind_code) lets the slot-limit trigger count parts per
+    kind."""
+
     __tablename__ = "build_items"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -64,6 +70,7 @@ class BuildItem(db.Model):
 
     @classmethod
     def for_product(cls, product: Product, quantity: int = 1) -> BuildItem:
+        """A build item for ``product``, with its kind copied for the composite foreign key."""
         return cls(product=product, product_id=product.id, kind_code=product.kind_code, quantity=quantity)
 
     __table_args__ = (

@@ -70,6 +70,7 @@ def load_products(ids: list[int]) -> dict[int, Product]:
 
 
 def category_tree() -> list[CategoryNode]:
+    """The category tree, alphabetical at every level."""
     rows = db.session.scalars(select(Category).order_by(Category.name)).all()
     nodes = {c.id: CategoryNode(id=c.id, name=c.name, slug=c.slug, kind=c.kind_code) for c in rows}
     roots: list[CategoryNode] = []
@@ -79,6 +80,7 @@ def category_tree() -> list[CategoryNode]:
 
 
 def list_brands() -> list[BrandResponse]:
+    """All brands, alphabetical."""
     return [BrandResponse.model_validate(b) for b in db.session.scalars(select(Brand).order_by(Brand.name))]
 
 
@@ -89,6 +91,7 @@ def _specs(product: Product):
 
 
 def to_summary(product: Product) -> ProductSummary:
+    """A product as listed in the catalog: price, availability, specs and main image."""
     available = product.inventory.quantity_available
     return ProductSummary(
         id=product.id,
@@ -105,6 +108,7 @@ def to_summary(product: Product) -> ProductSummary:
 
 
 def get_active(slug: str) -> Product:
+    """An active product by slug, or 404."""
     product = db.session.scalar(product_query().where(Product.slug == slug).options(selectinload(Product.category)))
     if product is None:
         raise NotFound("Product not found.")
@@ -112,6 +116,7 @@ def get_active(slug: str) -> Product:
 
 
 def rating_summary(product_id: int) -> RatingSummary:
+    """Average rating (rounded by PostgreSQL) and review count for a product."""
     average, count = db.session.execute(
         select(func.round(func.avg(Review.rating), 1), func.count()).where(Review.product_id == product_id)
     ).one()
@@ -119,6 +124,7 @@ def rating_summary(product_id: int) -> RatingSummary:
 
 
 def get_product(slug: str) -> ProductDetail:
+    """The product detail page payload: summary, description, category and images."""
     product = get_active(slug)
     summary = to_summary(product)
     return ProductDetail(

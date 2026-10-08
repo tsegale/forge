@@ -16,6 +16,7 @@ from .mail import Mail, send
 
 
 def format_money(cents: int, currency: str) -> str:
+    """Format integer cents as money; NAD is shown as N$."""
     amount = f"{cents // 100:,}.{cents % 100:02d}"
     return f"N$ {amount}" if currency.upper() == "NAD" else f"{amount} {currency.upper()}"
 
@@ -30,6 +31,8 @@ def _row(label: str, value: str, strong: bool = False) -> str:
 
 
 def confirmation(order: Order, email: str, first_name: str) -> Mail:
+    """The order confirmation email."""
+
     def money(cents: int) -> str:
         return format_money(cents, order.currency)
 

@@ -39,6 +39,7 @@ def _author(user: User) -> str:
 
 
 def to_response(review: Review) -> ReviewResponse:
+    """A review as returned by the API."""
     return ReviewResponse(
         id=review.id,
         rating=review.rating,
@@ -75,6 +76,7 @@ def _decode_cursor(query: ReviewQuery, product_id: int) -> tuple[Any, int] | Non
 
 
 def distribution(product_id: int) -> RatingDistribution:
+    """Review counts per star rating, with the overall average."""
     rows = dict(
         db.session.execute(
             select(Review.rating, func.count()).where(Review.product_id == product_id).group_by(Review.rating)
@@ -87,6 +89,7 @@ def distribution(product_id: int) -> RatingDistribution:
 
 
 def list_reviews(slug: str, query: ReviewQuery) -> ReviewPage:
+    """One page of a product's reviews, keyset-paginated in the chosen order."""
     product = get_active(slug)
     column, descending = _SORTS[query.sort]
     stmt: Select[tuple[Review]] = select(Review).where(Review.product_id == product.id).options(joinedload(Review.user))
@@ -112,6 +115,7 @@ def list_reviews(slug: str, query: ReviewQuery) -> ReviewPage:
 
 
 def own_review(user: User, slug: str) -> Review | None:
+    """The user's review of a product, if they wrote one."""
     product = get_active(slug)
     return db.session.scalar(select(Review).where(Review.product_id == product.id, Review.user_id == user.id))
 
@@ -137,6 +141,7 @@ def _owned(user: User, review_id: int) -> Review:
 
 
 def update(user: User, review_id: int, data: ReviewUpdate) -> Review:
+    """Edit the user's own review; null for rating or body leaves it unchanged."""
     review = _owned(user, review_id)
     for field in data.model_fields_set:
         value = getattr(data, field)
@@ -149,6 +154,7 @@ def update(user: User, review_id: int, data: ReviewUpdate) -> Review:
 
 
 def delete(user: User, review_id: int) -> None:
+    """Delete a review. Authors may delete their own; admins may delete any."""
     review = db.session.get(Review, review_id)
     if review is None:
         raise NotFound("Review not found.")

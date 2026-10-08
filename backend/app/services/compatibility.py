@@ -15,6 +15,7 @@ from .catalog import load_products
 
 
 def required_kinds() -> list[str]:
+    """Kinds every complete build needs (component_kinds.required_in_build)."""
     return list(db.session.scalars(select(ComponentKind.code).where(ComponentKind.required_in_build)))
 
 

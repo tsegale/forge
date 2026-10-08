@@ -82,6 +82,8 @@ SWAGGER_INIT = """window.addEventListener('load', function () {
 
 
 def init_app(app: Flask) -> None:
+    """Register the /api/docs pages (Swagger UI, Redoc, spec) and their docs-only CSP."""
+
     @app.get(f"/{DOCS_PATH}")
     @app.get(f"/{DOCS_PATH}/")
     def docs_home():

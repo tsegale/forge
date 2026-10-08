@@ -26,6 +26,8 @@ from ..security.tokens import (
 
 @dataclass(frozen=True, slots=True)
 class IssuedSession:
+    """Tokens issued at login or refresh: the access token and the refresh cookie value."""
+
     access: AccessToken
     refresh_token: str
     refresh_jti: uuid.UUID
@@ -47,6 +49,8 @@ def register(data: RegisterRequest) -> User:
 
 
 def authenticate(email: str, password: str) -> User:
+    """The user for these credentials, or 401. Unknown emails still pay for a hash verification, so response time does
+    not reveal which emails exist."""
     user = db.session.scalar(select(User).where(User.email == email))
     if user is None:
         burn_verification(password)
@@ -157,11 +161,13 @@ def end_session(refresh_token: str) -> None:
 
 
 def end_all_sessions(user: User) -> None:
+    """Revoke every refresh token the user holds, signing out all devices."""
     _revoke(RefreshToken.user_id == user.id)
     db.session.commit()
 
 
 def update_profile(user: User, first_name: str | None, last_name: str | None) -> User:
+    """Change the user's names; ``None`` leaves a name as it is."""
     if first_name is not None:
         user.first_name = first_name
     if last_name is not None:

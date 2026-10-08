@@ -33,6 +33,8 @@ MARGIN = 0.04  # breathing room kept around the trimmed product, as a share of i
 
 @dataclass
 class ImportReport:
+    """What an image import found: images and products imported, files skipped."""
+
     images: int = 0
     products: int = 0
     unknown: list[str] = field(default_factory=list)
@@ -40,6 +42,7 @@ class ImportReport:
 
 
 def media_root() -> Path:
+    """Where generated image variants are written (MEDIA_ROOT)."""
     return Path(current_app.config["MEDIA_ROOT"])
 
 
@@ -88,6 +91,8 @@ def write_variants(image: Image.Image, storage_key: str) -> tuple[int, int]:
 
 
 def import_images(source: Path) -> ImportReport:
+    """Import ``<SKU>-<n>.<ext>`` photos from ``source``: write WebP variants and replace each product's image rows by
+    position, dropping positions no longer present."""
     report = ImportReport()
     found: dict[str, list[tuple[int, Path]]] = {}
     for path in sorted(source.iterdir()) if source.is_dir() else []:

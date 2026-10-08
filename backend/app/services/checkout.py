@@ -39,11 +39,15 @@ from .stock import lock_inventory
 
 @dataclass(frozen=True, slots=True)
 class Line:
+    """A product and quantity to buy."""
+
     product_id: int
     quantity: int
 
 
 class InsufficientStock(Conflict):
+    """409: some products lack the stock for the quantity requested."""
+
     code, message = "insufficient_stock", "Some items are no longer available in the requested quantity."
 
 
@@ -164,6 +168,7 @@ def place_order(user: User, request: CheckoutRequest) -> Order:
 
 
 def get_order(user: User, order_number: str) -> Order:
+    """The user's order by number, or 404."""
     order = db.session.scalar(select(Order).where(Order.order_number == order_number, Order.user_id == user.id))
     if order is None:
         raise NotFound("Order not found.")

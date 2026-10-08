@@ -23,6 +23,7 @@ MAX_LINE_QUANTITY = 99  # matches ck_cart_items_quantity_range
 
 
 def parse_token(raw: str | None) -> uuid.UUID | None:
+    """The guest cart token from its cookie, or ``None`` if missing or malformed."""
     try:
         return uuid.UUID(raw) if raw else None
     except ValueError:
@@ -30,6 +31,7 @@ def parse_token(raw: str | None) -> uuid.UUID | None:
 
 
 def find(user: User | None, guest_token: uuid.UUID | None, *, lock: bool = False) -> Cart | None:
+    """The signed-in user's cart, else the guest token's cart, else ``None``."""
     if user is not None:
         stmt = select(Cart).where(Cart.user_id == user.id)
     elif guest_token is not None:
@@ -88,6 +90,7 @@ def _owned_line(cart: Cart | None, item_id: int) -> CartItem:
 
 
 def update_item(cart: Cart | None, item_id: int, quantity: int | None, saved_for_later: bool | None) -> None:
+    """Change a line's quantity and/or move it to or from saved for later."""
     line = _owned_line(cart, item_id)
     if quantity is not None:
         line.quantity = quantity
@@ -97,6 +100,7 @@ def update_item(cart: Cart | None, item_id: int, quantity: int | None, saved_for
 
 
 def remove_item(cart: Cart | None, item_id: int) -> None:
+    """Remove a line from the cart."""
     db.session.delete(_owned_line(cart, item_id))
     db.session.commit()
 
@@ -161,6 +165,7 @@ def _price(cents: int) -> Price:
 
 
 def totals_block(goods_gross_cents: int) -> Totals:
+    """The VAT-inclusive totals block for a goods amount, as API prices."""
     t = pricing.totals(goods_gross_cents)
     return Totals(
         subtotal=_price(t.subtotal_cents),
@@ -171,6 +176,7 @@ def totals_block(goods_gross_cents: int) -> Totals:
 
 
 def view(cart: Cart | None) -> CartResponse:
+    """The cart as returned by the API: active lines with totals, and saved lines."""
     lines = (
         list(db.session.scalars(select(CartItem).where(CartItem.cart_id == cart.id).order_by(CartItem.id)))
         if cart is not None

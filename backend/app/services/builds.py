@@ -50,6 +50,7 @@ def _summary(build: Build, products: dict[int, Product]) -> BuildSummary:
 
 
 def detail(build: Build) -> BuildDetail:
+    """A build with its parts, current prices and line totals."""
     products = load_products([i.product_id for i in build.items])
     items = [
         BuildItemResponse(
@@ -64,6 +65,7 @@ def detail(build: Build) -> BuildDetail:
 
 
 def list_builds(user: User) -> list[BuildSummary]:
+    """The user's builds, most recently changed first."""
     builds = db.session.scalars(
         select(Build)
         .where(Build.user_id == user.id)
@@ -75,6 +77,7 @@ def list_builds(user: User) -> list[BuildSummary]:
 
 
 def create(user: User, name: str) -> Build:
+    """Create an empty draft build."""
     build = Build(user_id=user.id, name=name)
     db.session.add(build)
     db.session.commit()
@@ -82,17 +85,20 @@ def create(user: User, name: str) -> Build:
 
 
 def rename(build: Build, name: str) -> Build:
+    """Rename a build."""
     build.name = name
     db.session.commit()
     return build
 
 
 def delete(build: Build) -> None:
+    """Delete a build. A trigger refuses to delete one that has been ordered."""
     db.session.delete(build)
     db.session.commit()
 
 
 def add_item(build: Build, product_id: int, quantity: int) -> Build:
+    """Add an active product to the build. Per-kind slot limits are enforced by the build_slot_limit trigger."""
     product = db.session.get(Product, product_id)
     if product is None or not product.is_active:
         raise ValidationFailed(
@@ -107,12 +113,14 @@ def add_item(build: Build, product_id: int, quantity: int) -> Build:
 
 
 def update_item(build: Build, item_id: int, quantity: int) -> Build:
+    """Change the quantity of one of the build's parts."""
     _owned_item(build, item_id).quantity = quantity
     db.session.commit()
     return build
 
 
 def remove_item(build: Build, item_id: int) -> Build:
+    """Remove one of the build's parts."""
     build.items.remove(_owned_item(build, item_id))
     db.session.commit()
     return build

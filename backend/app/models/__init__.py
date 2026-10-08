@@ -1,3 +1,5 @@
+"""ORM models, re-exported so Alembic and the app import every mapper from one place."""
+
 from .build import Build, BuildItem
 from .catalog import (
     AccessoryProduct,

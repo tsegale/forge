@@ -13,6 +13,7 @@ from ..schemas.addresses import AddressCreate, AddressUpdate
 
 
 def list_addresses(user: User) -> list[Address]:
+    """The user's addresses, grouped by type with the default first."""
     return list(
         db.session.scalars(
             select(Address)
@@ -43,6 +44,7 @@ def _demote_defaults(user: User, address_type: AddressType, keep_id: int | None 
 
 
 def create(user: User, data: AddressCreate) -> Address:
+    """Add an address; a new default demotes the previous default of that type."""
     if data.is_default:
         _demote_defaults(user, data.type)
     address = Address(user_id=user.id, **data.model_dump())
@@ -52,6 +54,7 @@ def create(user: User, data: AddressCreate) -> Address:
 
 
 def update_address(address: Address, data: AddressUpdate) -> Address:
+    """Apply the fields sent; becoming the default demotes the previous one."""
     changes = data.model_dump(exclude_unset=True)
     if changes.get("is_default"):
         _demote_defaults(db.session.get(User, address.user_id), address.type, keep_id=address.id)
@@ -62,5 +65,6 @@ def update_address(address: Address, data: AddressUpdate) -> Address:
 
 
 def delete(address: Address) -> None:
+    """Delete an address. Past orders keep their own address snapshots."""
     db.session.delete(address)
     db.session.commit()

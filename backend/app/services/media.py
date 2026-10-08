@@ -11,10 +11,12 @@ VARIANTS = {"thumb": 320, "card": 640, "full": 1280}
 
 
 def variant_name(storage_key: str, variant: str) -> str:
+    """File name of one WebP variant of a stored image."""
     return f"{storage_key}-{variant}.webp"
 
 
 def image_response(image: ProductImage) -> ProductImageResponse:
+    """Public URLs of an image's variants, with its alt text and size."""
     base = f"{current_app.config['MEDIA_URL']}/products"
     urls = {variant: f"{base}/{variant_name(image.storage_key, variant)}" for variant in VARIANTS}
     return ProductImageResponse(**urls, alt=image.alt_text, width=image.width, height=image.height)

@@ -24,6 +24,9 @@ from .mixins import TimestampMixin
 
 
 class Review(TimestampMixin, db.Model):
+    """A customer's review of a product, one per user per product. ``is_verified_purchase`` is maintained by a trigger
+    from the user's paid orders."""
+
     __tablename__ = "reviews"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -46,6 +49,8 @@ class Review(TimestampMixin, db.Model):
 
 
 class PriceAlert(TimestampMixin, db.Model):
+    """A request to email the user when a product's price falls to a target."""
+
     __tablename__ = "price_alerts"
 
     id: Mapped[int] = mapped_column(primary_key=True)

@@ -22,6 +22,7 @@ CORRECTION_THRESHOLD = 0.3
 
 
 def suggest(q: str, per_kind: int) -> SearchSuggestions:
+    """Search-box suggestions: the best matches per kind, ranked by relevance."""
     q = " ".join(q.split())
     score = cast(relevance_score(q), Numeric)
     ranked = (

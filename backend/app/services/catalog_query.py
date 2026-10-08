@@ -119,6 +119,8 @@ SPEC_FILTERS: dict[str, dict[KindCode, Predicate]] = {
 
 @dataclass(frozen=True, slots=True)
 class SortKey:
+    """How a sort option orders products, and how its value is written to and read from a cursor."""
+
     column: Any
     descending: bool
     encode: Callable[[Any], Any] = lambda v: v
@@ -179,6 +181,7 @@ def search_predicate(q: str) -> ColumnElement[bool]:
 
 
 def resolve_sort(params: ProductQuery) -> SortKey:
+    """The sort key for a query; relevance is the default when searching."""
     if params.sort == "relevance" or (params.sort is None and params.q):
         if not params.q:
             raise ValidationFailed(
@@ -332,6 +335,7 @@ def filter_clauses(
 def build_query(
     params: ProductFilters, base: BuildContext | None = None, *, compatible_only: bool = True
 ) -> Select[tuple[Product]]:
+    """The product SELECT for these filters, optionally restricted to parts compatible with a build."""
     entity = _entity(params)
     stmt = select(entity).where(*filter_clauses(params, base, compatible_only=compatible_only))
     stmt = stmt.options(selectinload(Product.inventory))
@@ -347,6 +351,7 @@ def _seek(stmt: Select[tuple[Product]], sort: SortKey, after: tuple[Any, int]) -
 
 
 def list_products(params: ProductQuery) -> ProductPage:
+    """One page of products, keyset-paginated on the sort key and id."""
     sort = resolve_sort(params)
     base = compatibility_base(params)
     # The sort key is selected alongside each product so the cursor carries the exact value

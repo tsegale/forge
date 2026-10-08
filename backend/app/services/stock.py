@@ -16,6 +16,7 @@ from ..models.enums import ReservationStatus
 
 
 def lock_inventory(product_ids: Iterable[int]) -> dict[int, Inventory]:
+    """Lock inventory rows FOR UPDATE in product id order, so concurrent checkouts cannot deadlock."""
     ids = sorted(set(product_ids))
     rows = db.session.scalars(
         select(Inventory).where(Inventory.product_id.in_(ids)).order_by(Inventory.product_id).with_for_update()
@@ -24,6 +25,7 @@ def lock_inventory(product_ids: Iterable[int]) -> dict[int, Inventory]:
 
 
 def order_reservations(order_id: int) -> list[StockReservation]:
+    """An order's stock reservations, in product id order."""
     return list(
         db.session.scalars(
             select(StockReservation).where(StockReservation.order_id == order_id).order_by(StockReservation.product_id)

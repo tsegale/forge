@@ -14,6 +14,8 @@ OUTBOX_KEY = "forge.outbox"
 
 @dataclass(frozen=True, slots=True)
 class Mail:
+    """An email with plain text and HTML bodies."""
+
     to: str
     subject: str
     text: str
@@ -26,6 +28,7 @@ def outbox() -> list[Mail]:
 
 
 def send(mail: Mail) -> None:
+    """Send through SMTP, or keep in the in-memory outbox when MAIL_BACKEND is memory."""
     cfg = current_app.config
     if cfg["MAIL_BACKEND"] == "memory":
         outbox().append(mail)

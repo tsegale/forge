@@ -74,6 +74,8 @@ class ComponentKind(db.Model):
 
 
 class Socket(db.Model):
+    """Reference data: a CPU socket such as AM5 or LGA1700."""
+
     __tablename__ = "sockets"
 
     code: Mapped[str] = mapped_column(String(20), primary_key=True)  # e.g. AM5, LGA1700
@@ -81,6 +83,8 @@ class Socket(db.Model):
 
 
 class BoardFormFactor(db.Model):
+    """Reference data: a motherboard form factor and its board dimensions."""
+
     __tablename__ = "board_form_factors"
 
     code: Mapped[str] = mapped_column(String(20), primary_key=True)  # ATX, Micro-ATX, Mini-ITX, E-ATX
@@ -89,6 +93,8 @@ class BoardFormFactor(db.Model):
 
 
 class Brand(TimestampMixin, db.Model):
+    """A manufacturer."""
+
     __tablename__ = "brands"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -121,6 +127,9 @@ class Category(TimestampMixin, db.Model):
 
 
 class Product(TimestampMixin, db.Model):
+    """Supertype of every sellable part (joined-table inheritance on ``kind_code``). Shared columns live here; each
+    kind's specifications live in its own table."""
+
     __tablename__ = "products"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -209,6 +218,8 @@ class _SpecTable:
 
 
 class CpuProduct(_SpecTable, Product):
+    """Processor specifications (cpu_specs)."""
+
     __tablename__ = "cpu_specs"
 
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id", ondelete="CASCADE"), primary_key=True)
@@ -237,6 +248,8 @@ class CpuProduct(_SpecTable, Product):
 
 
 class MotherboardProduct(_SpecTable, Product):
+    """Motherboard specifications (motherboard_specs)."""
+
     __tablename__ = "motherboard_specs"
 
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id", ondelete="CASCADE"), primary_key=True)
@@ -262,6 +275,8 @@ class MotherboardProduct(_SpecTable, Product):
 
 
 class MemoryProduct(_SpecTable, Product):
+    """Memory kit specifications (memory_specs)."""
+
     __tablename__ = "memory_specs"
 
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id", ondelete="CASCADE"), primary_key=True)
@@ -281,6 +296,8 @@ class MemoryProduct(_SpecTable, Product):
 
 
 class GpuProduct(_SpecTable, Product):
+    """Graphics card specifications (gpu_specs)."""
+
     __tablename__ = "gpu_specs"
 
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id", ondelete="CASCADE"), primary_key=True)
@@ -300,6 +317,8 @@ class GpuProduct(_SpecTable, Product):
 
 
 class StorageProduct(_SpecTable, Product):
+    """Drive specifications (storage_specs)."""
+
     __tablename__ = "storage_specs"
 
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id", ondelete="CASCADE"), primary_key=True)
@@ -323,6 +342,8 @@ class StorageProduct(_SpecTable, Product):
 
 
 class PsuProduct(_SpecTable, Product):
+    """Power supply specifications (psu_specs)."""
+
     __tablename__ = "psu_specs"
 
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id", ondelete="CASCADE"), primary_key=True)
@@ -347,6 +368,8 @@ case_supported_form_factors = Table(
 
 
 class CaseProduct(_SpecTable, Product):
+    """Case specifications (case_specs), with the board form factors it accepts."""
+
     __tablename__ = "case_specs"
 
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id", ondelete="CASCADE"), primary_key=True)
@@ -373,6 +396,8 @@ cooler_supported_sockets = Table(
 
 
 class CoolerProduct(_SpecTable, Product):
+    """CPU cooler specifications (cooler_specs), with the sockets it supports."""
+
     __tablename__ = "cooler_specs"
 
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id", ondelete="CASCADE"), primary_key=True)
@@ -421,6 +446,7 @@ class Inventory(db.Model):
 
     @property
     def quantity_available(self) -> int:
+        """Units that can still be sold: on hand minus held by active reservations."""
         return self.quantity_on_hand - self.quantity_reserved
 
     __table_args__ = (

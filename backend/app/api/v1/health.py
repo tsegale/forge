@@ -15,10 +15,14 @@ TAG = "Health"
 
 
 class Liveness(BaseModel):
+    """Liveness: the process is up and serving requests."""
+
     status: Literal["ok"]
 
 
 class Readiness(BaseModel):
+    """Readiness: PostgreSQL and Redis checked individually."""
+
     status: Literal["ok", "degraded"]
     checks: dict[str, Literal["ok", "unavailable"]]
 

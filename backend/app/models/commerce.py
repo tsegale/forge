@@ -49,6 +49,8 @@ class Cart(TimestampMixin, db.Model):
 
 
 class CartItem(TimestampMixin, db.Model):
+    """One product line in a cart, active or saved for later."""
+
     __tablename__ = "cart_items"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -68,6 +70,9 @@ class CartItem(TimestampMixin, db.Model):
 
 
 class Order(TimestampMixin, db.Model):
+    """A customer order. Status changes are checked against order_status_transitions by a trigger and logged to
+    order_status_history; paid requires a matching succeeded payment."""
+
     __tablename__ = "orders"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -214,6 +219,8 @@ class StockReservation(db.Model):
 
 
 class Payment(TimestampMixin, db.Model):
+    """A payment attempt with the provider for an order (one per payment intent)."""
+
     __tablename__ = "payments"
 
     id: Mapped[int] = mapped_column(primary_key=True)
