@@ -51,7 +51,9 @@ jobs:
         run: scripts/ci/start-e2e-stack.sh
       - name: Take the screenshots
         working-directory: frontend
-        run: npx playwright test e2e/visual.spec.ts --update-snapshots
+        # "all" rewrites every screenshot; the default (changed) skips any within the diff tolerance,
+        # which would leave small changes such as a new logo out of the baselines.
+        run: npx playwright test e2e/visual.spec.ts --update-snapshots=all
       - name: Upload the baselines
         uses: actions/upload-artifact@v4
         with:

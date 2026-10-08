@@ -75,9 +75,8 @@ export function SiteFooter({ inspector }: { inspector?: ReactNode }) {
 
         <div className="grid grid-cols-2 gap-8 py-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
           <div className="col-span-2 md:col-span-1">
-            <Link to="/" className="inline-flex items-center gap-2 text-accent" aria-label="Forge home">
-              <Logo />
-              <span className="text-lg font-semibold tracking-tight text-ink">Forge</span>
+            <Link to="/" className="inline-flex items-center" aria-label="Forge home">
+              <Logo className="h-10" />
             </Link>
             <p className="mt-3 max-w-xs text-base text-ink-muted">
               PC components and complete builds, checked for compatibility by a database-enforced engine.

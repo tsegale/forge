@@ -10,7 +10,7 @@ at the widths listed; the file names are `<name>-<width>.webp`.
 
 | Name | Used on | Photographer | Source | Crop | Widths |
 | --- | --- | --- | --- | --- | --- |
-| hero-build | Home page hero | Đào Hiếu | https://unsplash.com/photos/Z2x0uAbu56M | 4:3 | 480, 800, 1200, 1600 |
+| hero-wide | Home page hero (full width) | Đào Hiếu | https://unsplash.com/photos/Z2x0uAbu56M | 3:2 | 768, 1280, 1920, 2400 |
 | auth-build | Sign in, register and password reset | Đào Hiếu | https://unsplash.com/photos/Mk4cafr5Gdg | 4:3 | 384, 768 |
 | build-gaming | Featured build: 1440p gaming | Andrey Matveev | https://unsplash.com/photos/wdbXQaD6m_Y | 3:2 | 400, 800 |
 | build-compact | Featured build: compact small form factor | Devan Morgan | https://unsplash.com/photos/AZcrU0-8QzU | 3:2 | 400, 800 |

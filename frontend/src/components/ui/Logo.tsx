@@ -1,10 +1,20 @@
-/** Forge logomark: an anvil-like block with a spark, drawn as inline SVG (no icon fonts). */
-export function Logo({ className = 'h-7 w-7' }: { className?: string }) {
+import logo2x from '@/assets/brand/forge-logo-80.webp'
+import logo3x from '@/assets/brand/forge-logo-120.webp'
+
+/**
+ * Forge logo (mark and wordmark). Decorative: every use sits inside a link labelled "Forge home".
+ * Sized by its height; the files are 2x and 3x of 40 px, and width/height keep the ratio before load.
+ */
+export function Logo({ className = 'h-9' }: { className?: string }) {
   return (
-    <svg viewBox="0 0 32 32" className={className} aria-hidden="true" focusable="false">
-      <rect x="3" y="14" width="26" height="7" rx="1.5" fill="currentColor" />
-      <path d="M9 21h14l-2.5 7h-9z" fill="currentColor" opacity="0.75" />
-      <path d="M16 3l1.6 4.4L22 9l-4.4 1.6L16 15l-1.6-4.4L10 9l4.4-1.6z" fill="currentColor" opacity="0.9" />
-    </svg>
+    <img
+      src={logo2x}
+      srcSet={`${logo2x} 2x, ${logo3x} 3x`}
+      width={207}
+      height={80}
+      alt=""
+      decoding="async"
+      className={`w-auto ${className}`}
+    />
   )
 }

@@ -37,8 +37,8 @@ function photo(name: string, ratio: [number, number], alt: string): PhotoSource 
 
 export const PHOTOS = {
   hero: photo(
-    'hero-build',
-    [4, 3],
+    'hero-wide',
+    [3, 2],
     'Inside a white PC build: motherboard, memory and a white tower cooler with braided cables',
   ),
   auth: photo(
