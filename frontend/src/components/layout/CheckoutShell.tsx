@@ -21,9 +21,8 @@ export function CheckoutShell() {
       </a>
       <header className="border-b border-border bg-surface">
         <div className={`${CONTAINER} flex h-16 items-center justify-between gap-4`}>
-          <Link to="/" className="flex items-center gap-2 text-accent" aria-label="Forge home">
+          <Link to="/" className="flex items-center" aria-label="Forge home">
             <Logo />
-            <span className="text-xl font-semibold tracking-tight text-ink">Forge</span>
           </Link>
           <p className="flex items-center gap-1.5 text-sm font-medium text-ink-muted">
             <Lock aria-hidden="true" className="h-4 w-4 text-success-ink" />

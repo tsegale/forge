@@ -38,9 +38,8 @@ export function AppShell() {
       <header className="sticky top-0 z-30 border-b border-border bg-surface">
         <div className={`${CONTAINER} flex h-16 items-center gap-3 lg:gap-6`}>
           <MobileMenu />
-          <Link to="/" className="flex shrink-0 items-center gap-2 text-accent" aria-label="Forge home">
+          <Link to="/" className="flex shrink-0 items-center" aria-label="Forge home">
             <Logo />
-            <span className="text-xl font-semibold tracking-tight text-ink">Forge</span>
           </Link>
           <SearchBox className="hidden flex-1 md:block lg:max-w-xl" />
           <div className="ml-auto flex items-center gap-1">
