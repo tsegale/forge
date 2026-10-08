@@ -78,7 +78,7 @@ function LiveCheck() {
     },
   ]
   return (
-    <div aria-hidden="true" className="rounded-md border border-border bg-surface p-5 shadow-sm">
+    <div aria-hidden="true" className="rounded-md border border-border bg-surface/85 p-5 shadow-sm">
       <p className="flex items-center gap-2 text-sm font-semibold text-success-ink">
         <CircleCheck className="h-4 w-4" /> Compatible, 1 note
       </p>
@@ -192,7 +192,7 @@ export function HomePage() {
         <div
           className={`${CONTAINER} relative -mt-16 grid gap-6 sm:-mt-24 lg:mt-0 lg:grid-cols-[minmax(0,34rem)_1fr] lg:items-end lg:py-14`}
         >
-          <div className="rounded-md border border-border bg-surface p-6 shadow-md sm:p-8">
+          <div className="rounded-md border border-border bg-surface/85 p-6 shadow-md sm:p-8">
             <p className="text-sm font-semibold tracking-wide text-accent uppercase">
               PC components, checked part against part
             </p>
