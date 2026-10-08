@@ -1099,6 +1099,7 @@ export interface components {
         };
         /**
          * AddressType
+         * @description What an address book entry is used for.
          * @enum {string}
          */
         AddressType: "shipping" | "billing";
@@ -1485,6 +1486,7 @@ export interface components {
         };
         /**
          * BuildStatus
+         * @description Build lifecycle: draft, validated by the engine, or locked by an order.
          * @enum {string}
          */
         BuildStatus: "draft" | "validated" | "ordered";
@@ -1788,6 +1790,7 @@ export interface components {
         };
         /**
          * CoolerType
+         * @description Air tower or all-in-one liquid cooler.
          * @enum {string}
          */
         CoolerType: "air" | "aio";
@@ -1832,7 +1835,10 @@ export interface components {
             orders: number;
             revenue: components["schemas"]["Price"];
         };
-        /** ErrorBody */
+        /**
+         * ErrorBody
+         * @description The error envelope every 4xx and 5xx response carries.
+         */
         ErrorBody: {
             /**
              * Code
@@ -1982,7 +1988,10 @@ export interface components {
             /** Kind */
             kind: string;
         };
-        /** Liveness */
+        /**
+         * Liveness
+         * @description Liveness: the process is up and serving requests.
+         */
         Liveness: {
             /**
              * Status
@@ -2048,6 +2057,7 @@ export interface components {
         };
         /**
          * MemoryType
+         * @description DDR generation shared by memory kits and motherboards.
          * @enum {string}
          */
         MemoryType: "ddr4" | "ddr5";
@@ -2203,6 +2213,7 @@ export interface components {
         };
         /**
          * OrderStatus
+         * @description Order lifecycle; legal transitions live in the order_status_transitions table.
          * @enum {string}
          */
         OrderStatus: "pending_payment" | "paid" | "fulfilling" | "shipped" | "delivered" | "cancelled" | "refunded";
@@ -2907,16 +2918,19 @@ export interface components {
         PsuAtxVersion: "2.x" | "3.0" | "3.1";
         /**
          * PsuEfficiency
+         * @description 80 PLUS efficiency certification of a power supply.
          * @enum {string}
          */
         PsuEfficiency: "80plus" | "80plus_bronze" | "80plus_silver" | "80plus_gold" | "80plus_platinum" | "80plus_titanium";
         /**
          * PsuFormFactor
+         * @description Power supply size standard; cases accept one of these.
          * @enum {string}
          */
         PsuFormFactor: "atx" | "sfx" | "sfx_l";
         /**
          * PsuModularity
+         * @description How a power supply's cables attach.
          * @enum {string}
          */
         PsuModularity: "non_modular" | "semi_modular" | "fully_modular";
@@ -2991,7 +3005,10 @@ export interface components {
             /** Count */
             count: number;
         };
-        /** Readiness */
+        /**
+         * Readiness
+         * @description Readiness: PostgreSQL and Redis checked individually.
+         */
         Readiness: {
             /** Checks */
             checks: {
@@ -3219,11 +3236,13 @@ export interface components {
         };
         /**
          * StorageFormFactor
+         * @description Physical drive size.
          * @enum {string}
          */
         StorageFormFactor: "m2_2280" | "2.5in" | "3.5in";
         /**
          * StorageInterface
+         * @description Drive interface.
          * @enum {string}
          */
         StorageInterface: "nvme" | "sata";
@@ -3331,10 +3350,14 @@ export interface components {
         };
         /**
          * UserRole
+         * @description Account role used by role-based access control.
          * @enum {string}
          */
         UserRole: "customer" | "admin";
-        /** WebhookAck */
+        /**
+         * WebhookAck
+         * @description Acknowledgement for the provider; duplicate deliveries are acknowledged too.
+         */
         WebhookAck: {
             /** Duplicate */
             duplicate: boolean;

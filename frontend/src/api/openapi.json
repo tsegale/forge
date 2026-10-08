@@ -315,6 +315,7 @@
         "type": "object"
       },
       "AddressType": {
+        "description": "What an address book entry is used for.",
         "enum": [
           "shipping",
           "billing"
@@ -1272,6 +1273,7 @@
         "type": "object"
       },
       "BuildStatus": {
+        "description": "Build lifecycle: draft, validated by the engine, or locked by an order.",
         "enum": [
           "draft",
           "validated",
@@ -2025,6 +2027,7 @@
         "type": "object"
       },
       "CoolerType": {
+        "description": "Air tower or all-in-one liquid cooler.",
         "enum": [
           "air",
           "aio"
@@ -2117,6 +2120,7 @@
         "type": "object"
       },
       "ErrorBody": {
+        "description": "The error envelope every 4xx and 5xx response carries.",
         "properties": {
           "code": {
             "description": "Stable, machine-readable error code.",
@@ -2423,6 +2427,7 @@
         "type": "object"
       },
       "Liveness": {
+        "description": "Liveness: the process is up and serving requests.",
         "properties": {
           "status": {
             "const": "ok",
@@ -2564,6 +2569,7 @@
         "type": "object"
       },
       "MemoryType": {
+        "description": "DDR generation shared by memory kits and motherboards.",
         "enum": [
           "ddr4",
           "ddr5"
@@ -2960,6 +2966,7 @@
         "type": "object"
       },
       "OrderStatus": {
+        "description": "Order lifecycle; legal transitions live in the order_status_transitions table.",
         "enum": [
           "pending_payment",
           "paid",
@@ -4654,6 +4661,7 @@
         "type": "string"
       },
       "PsuEfficiency": {
+        "description": "80 PLUS efficiency certification of a power supply.",
         "enum": [
           "80plus",
           "80plus_bronze",
@@ -4666,6 +4674,7 @@
         "type": "string"
       },
       "PsuFormFactor": {
+        "description": "Power supply size standard; cases accept one of these.",
         "enum": [
           "atx",
           "sfx",
@@ -4675,6 +4684,7 @@
         "type": "string"
       },
       "PsuModularity": {
+        "description": "How a power supply's cables attach.",
         "enum": [
           "non_modular",
           "semi_modular",
@@ -4838,6 +4848,7 @@
         "type": "object"
       },
       "Readiness": {
+        "description": "Readiness: PostgreSQL and Redis checked individually.",
         "properties": {
           "checks": {
             "additionalProperties": {
@@ -5388,6 +5399,7 @@
         "type": "object"
       },
       "StorageFormFactor": {
+        "description": "Physical drive size.",
         "enum": [
           "m2_2280",
           "2.5in",
@@ -5397,6 +5409,7 @@
         "type": "string"
       },
       "StorageInterface": {
+        "description": "Drive interface.",
         "enum": [
           "nvme",
           "sata"
@@ -5621,6 +5634,7 @@
         "type": "object"
       },
       "UserRole": {
+        "description": "Account role used by role-based access control.",
         "enum": [
           "customer",
           "admin"
@@ -5629,6 +5643,7 @@
         "type": "string"
       },
       "WebhookAck": {
+        "description": "Acknowledgement for the provider; duplicate deliveries are acknowledged too.",
         "properties": {
           "duplicate": {
             "title": "Duplicate",
