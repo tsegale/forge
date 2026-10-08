@@ -63,7 +63,8 @@ export const routes: RouteObject[] = [
       {
         errorElement: <RouteError />,
         children: [
-          { index: true, element: <HomePage /> },
+          // Full bleed: the page lays out its own containers, so the hero can span the window.
+          { index: true, element: <HomePage />, handle: { fullBleed: true } },
           { path: 'shop', element: <CatalogPage /> },
           { path: 'shop/:kind', element: <CatalogPage /> },
           { path: 'search', element: <CatalogPage /> },

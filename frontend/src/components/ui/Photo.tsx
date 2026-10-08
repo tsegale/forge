@@ -9,6 +9,7 @@ export function Photo({
   photo,
   sizes,
   priority = false,
+  fill = false,
   alt,
   className,
   imgClassName,
@@ -17,6 +18,8 @@ export function Photo({
   /** The rendered width at each breakpoint, so the browser picks the right variant. */
   sizes: string
   priority?: boolean
+  /** Fill the positioned parent instead of keeping the photo's own ratio (the parent fixes the box). */
+  fill?: boolean
   /** Overrides the photo's own description, for example "" where it repeats nearby text. */
   alt?: string
   className?: string
@@ -24,8 +27,8 @@ export function Photo({
 }) {
   return (
     <div
-      className={cn('relative overflow-hidden bg-surface-muted', className)}
-      style={{ aspectRatio: photo.aspect }}
+      className={cn('overflow-hidden bg-surface-muted', fill ? 'absolute inset-0' : 'relative', className)}
+      style={fill ? undefined : { aspectRatio: photo.aspect }}
     >
       <img
         src={photo.src}

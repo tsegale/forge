@@ -11,6 +11,7 @@ import { CATEGORY_LINKS } from '@/catalog/navigation'
 import { facetsQuery } from '@/catalog/queries'
 import { ProductCard, ProductCardSkeleton } from '@/components/catalog/ProductCard'
 import { Button } from '@/components/ui/Button'
+import { CONTAINER } from '@/components/layout/AppShell'
 import { Photo } from '@/components/ui/Photo'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { toast } from '@/components/ui/toastStore'
@@ -104,8 +105,6 @@ function LiveCheck() {
   )
 }
 
-const HERO_SIZES = '(min-width: 1280px) 640px, (min-width: 1024px) 52vw, 100vw'
-
 function FeaturedBuildCard({ build, index }: { build: FeaturedBuild; index: number }) {
   const navigate = useNavigate()
   const parts = build.items.map((item) => item.product)
@@ -172,171 +171,181 @@ export function HomePage() {
   preload(PHOTOS.hero.src, {
     as: 'image',
     imageSrcSet: PHOTOS.hero.srcSet,
-    imageSizes: HERO_SIZES,
+    imageSizes: '100vw',
     fetchPriority: 'high',
   })
 
   return (
     <div className="flex flex-col gap-16">
-      <section
-        aria-labelledby="hero-heading"
-        className="grid grid-cols-1 items-center gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]"
-      >
-        <div>
-          <p className="text-sm font-semibold tracking-wide text-accent uppercase">
-            PC components, checked part against part
-          </p>
-          <h1
-            id="hero-heading"
-            className="mt-3 text-4xl leading-tight font-semibold tracking-tight text-ink sm:text-5xl"
-          >
-            Build a PC that works the first time.
-          </h1>
-          <p className="mt-4 max-w-xl text-lg text-ink-muted">
-            Every part you add is checked against the rest of the build: socket, memory, size, cooling and
-            power, with the measurements behind each verdict. An incompatible build cannot be ordered.
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Button asChild size="lg">
-              <Link to="/configurator">Start a build</Link>
-            </Button>
-            <Button asChild size="lg" variant="secondary">
-              <Link to="/shop">Shop components</Link>
-            </Button>
-          </div>
-        </div>
-        <div className="relative lg:pb-16">
+      <section aria-labelledby="hero-heading" className="relative lg:flex lg:min-h-[36rem] lg:items-center">
+        {/* The photo is a band on small screens and covers the whole section from lg up; either way its box
+            is fixed before it loads. */}
+        <div className="relative aspect-[16/10] sm:aspect-[2/1] lg:absolute lg:inset-0 lg:aspect-auto">
           <Photo
             photo={PHOTOS.hero}
-            sizes={HERO_SIZES}
+            sizes="100vw"
             priority
-            className="rounded-md border border-border"
+            fill
+            imgClassName="object-[70%_50%] lg:object-[85%_50%]"
           />
-          <div className="mt-4 lg:absolute lg:bottom-0 lg:-left-8 lg:mt-0 lg:w-72">
+        </div>
+        <div
+          className={`${CONTAINER} relative -mt-16 grid gap-6 sm:-mt-24 lg:mt-0 lg:grid-cols-[minmax(0,34rem)_1fr] lg:items-end lg:py-14`}
+        >
+          <div className="rounded-md border border-border bg-surface p-6 shadow-md sm:p-8">
+            <p className="text-sm font-semibold tracking-wide text-accent uppercase">
+              PC components, checked part against part
+            </p>
+            <h1
+              id="hero-heading"
+              className="mt-3 text-4xl leading-tight font-semibold tracking-tight text-ink sm:text-5xl"
+            >
+              Build a PC that works the first time.
+            </h1>
+            <p className="mt-4 text-lg text-ink-muted">
+              Every part you add is checked against the rest of the build: socket, memory, size, cooling and
+              power, with the measurements behind each verdict. An incompatible build cannot be ordered.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Button asChild size="lg">
+                <Link to="/configurator">Start a build</Link>
+              </Button>
+              <Button asChild size="lg" variant="secondary">
+                <Link to="/shop">Shop components</Link>
+              </Button>
+            </div>
+          </div>
+          <div className="lg:ml-auto lg:w-80">
             <LiveCheck />
           </div>
         </div>
       </section>
 
-      <Section
-        id="builds-heading"
-        title="Start from a validated build"
-        intro="Picked by Forge, checked by the engine. Change any part."
-      >
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          {featured.data
-            ? featured.data.items.map((build, index) => (
-                <FeaturedBuildCard key={build.id} build={build} index={index} />
-              ))
-            : Array.from({ length: 3 }, (_, i) => <Skeleton key={i} className="h-80 w-full" />)}
-        </div>
-      </Section>
-
-      <Section id="categories-heading" title="Shop by category">
-        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {CATEGORY_LINKS.filter((c) => c.kind !== 'accessory').map((category) => {
-            const photo = CATEGORY_PHOTOS[category.kind]
-            return (
-              <li key={category.kind}>
-                <Link
-                  to={`/shop/${category.kind}`}
-                  className="group flex h-full flex-col overflow-hidden rounded-md border border-border bg-surface hover:border-ink-subtle"
-                >
-                  {photo ? (
-                    <Photo
-                      photo={photo}
-                      sizes="(min-width: 1280px) 300px, (min-width: 640px) 25vw, 50vw"
-                      imgClassName="transition-transform duration-300 group-hover:scale-[1.03] motion-reduce:transition-none"
-                    />
-                  ) : null}
-                  <span className="flex flex-col p-4">
-                    <span className="font-medium text-ink group-hover:text-accent">
-                      {KIND_LABELS[category.kind]}
-                    </span>
-                    <span className="text-sm text-ink-subtle">
-                      {counts.has(category.kind)
-                        ? `${String(counts.get(category.kind))} parts`
-                        : category.blurb}
-                    </span>
-                  </span>
-                </Link>
-              </li>
-            )
-          })}
-        </ul>
-      </Section>
-
-      {drops.data?.items.length !== 0 ? (
+      <div className={`${CONTAINER} flex flex-col gap-16`}>
         <Section
-          id="drops-heading"
-          title="Price drops"
-          intro="Cut in the last 30 days, from our own price history."
-          link={{ to: '/shop', label: 'All components' }}
+          id="builds-heading"
+          title="Start from a validated build"
+          intro="Picked by Forge, checked by the engine. Change any part."
         >
-          <ul className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-            {drops.data
-              ? drops.data.items.slice(0, 4).map((drop) => (
-                  <li key={drop.product.id} className="grid min-w-0">
-                    <ProductCard
-                      product={{ ...drop.product, was_price: drop.was }}
-                      note={
-                        <p className="text-sm font-medium text-success-ink">
-                          {drop.percent_off}% off, {daysAgo(drop.dropped_at)}
-                        </p>
-                      }
-                    />
-                  </li>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            {featured.data
+              ? featured.data.items.map((build, index) => (
+                  <FeaturedBuildCard key={build.id} build={build} index={index} />
                 ))
-              : Array.from({ length: 4 }, (_, i) => (
-                  <li key={i} aria-hidden="true">
-                    <ProductCardSkeleton />
-                  </li>
-                ))}
+              : Array.from({ length: 3 }, (_, i) => <Skeleton key={i} className="h-80 w-full" />)}
+          </div>
+        </Section>
+
+        <Section id="categories-heading" title="Shop by category">
+          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {CATEGORY_LINKS.filter((c) => c.kind !== 'accessory').map((category) => {
+              const photo = CATEGORY_PHOTOS[category.kind]
+              return (
+                <li key={category.kind}>
+                  <Link
+                    to={`/shop/${category.kind}`}
+                    className="group flex h-full flex-col overflow-hidden rounded-md border border-border bg-surface hover:border-ink-subtle"
+                  >
+                    {photo ? (
+                      <Photo
+                        photo={photo}
+                        sizes="(min-width: 1280px) 300px, (min-width: 640px) 25vw, 50vw"
+                        imgClassName="transition-transform duration-300 group-hover:scale-[1.03] motion-reduce:transition-none"
+                      />
+                    ) : null}
+                    <span className="flex flex-col p-4">
+                      <span className="font-medium text-ink group-hover:text-accent">
+                        {KIND_LABELS[category.kind]}
+                      </span>
+                      <span className="text-sm text-ink-subtle">
+                        {counts.has(category.kind)
+                          ? `${String(counts.get(category.kind))} parts`
+                          : category.blurb}
+                      </span>
+                    </span>
+                  </Link>
+                </li>
+              )
+            })}
           </ul>
         </Section>
-      ) : null}
 
-      {restocks.data?.items.length ? (
-        <Section id="restock-heading" title="Back in stock" intro="Sold out, now available again.">
-          <ul className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-            {restocks.data.items.map((item) => (
-              <li key={item.product.id} className="grid min-w-0">
-                <ProductCard
-                  product={item.product}
-                  note={<p className="text-sm text-ink-muted">Restocked {daysAgo(item.restocked_at)}</p>}
-                />
+        {drops.data?.items.length !== 0 ? (
+          <Section
+            id="drops-heading"
+            title="Price drops"
+            intro="Cut in the last 30 days, from our own price history."
+            link={{ to: '/shop', label: 'All components' }}
+          >
+            <ul className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+              {drops.data
+                ? drops.data.items.slice(0, 4).map((drop) => (
+                    <li key={drop.product.id} className="grid min-w-0">
+                      <ProductCard
+                        product={{ ...drop.product, was_price: drop.was }}
+                        note={
+                          <p className="text-sm font-medium text-success-ink">
+                            {drop.percent_off}% off, {daysAgo(drop.dropped_at)}
+                          </p>
+                        }
+                      />
+                    </li>
+                  ))
+                : Array.from({ length: 4 }, (_, i) => (
+                    <li key={i} aria-hidden="true">
+                      <ProductCardSkeleton />
+                    </li>
+                  ))}
+            </ul>
+          </Section>
+        ) : null}
+
+        {restocks.data?.items.length ? (
+          <Section id="restock-heading" title="Back in stock" intro="Sold out, now available again.">
+            <ul className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+              {restocks.data.items.map((item) => (
+                <li key={item.product.id} className="grid min-w-0">
+                  <ProductCard
+                    product={item.product}
+                    note={<p className="text-sm text-ink-muted">Restocked {daysAgo(item.restocked_at)}</p>}
+                  />
+                </li>
+              ))}
+            </ul>
+          </Section>
+        ) : null}
+
+        <Section
+          id="how-heading"
+          title="How Forge works"
+          link={{ to: '/how-it-works', label: 'The details' }}
+        >
+          <ol className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            {[
+              [
+                'Choose parts',
+                'Pick from the catalog or start from a validated build. Each pick lists only parts that fit.',
+              ],
+              [
+                'The engine checks',
+                'Rules for socket, memory, size, cooling and power run on every change, in the database too.',
+              ],
+              [
+                'Pay with stock held',
+                `Checkout reserves every part${holdMinutes === null ? '' : ` for ${String(holdMinutes)} minutes`} while you pay, so nothing sells out mid-payment.`,
+              ],
+            ].map(([title, text], index) => (
+              <li key={title} className="rounded-md border border-border bg-surface p-5">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-accent-soft font-tech text-sm font-semibold text-accent">
+                  {index + 1}
+                </span>
+                <h3 className="mt-3 font-semibold text-ink">{title}</h3>
+                <p className="mt-1 text-sm text-ink-muted">{text}</p>
               </li>
             ))}
-          </ul>
+          </ol>
         </Section>
-      ) : null}
-
-      <Section id="how-heading" title="How Forge works" link={{ to: '/how-it-works', label: 'The details' }}>
-        <ol className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          {[
-            [
-              'Choose parts',
-              'Pick from the catalog or start from a validated build. Each pick lists only parts that fit.',
-            ],
-            [
-              'The engine checks',
-              'Rules for socket, memory, size, cooling and power run on every change, in the database too.',
-            ],
-            [
-              'Pay with stock held',
-              `Checkout reserves every part${holdMinutes === null ? '' : ` for ${String(holdMinutes)} minutes`} while you pay, so nothing sells out mid-payment.`,
-            ],
-          ].map(([title, text], index) => (
-            <li key={title} className="rounded-md border border-border bg-surface p-5">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-accent-soft font-tech text-sm font-semibold text-accent">
-                {index + 1}
-              </span>
-              <h3 className="mt-3 font-semibold text-ink">{title}</h3>
-              <p className="mt-1 text-sm text-ink-muted">{text}</p>
-            </li>
-          ))}
-        </ol>
-      </Section>
+      </div>
     </div>
   )
 }
