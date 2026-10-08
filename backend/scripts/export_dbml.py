@@ -14,12 +14,22 @@ from sqlalchemy.dialects import postgresql
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.environ.setdefault("SECRET_KEY", "export")
 os.environ.setdefault("DATABASE_URL", "postgresql+psycopg://unused@localhost/unused")
+# Production config validates its settings at startup; only the metadata is read here.
+for _name, _placeholder in {
+    "JWT_SECRET_KEY": "export-only-placeholder-at-least-32-bytes",
+    "STRIPE_SECRET_KEY": "sk_test_export",
+    "STRIPE_PUBLISHABLE_KEY": "pk_test_export",
+    "STRIPE_WEBHOOK_SECRET": "whsec_export",
+    "MAIL_SERVER": "unused",
+    "PUBLIC_BASE_URL": "http://unused",
+}.items():
+    os.environ.setdefault(_name, _placeholder)
 
 from app import create_app  # noqa: E402
 from app.extensions import db  # noqa: E402
 
 GROUPS = {
-    "Identity": ["users", "addresses", "refresh_tokens"],
+    "Identity": ["users", "addresses", "refresh_tokens", "password_reset_tokens"],
     "Catalog": [
         "component_kinds",
         "sockets",
@@ -38,7 +48,9 @@ GROUPS = {
         "cooler_specs",
         "cooler_supported_sockets",
         "inventory",
+        "inventory_events",
         "price_history",
+        "product_images",
     ],
     "Builds": ["builds", "build_items"],
     "Commerce": [
@@ -51,6 +63,7 @@ GROUPS = {
         "order_status_history",
         "stock_reservations",
         "payments",
+        "payment_events",
         "processed_webhook_events",
     ],
     "Engagement": ["reviews", "price_alerts"],

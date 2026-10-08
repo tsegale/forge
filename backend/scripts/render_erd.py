@@ -14,6 +14,16 @@ from sqlalchemy.dialects import postgresql
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.environ.setdefault("SECRET_KEY", "export")
 os.environ.setdefault("DATABASE_URL", "postgresql+psycopg://unused@localhost/unused")
+# Production config validates its settings at startup; only the metadata is read here.
+for _name, _placeholder in {
+    "JWT_SECRET_KEY": "export-only-placeholder-at-least-32-bytes",
+    "STRIPE_SECRET_KEY": "sk_test_export",
+    "STRIPE_PUBLISHABLE_KEY": "pk_test_export",
+    "STRIPE_WEBHOOK_SECRET": "whsec_export",
+    "MAIL_SERVER": "unused",
+    "PUBLIC_BASE_URL": "http://unused",
+}.items():
+    os.environ.setdefault(_name, _placeholder)
 
 from export_dbml import GROUPS  # noqa: E402
 
