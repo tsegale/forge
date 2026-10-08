@@ -1,5 +1,7 @@
 import { History, Layers, ShieldCheck } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { Photo } from '@/components/ui/Photo'
+import { PHOTOS } from '@/lib/photos'
 
 const BENEFITS = [
   {
@@ -19,7 +21,7 @@ const BENEFITS = [
   },
 ]
 
-/** Sign in, registration and password reset: the form, and on wide screens why an account helps. */
+/** Sign in, registration and password reset: the form, and on wide screens a build photo and why an account helps. */
 export function AuthLayout({
   title,
   intro,
@@ -40,19 +42,22 @@ export function AuthLayout({
           <div className="mt-8">{children}</div>
         </div>
       </section>
-      <aside aria-label="Why create an account" className="hidden bg-ink px-10 py-14 text-white lg:block">
-        <p className="text-sm font-semibold tracking-wide text-white/70 uppercase">Your Forge account</p>
-        <ul className="mt-6 flex flex-col gap-6">
-          {BENEFITS.map(({ icon: Icon, title, text }) => (
-            <li key={title} className="flex gap-3">
-              <Icon aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-white/80" />
-              <div>
-                <p className="font-medium">{title}</p>
-                <p className="text-sm text-white/75">{text}</p>
-              </div>
-            </li>
-          ))}
-        </ul>
+      <aside aria-label="Why create an account" className="hidden flex-col bg-ink text-white lg:flex">
+        <Photo photo={PHOTOS.auth} sizes="24rem" className="shrink-0" />
+        <div className="px-10 py-8">
+          <p className="text-sm font-semibold tracking-wide text-white/70 uppercase">Your Forge account</p>
+          <ul className="mt-5 flex flex-col gap-5">
+            {BENEFITS.map(({ icon: Icon, title, text }) => (
+              <li key={title} className="flex gap-3">
+                <Icon aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-white/80" />
+                <div>
+                  <p className="font-medium">{title}</p>
+                  <p className="text-sm text-white/75">{text}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
       </aside>
     </div>
   )

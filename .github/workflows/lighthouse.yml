@@ -6,7 +6,7 @@ name: Lighthouse
 # is on the default branch). Not on other branch pushes: it builds every image.
 on:
   push:
-    branches: [main, feat/redesign]
+    branches: [main, "feat/**"]
   workflow_dispatch:
 
 jobs:

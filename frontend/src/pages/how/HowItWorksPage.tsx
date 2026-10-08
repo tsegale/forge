@@ -3,7 +3,9 @@ import { useId, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs'
 import { Button } from '@/components/ui/Button'
+import { Photo } from '@/components/ui/Photo'
 import { setInspectorOpen } from '@/inspector/store'
+import { PHOTOS } from '@/lib/photos'
 import { usePageTitle } from '@/lib/usePageTitle'
 
 const RULES = [
@@ -247,6 +249,12 @@ export function HowItWorksPage() {
           </ul>
         </nav>
       </header>
+      <Photo
+        photo={PHOTOS.howAssembly}
+        sizes="(min-width: 896px) 896px, 100vw"
+        priority
+        className="rounded-md border border-border"
+      />
 
       <Section id="engine" icon={Layers} title="The compatibility engine">
         <p>

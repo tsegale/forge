@@ -3,9 +3,11 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
 import { keySpecs, specGroups } from '@/catalog/specs'
+import { PHOTOS } from '@/lib/photos'
 import { Breadcrumbs } from './Breadcrumbs'
 import { Button, IconButton } from './Button'
 import { Field } from './Field'
+import { Photo } from './Photo'
 import { Price } from './Price'
 import { ProgressBar } from './ProgressBar'
 import { Rating } from './Rating'
@@ -156,5 +158,22 @@ describe('spec helpers', () => {
     expect(groups.map((g) => g.title)).toEqual(['Platform', 'Performance', 'Power'])
     expect(groups.flatMap((g) => g.rows)).toHaveLength(9)
     expect(groups[0]?.rows[0]).toEqual({ label: 'Socket', value: 'AM5' })
+  })
+})
+
+describe('Photo', () => {
+  it('reserves its box, offers every width and loads lazily unless it is the priority image', () => {
+    const { container, rerender } = render(<Photo photo={PHOTOS.emptyCart} sizes="400px" />)
+    const img = screen.getByRole('img', { name: PHOTOS.emptyCart.alt })
+    expect(img).toHaveAttribute('loading', 'lazy')
+    expect(img).toHaveAttribute('srcset', PHOTOS.emptyCart.srcSet)
+    expect(img).toHaveAttribute('sizes', '400px')
+    expect(img).toHaveAttribute('width', String(PHOTOS.emptyCart.width))
+    expect(img).toHaveAttribute('height', String(PHOTOS.emptyCart.height))
+    expect(container.firstElementChild).toHaveStyle({ aspectRatio: '3 / 2' })
+
+    rerender(<Photo photo={PHOTOS.emptyCart} sizes="400px" priority />)
+    expect(img).toHaveAttribute('loading', 'eager')
+    expect(img).toHaveAttribute('fetchpriority', 'high')
   })
 })
